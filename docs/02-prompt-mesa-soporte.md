@@ -56,10 +56,13 @@ El criterio es **seguridad + bajo costo de operación + portabilidad**. Usa este
 | Observabilidad | Logs JSON estructurados (pino), OpenTelemetry, endpoint `/health` y `/ready` | — |
 | Empaquetado | Docker multi-stage con imágenes no-root y distroless/slim; `docker-compose.yml` para local y para un despliegue en una sola VM | — |
 
-**Despliegue (documentar ambas opciones en `docs/despliegue.md`, sin atarse a un proveedor):**
+**Despliegue objetivo (ver `03-despliegue-hosting.md`; documentarlo en `docs/despliegue.md`):**
 
-- **Opción económica (por defecto):** una VM Linux (2–4 vCPU, 8 GB) con Docker Compose, Caddy como proxy inverso con TLS automático, respaldos cifrados diarios de PostgreSQL hacia almacenamiento de objetos externo y actualizaciones de seguridad automáticas del sistema operativo.
-- **Opción administrada:** Azure Container Apps + Azure Database for PostgreSQL Flexible Server + Azure Cache for Redis + Blob Storage + Key Vault.
+- **Producción:** Azure, región Mexico Central. Una VM Linux (2 vCPU, 8 GB) con Docker Compose para api, web, worker, Redis y ClamAV; Azure Database for PostgreSQL Flexible Server con acceso privado (o PostgreSQL en contenedor si el servicio no está disponible en la región); Blob Storage para adjuntos y respaldos; Key Vault con Managed Identity.
+- **Entrada:** Cloudflare (WAF, DDoS, TLS) mediante Cloudflare Tunnel, sin puertos entrantes en la VM. El área de agentes y admin se protege además con Cloudflare Access (Entra ID).
+- **Requisito derivado:** la app debe poder servir el **portal de clientes y el área de agentes/admin en hosts distintos** (por ejemplo `soporte.` y `agentes.soporte.`), con cookies separadas por host. Los endpoints de agentes y admin solo responden en su host, y los webhooks entrantes van bajo `/hooks/*`.
+- **Almacenamiento y secretos:** adaptadores para Azure Blob Storage y Key Vault con Managed Identity (sin claves compartidas). MinIO y archivos de secretos se usan en local.
+- **Portabilidad:** mantén la app portable (Docker Compose funciona en cualquier VM) para poder moverla a Azure Container Apps si el volumen crece.
 
 La aplicación sigue los principios *12-factor*: toda la configuración va por variables de entorno y los secretos se leen de un proveedor de secretos (archivo montado, Docker secrets o Key Vault), nunca del repositorio.
 
@@ -399,7 +402,7 @@ Una fase está terminada cuando:
 | 5 | MFA para clientes | Recomendado, no obligatorio; configurable por organización. |
 | 6 | Buzón y dominio de correo | Variables de entorno; adaptador Graph y adaptador IMAP/SMTP; Mailpit en local. |
 | 7 | Proveedor de telefonía | Registro manual y webhook CTI genérico. |
-| 8 | Infraestructura y residencia de datos | Opción económica (VM + Docker Compose), portable a Azure. |
+| 8 | Infraestructura y residencia de datos | Azure Mexico Central (VM + PostgreSQL Flexible) detrás de Cloudflare; ver `03-despliegue-hosting.md`. |
 | 9 | Retención de datos y alcance ISO 27001 | Mecanismo implementado pero deshabilitado; sin borrado automático hasta que se configure. |
 | 10 | IA | Deshabilitada; no se implementa antes de la fase 3. |
 | 11 | RPO/RTO | RPO 24 h, RTO 8 h. |
