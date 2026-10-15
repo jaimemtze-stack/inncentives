@@ -70,11 +70,13 @@ export function sanitizeHtml(html: string, opts: SanitizeOptions = {}): string {
     transformTags: {
       a: (tagName, attribs) => {
         const { href, ...rest } = attribs;
-        const safe = href && SAFE_HREF.test(href.trim()) ? { href: href.trim() } : {};
-        return {
-          tagName,
-          attribs: { ...rest, ...safe, target: '_blank', rel: 'noopener noreferrer nofollow' },
+        const out: Record<string, string> = {
+          ...rest,
+          target: '_blank',
+          rel: 'noopener noreferrer nofollow',
         };
+        if (href && SAFE_HREF.test(href.trim())) out.href = href.trim();
+        return { tagName, attribs: out };
       },
       img: (tagName, attribs) => {
         const src = (attribs.src ?? '').trim();

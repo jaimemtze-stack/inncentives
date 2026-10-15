@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "tsx watch src/main.ts",
+    "dev": "node --watch -r @swc-node/register src/main.ts",
     "start": "node dist/src/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
@@ -12,10 +12,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "node -r @swc-node/register prisma/seed.ts"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "node -r @swc-node/register prisma/seed.ts"
   },
   "dependencies": {
     "@azure/identity": "^4.14.0",
@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@nestjs/testing": "^10.4.22",
+    "@swc-node/register": "^1.12.1",
     "@swc/core": "^1.16.18",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",

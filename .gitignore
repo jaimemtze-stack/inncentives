@@ -10,3 +10,6 @@ playwright-report/
 test-results/
 secrets/
 *.tsbuildinfo
+test-results/
+playwright-report/
+dump.rdb
