@@ -23,6 +23,10 @@ describe('FieldCrypto (AES-256-GCM)', () => {
     parts[4] = Buffer.from('xxxx').toString('base64url');
     expect(() => c.decrypt(parts.join('.'), 'a')).toThrow();
     expect(() => c.decrypt('v0.0.a.b.c')).toThrow();
+    // Truncated authentication tag is rejected before decryption
+    const short = enc.split('.');
+    short[3] = Buffer.from(short[3]!, 'base64url').subarray(0, 4).toString('base64url');
+    expect(() => c.decrypt(short.join('.'), 'a')).toThrow(/authentication tag/);
   });
 
   it('supports key rotation', () => {

@@ -1,10 +1,8 @@
 import 'reflect-metadata';
 import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
-import type { ModuleMetadata } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
 import type { Logger } from 'pino';
 import { randomUUID } from 'node:crypto';
 import { AppModule } from './app.module';
@@ -16,8 +14,12 @@ import { createLogger } from './common/logger';
 
 export interface CreateAppOptions {
   logger?: Logger;
-  /** Test hook to override providers (e.g. the mail queue). */
-  overrideProviders?: Array<{ provide: unknown; useValue: unknown }>;
+  /**
+   * Builds the Nest application from the adapter. Tests pass a builder based on
+   * @nestjs/testing to override providers; production code must not import it
+   * (it is a dev dependency and absent from the runtime image).
+   */
+  build?: (adapter: FastifyAdapter) => Promise<NestFastifyApplication>;
 }
 
 function createAdapter(config: AppConfig): FastifyAdapter {
@@ -28,7 +30,6 @@ function createAdapter(config: AppConfig): FastifyAdapter {
     // Correlation ids are generated server-side; inbound ids are not trusted.
     genReqId: () => randomUUID(),
     requestIdHeader: false,
-    disableRequestLogging: true,
   });
 }
 
@@ -39,26 +40,11 @@ export async function createApp(
   const logger = opts.logger ?? createLogger(config.LOG_LEVEL);
   const fastifyAdapter = createAdapter(config);
 
-  let app: NestFastifyApplication;
-  if (opts.overrideProviders?.length) {
-    let builder = Test.createTestingModule({
-      imports: [AppModule.forRoot(config)],
-    } as ModuleMetadata);
-    for (const o of opts.overrideProviders)
-      builder = builder.overrideProvider(o.provide).useValue(o.useValue);
-    const moduleRef = await builder.compile();
-    app = moduleRef.createNestApplication<NestFastifyApplication>(fastifyAdapter, {
-      logger: false,
-    });
-  } else {
-    app = await NestFactory.create<NestFastifyApplication>(
-      AppModule.forRoot(config),
-      fastifyAdapter,
-      {
+  const app = opts.build
+    ? await opts.build(fastifyAdapter)
+    : await NestFactory.create<NestFastifyApplication>(AppModule.forRoot(config), fastifyAdapter, {
         logger: ['error', 'warn'],
-      },
-    );
-  }
+      });
 
   const fastify = app.getHttpAdapter().getInstance();
 

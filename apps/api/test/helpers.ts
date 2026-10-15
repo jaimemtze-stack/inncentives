@@ -2,7 +2,9 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
+import { Test } from '@nestjs/testing';
 import { createApp } from '../src/app.factory';
+import { AppModule } from '../src/app.module';
 import { type AppConfig } from '../src/config/config';
 import { MAIL_QUEUE, type MailQueue, type TransactionalMail } from '../src/common/mail/mail-queue';
 import { HIBP_FETCH, type Fetcher } from '../src/modules/auth/password.service';
@@ -89,10 +91,15 @@ export async function createTestContext(overrides: Partial<AppConfig> = {}): Pro
   const mail = new MemoryMailQueue();
   const app = await createApp(config, {
     logger: createLogger('silent'),
-    overrideProviders: [
-      { provide: MAIL_QUEUE, useValue: mail },
-      { provide: HIBP_FETCH, useValue: fakeHibp() },
-    ],
+    build: async (adapter) => {
+      const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(config)] })
+        .overrideProvider(MAIL_QUEUE)
+        .useValue(mail)
+        .overrideProvider(HIBP_FETCH)
+        .useValue(fakeHibp())
+        .compile();
+      return moduleRef.createNestApplication<NestFastifyApplication>(adapter, { logger: false });
+    },
   });
   const prisma = new PrismaClient({ datasources: { db: { url: config.databaseUrl } } });
   return {

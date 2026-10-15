@@ -1,0 +1,20 @@
+# Rendered by the nginx image entrypoint (envsubst) into /etc/nginx/conf.d/default.conf.
+# Only the configured hosts are served; anything else is dropped (defense in depth for the
+# host-based separation between the customer portal and the agent area).
+server {
+  listen 8080 default_server;
+  server_name _;
+  return 444;
+}
+
+server {
+  listen 8080;
+  server_name ${PORTAL_HOST};
+  include /etc/nginx/inn-common.conf;
+}
+
+server {
+  listen 8080;
+  server_name ${AGENT_HOST};
+  include /etc/nginx/inn-common.conf;
+}

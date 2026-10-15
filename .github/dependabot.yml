@@ -1,8 +1,10 @@
 version: 2
+# cooldown: wait 7 days before proposing a newly published version (matches pnpm minimumReleaseAge).
 updates:
   - package-ecosystem: npm
     directory: /
     schedule: { interval: weekly }
+    cooldown: { default-days: 7 }
     open-pull-requests-limit: 10
     groups:
       minor-and-patch:
@@ -10,6 +12,8 @@ updates:
   - package-ecosystem: docker
     directory: /
     schedule: { interval: weekly }
+    cooldown: { default-days: 7 }
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    cooldown: { default-days: 7 }

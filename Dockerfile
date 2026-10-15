@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.7
 # Multi-stage build for api, worker and web. Targets: api, worker, web.
-FROM node:22.11-bookworm-slim AS base
-ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true
-RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+FROM node:22.23.3-bookworm-slim AS base
+ENV CI=true
+# pnpm from the npm registry (corepack's bundled signing keys go stale in older images).
+RUN npm install -g pnpm@10.28.0 && pnpm --version
 WORKDIR /repo
 
 FROM base AS deps
@@ -11,6 +12,7 @@ COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 COPY apps/worker/package.json apps/worker/
 COPY apps/web/package.json apps/web/
+COPY e2e/package.json e2e/
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
@@ -49,8 +51,12 @@ ENV NODE_ENV=production
 USER nonroot
 CMD ["dist/main.js"]
 
-FROM nginxinc/nginx-unprivileged:1.27-alpine AS web
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+FROM nginxinc/nginx-unprivileged:1.30.6-alpine AS web
+# Hosts are injected at start (PORTAL_HOST, AGENT_HOST) by the image's envsubst entrypoint.
+ENV NGINX_ENVSUBST_FILTER=^(PORTAL_HOST|AGENT_HOST)$
+COPY apps/web/nginx-common.conf /etc/nginx/inn-common.conf
+COPY apps/web/nginx-headers.conf /etc/nginx/inn-headers.conf
+COPY apps/web/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
 USER 101
 EXPOSE 8080

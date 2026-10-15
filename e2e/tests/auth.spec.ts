@@ -5,6 +5,11 @@ const PASSWORD = process.env.SEED_DEMO_PASSWORD ?? 'demo frase segura 2026';
 const AGENT_URL = process.env.E2E_AGENT_URL ?? 'http://agents.localhost:5173';
 
 test('customer signs in on the portal, sees the home page and signs out', async ({ page }) => {
+  // When served through nginx the strict CSP is active; the SPA must not trigger violations.
+  const cspViolations: string[] = [];
+  page.on('console', (msg) => {
+    if (/Content Security Policy/i.test(msg.text())) cspViolations.push(msg.text());
+  });
   await page.goto('/login');
   await page.getByLabel('Correo electrónico').fill('cliente@acme.test');
   await page.getByLabel('Contraseña').fill(PASSWORD);
@@ -23,6 +28,7 @@ test('customer signs in on the portal, sees the home page and signs out', async 
   await expect(page).toHaveURL(/\/login$/);
   await page.goto('/');
   await expect(page).toHaveURL(/\/login$/);
+  expect(cspViolations).toEqual([]);
 });
 
 test('wrong credentials show a generic message', async ({ page }) => {

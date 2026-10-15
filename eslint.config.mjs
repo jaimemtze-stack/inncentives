@@ -34,4 +34,15 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Runtime code must not import dev-only packages: they are absent from production images.
+    files: ['apps/api/src/**/*.ts', 'apps/worker/src/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: ['@nestjs/testing', 'vitest', 'supertest', '@playwright/*', '**/test/*'] },
+      ],
+    },
+  },
 );

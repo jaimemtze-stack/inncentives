@@ -22,7 +22,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "sanitize-html": "^2.18.1",
+    "sanitize-html": "^2.18.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
