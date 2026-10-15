@@ -1,0 +1,51 @@
+{
+  "app": {
+    "name": "Inncentives Support",
+    "agentArea": "Agent area",
+    "portal": "Customer portal",
+    "language": "Language"
+  },
+  "auth": {
+    "email": "E-mail",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "forgot": "Forgot your password?",
+    "invalid": "Incorrect e-mail or password.",
+    "tooMany": "Too many attempts. Try again later.",
+    "mfaTitle": "Two-step verification",
+    "mfaHelp": "Enter the 6-digit code from your authenticator app or a recovery code.",
+    "code": "Code",
+    "verify": "Verify",
+    "mfaSetupTitle": "Set up two-step verification",
+    "mfaSetupHelp": "Required for agents and administrators. Scan the QR code with your authenticator app and enter the code.",
+    "mfaManual": "Manual entry key",
+    "enable": "Enable",
+    "recoveryTitle": "Recovery codes",
+    "recoveryHelp": "Store them somewhere safe. Each code works once and they will not be shown again.",
+    "continue": "Continue",
+    "mfaRecommended": "We recommend enabling two-step verification to protect your account.",
+    "forgotTitle": "Reset password",
+    "forgotHelp": "If the e-mail belongs to an account, you will receive a link to reset your password.",
+    "send": "Send",
+    "sent": "If the account exists, we sent an e-mail with instructions.",
+    "newPassword": "New password",
+    "passwordHint": "At least 12 characters. A passphrase works well.",
+    "save": "Save",
+    "resetDone": "Your password was updated. You can sign in now.",
+    "tokenInvalid": "The link is invalid or has expired.",
+    "breached": "That password appears in known breaches. Choose another one.",
+    "acceptTitle": "Activate your account",
+    "acceptDone": "Your account is active. You can sign in now.",
+    "error": "Something went wrong. Please try again."
+  },
+  "home": {
+    "welcome": "Hello, {{name}}",
+    "agentPlaceholder": "Your ticket overviews will be here (phase 1).",
+    "portalPlaceholder": "You will see and create your tickets here (phase 1).",
+    "sessions": "Active sessions",
+    "current": "Current",
+    "revoke": "Sign out"
+  },
+  "privacy": "Privacy notice"
+}

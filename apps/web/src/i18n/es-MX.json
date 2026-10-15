@@ -1,0 +1,51 @@
+{
+  "app": {
+    "name": "Soporte Inncentives",
+    "agentArea": "Área de agentes",
+    "portal": "Portal de clientes",
+    "language": "Idioma"
+  },
+  "auth": {
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "forgot": "¿Olvidaste tu contraseña?",
+    "invalid": "Correo o contraseña incorrectos.",
+    "tooMany": "Demasiados intentos. Intenta más tarde.",
+    "mfaTitle": "Verificación en dos pasos",
+    "mfaHelp": "Escribe el código de 6 dígitos de tu app de autenticación o un código de recuperación.",
+    "code": "Código",
+    "verify": "Verificar",
+    "mfaSetupTitle": "Configura la verificación en dos pasos",
+    "mfaSetupHelp": "Es obligatoria para agentes y administradores. Escanea el código QR con tu app de autenticación y escribe el código.",
+    "mfaManual": "Clave para captura manual",
+    "enable": "Activar",
+    "recoveryTitle": "Códigos de recuperación",
+    "recoveryHelp": "Guárdalos en un lugar seguro. Cada código sirve una sola vez y no se volverán a mostrar.",
+    "continue": "Continuar",
+    "mfaRecommended": "Te recomendamos activar la verificación en dos pasos para proteger tu cuenta.",
+    "forgotTitle": "Restablecer contraseña",
+    "forgotHelp": "Si el correo corresponde a una cuenta, recibirás un enlace para restablecer tu contraseña.",
+    "send": "Enviar",
+    "sent": "Si la cuenta existe, enviamos un correo con instrucciones.",
+    "newPassword": "Nueva contraseña",
+    "passwordHint": "Mínimo 12 caracteres. Puedes usar una frase.",
+    "save": "Guardar",
+    "resetDone": "Tu contraseña se actualizó. Ya puedes iniciar sesión.",
+    "tokenInvalid": "El enlace no es válido o ya caducó.",
+    "breached": "Esa contraseña apareció en filtraciones conocidas. Elige otra.",
+    "acceptTitle": "Activa tu cuenta",
+    "acceptDone": "Tu cuenta está activa. Ya puedes iniciar sesión.",
+    "error": "Ocurrió un error. Intenta de nuevo."
+  },
+  "home": {
+    "welcome": "Hola, {{name}}",
+    "agentPlaceholder": "Aquí estarán tus vistas de tickets (fase 1).",
+    "portalPlaceholder": "Aquí verás tus tickets y podrás crear nuevos (fase 1).",
+    "sessions": "Sesiones activas",
+    "current": "Actual",
+    "revoke": "Cerrar"
+  },
+  "privacy": "Aviso de privacidad"
+}
