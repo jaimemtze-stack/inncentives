@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fictitious test data and documentation placeholders"
+paths = ['''apps/api/test/''', '''packages/shared/src/.*\.spec\.ts''', '''\.env\.example''']

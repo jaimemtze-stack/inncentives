@@ -1,0 +1,22 @@
+rules:
+  - id: prisma-raw-unsafe
+    languages: [typescript]
+    severity: ERROR
+    message: Use $queryRaw/$executeRaw tagged templates; *Unsafe variants allow SQL injection.
+    pattern-either:
+      - pattern: $X.$queryRawUnsafe(...)
+      - pattern: $X.$executeRawUnsafe(...)
+    paths:
+      exclude: ['apps/api/test/**']
+  - id: no-dangerously-set-inner-html
+    languages: [typescript]
+    severity: ERROR
+    message: Render server-sanitized HTML only through the dedicated SafeHtml component.
+    pattern: <$EL dangerouslySetInnerHTML={...} />
+    paths:
+      exclude: ['apps/web/src/components/SafeHtml.tsx']
+  - id: no-localstorage-tokens
+    languages: [typescript]
+    severity: ERROR
+    message: Never store credentials or tokens in web storage.
+    pattern-regex: localStorage\.setItem\(\s*['"][^'"]*(token|session|jwt)[^'"]*['"]
