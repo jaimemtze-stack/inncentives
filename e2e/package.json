@@ -1,0 +1,12 @@
+{
+  "name": "@inn/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "echo 'E2E runs with: pnpm --filter @inn/e2e e2e (requires the running stack)'",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.48.2"
+  }
+}
