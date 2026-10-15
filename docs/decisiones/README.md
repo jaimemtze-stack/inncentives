@@ -11,3 +11,4 @@ Formato: contexto, decisión, alternativas, consecuencias. Un ADR aceptado no se
 | [0005](0005-despliegue.md) | Despliegue en Azure Mexico Central detrás de Cloudflare | Aceptado |
 | [0006](0006-sesiones-y-autenticacion.md) | Sesiones de servidor, Argon2id y TOTP | Aceptado |
 | [0007](0007-valores-por-defecto-pendientes.md) | Valores por defecto de las decisiones pendientes | Aceptado |
+| [0008](0008-swc-para-desarrollo-y-pruebas.md) | SWC para ejecutar TypeScript en desarrollo y pruebas | Aceptado |

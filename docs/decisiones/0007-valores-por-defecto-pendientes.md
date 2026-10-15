@@ -8,7 +8,7 @@ Mientras el negocio decide, se implementan estos valores (sección 10 del prompt
 |---|---|---|---|
 | 1 | Volumen | 50 agentes, 300 organizaciones, 5,000 tickets/mes en una VM | `docs/despliegue.md` (escalamiento) |
 | 2 | Niveles | Grupos "Soporte N1/N2/N3", "Por verificar"; escalamiento manual | Admin › Grupos |
-| 3 | Plan y SLA | Plan "Estándar": crítica 1h/4h, alta 2h/8h, normal 4h/24h, baja 8h/40h (horas hábiles) | Admin › SLAs / Planes |
+| 3 | Plan y SLA | Plan "Estándar": crítica 1h/4h, alta 2h/8h, normal 4h/24h, baja 8h/40h (respuesta/solución, horas hábiles). El prompt no fija el tiempo de **actualización**; se usa el doble de la primera respuesta (2h, 4h, 8h, 16h) | Admin › SLAs / Planes |
 | 4 | SSO | Local + MFA; OIDC en fase 2 | `AUTH_OIDC_*` |
 | 5 | MFA clientes | Recomendado; por organización | Organización › `mfaPolicy` |
 | 6 | Correo | `MAIL_ADAPTER`; Mailpit en local | Variables de entorno |

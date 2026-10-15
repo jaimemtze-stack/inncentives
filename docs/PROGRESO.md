@@ -7,65 +7,66 @@
 
 | Fase | Estado | Notas |
 |---|---|---|
-| Fase 0 — Cimientos | 🟡 en curso | Monorepo, núcleo de dominio compartido, API con autenticación, autorización y auditoría. |
+| Fase 0 — Cimientos | 🟡 casi terminada | Código y pruebas listos (161 unitarias/integración + 4 E2E); falta validar CI y Compose en GitHub. |
 | Fase 1 — MVP | ⬜ | Arranca cuando la fase 0 cumpla la Definición de terminado. |
 | Fase 2 — Conocimiento, integraciones, reportes | ⬜ | — |
 | Fase 3 — Canales adicionales e Inncentives | ⬜ | — |
 
 ## Fase 0 — Cimientos
 
+Detalle y riesgos: [`docs/fases/fase-0.md`](fases/fase-0.md).
+
 ### Documentación inicial
 - ✅ `docs/PROGRESO.md` con desglose de fase 0 y fase 1.
-- ✅ ADRs iniciales (`docs/decisiones/0001`–`0006`).
+- ✅ ADRs `docs/decisiones/0001`–`0008`.
 - ✅ Modelo de amenazas inicial (`docs/seguridad/modelo-amenazas.md`).
-- ✅ Matriz ASVS inicial (`docs/seguridad/matriz-asvs.md`).
+- ✅ Matriz ASVS inicial con rutas a código y pruebas (`docs/seguridad/matriz-asvs.md`).
 - ✅ `SECURITY.md` y `docs/seguridad/respuesta-incidentes.md`.
 - ✅ Guía de despliegue inicial (`docs/despliegue.md`).
 
 ### Repositorio y herramientas
-- ✅ Monorepo pnpm: `apps/api`, `apps/web`, `apps/worker`, `packages/shared`.
-- ✅ TypeScript strict, ESLint, Prettier, Vitest.
-- ✅ `docker-compose.yml` local (Postgres, Redis, MinIO, ClamAV, Mailpit, api, worker, web).
-- ✅ Dockerfiles multi-stage no-root.
-- ✅ CI GitHub Actions: lint, typecheck, pruebas con cobertura, Semgrep, `pnpm audit`, gitleaks, Trivy; Dependabot.
+- ✅ Monorepo pnpm: `apps/api`, `apps/web`, `apps/worker`, `packages/shared`, `e2e`.
+- ✅ TypeScript strict, ESLint (prohíbe `$queryRawUnsafe`), Prettier, Vitest.
+- ✅ `docker-compose.yml` (Postgres, Redis, MinIO, ClamAV, Mailpit + perfil `app`) con contenedores endurecidos.
+- ✅ `Dockerfile` multi-stage: api y worker en distroless `nonroot`, web en nginx sin privilegios.
+- ✅ CI GitHub Actions: formato, lint, typecheck, pruebas con cobertura, Semgrep, `pnpm audit`, gitleaks, Trivy, prueba de Compose; Dependabot.
 
-### `packages/shared`
-- ✅ Calendario laboral con festivos de México por regla (pruebas multi-año).
-- ✅ Cálculo de tiempo hábil y de vencimientos de SLA (pausas, en riesgo al 80 %).
-- ✅ Detector de datos sensibles (RFC, CURP, NSS, CLABE, tarjetas con Luhn, columnas de sueldo).
-- ✅ Motor de plantillas seguro con lista blanca de variables.
-- ✅ Escape de fórmulas para CSV/XLSX.
-- ✅ Generador de número de ticket y parser de número en asunto.
-- ✅ Esquemas Zod de autenticación y de entidades base.
+### `packages/shared` (102 pruebas, cobertura 97 %)
+- ✅ Calendario laboral con festivos de México por regla (pruebas 2024–2030, incluye 1 de octubre sexenal y Semana Santa opcional).
+- ✅ Tiempo hábil y SLA: primera respuesta, actualización, solución, pausas, "en riesgo" al 80 %.
+- ✅ Detector de datos sensibles (RFC, CURP, NSS, CLABE, tarjetas con Luhn, columnas de sueldo) y redacción.
+- ✅ Motor de plantillas con lista blanca de variables y escape HTML.
+- ✅ Escape de fórmulas CSV/XLSX; número de ticket y parser de asunto.
+- ✅ Sanitización HTML en servidor (21 vectores OWASP), bloqueo de imágenes remotas.
+- ✅ Esquemas Zod de autenticación, paginación y cadenas seguras para cabeceras.
 
-### `apps/api` (NestJS + Fastify)
-- ✅ Configuración por entorno validada con Zod y proveedor de secretos (env / archivo / Docker secrets; Key Vault con adaptador).
-- ✅ Logger pino con redacción automática.
-- ✅ Filtro global de errores, pipe de validación Zod, ID de correlación.
-- ✅ Cabeceras de seguridad (CSP sin `unsafe-inline`, HSTS, etc.), CORS cerrado, límite de cuerpo.
-- ✅ Guard global *deny-by-default* (`@RequirePermission` / `@Public`) con prueba que recorre todas las rutas.
-- ✅ *Policy service* único con filtros de consulta para tickets (cliente/organización/grupo).
-- ✅ AuditLog append-only con cadena de hash y trigger de BD que bloquea UPDATE/DELETE.
-- ✅ Esquema Prisma del dominio completo (sección 3) y migración inicial.
-- ✅ Autenticación local: Argon2id, política de contraseñas (12+, HIBP k-anonymity desactivable), bloqueo progresivo, mensajes no enumerables.
-- ✅ Sesiones en Redis con cookie `__Host-`, rotación, inactividad 30 min, absoluta 12 h, listado y revocación.
-- ✅ CSRF *double submit* firmado.
-- ✅ TOTP + códigos de recuperación, semilla cifrada AES-256-GCM.
-- ✅ Invitaciones y recuperación de contraseña con tokens de un solo uso (hash, caducidad).
-- ✅ Reautenticación para acciones sensibles.
-- ✅ Separación de hosts (portal / agentes) con guard de host.
-- ✅ `/health` y `/ready`.
-- ✅ Seed de datos de demostración (ficticios).
+### `apps/api` (52 pruebas, cobertura 92 %)
+- ✅ Configuración validada con Zod; secretos por archivo, entorno o Key Vault (Managed Identity).
+- ✅ Logger pino con redacción; filtro de errores sin trazas al cliente; ID de correlación.
+- ✅ Cabeceras de seguridad, CORS cerrado, límite de cuerpo, rate limiting global en Redis.
+- ✅ `AccessGuard` global *deny-by-default* + prueba que recorre todas las rutas.
+- ✅ Separación de hosts portal/agentes (cookies distintas; admin/agente solo en su host).
+- ✅ `PolicyService` único con filtros de consulta (cliente / organización compartida / grupos por nivel).
+- ✅ AuditLog append-only (trigger de BD) con cadena de hash verificable y API de consulta.
+- ✅ Esquema Prisma del dominio completo + búsqueda `tsvector` es/en (migración SQL).
+- ✅ Argon2id, HIBP k-anonymity, bloqueo progresivo por cuenta e IP, mensajes no enumerables.
+- ✅ Sesiones en Redis (solo hash), `__Host-`, rotación, inactividad 30 min, absoluta 12 h, listado/revocación.
+- ✅ CSRF *double submit* firmado y ligado a la sesión.
+- ✅ TOTP (RFC 6238) con anti-repetición, códigos de recuperación, MFA obligatorio para agentes/admins.
+- ✅ Invitaciones (admin: cualquier rol; agente: solo clientes) y recuperación de contraseña con tokens de un solo uso.
+- ✅ Reautenticación para cambiar MFA; notificación de nuevo dispositivo, cambio de contraseña y de MFA.
+- ✅ `/health` y `/ready`; seed de referencia y de demostración (ficticio).
 
 ### `apps/worker` y `apps/web`
-- ✅ Worker BullMQ con colas declaradas (correo, SLA, escaneo, retención) y *graceful shutdown*.
-- ✅ SPA React + Vite + i18next (es-MX por defecto, en) con inicio de sesión, MFA y layout de agente/portal.
+- ✅ Worker BullMQ: correo transaccional (plantillas es-MX/en escapadas) con adaptadores SMTP/Mailpit y Microsoft Graph.
+- ✅ SPA React + TanStack + Tailwind + i18next: login, MFA, alta de MFA con QR, recuperación, invitación, sesiones activas.
+- ✅ Playwright: 4 flujos en navegador real contra API + SPA (login, error genérico, idioma, alta de MFA de agente en host separado).
 
-### Pendiente para cerrar la fase 0
-- ⬜ Pruebas E2E Playwright de login + MFA + invitación (requiere entorno con Docker Compose).
-- ⬜ Verificar `docker compose up` desde cero en un host con daemon Docker (el contenedor de desarrollo actual no tiene daemon).
-- ⬜ Ejecutar CI completo en GitHub Actions y resolver hallazgos.
-- ⬜ `docs/fases/fase-0.md` final.
+### Pendiente para cerrar la fase 0 (Definición de terminado)
+- ⬜ Primera ejecución del CI en GitHub Actions y corrección de hallazgos (Semgrep, `pnpm audit`, Trivy, Compose).
+- ⬜ `docker compose --profile app up` verificado desde cero en un host con Docker (este entorno no tiene daemon).
+- ⬜ Integrar Playwright al CI (requiere el stack de Compose).
+- ⬜ Rol de BD de la aplicación separado del propietario + `REVOKE UPDATE, DELETE` en `audit_logs`.
 
 ## Fase 1 — MVP (desglose)
 
@@ -134,5 +135,6 @@
 | Clientes adjuntan nómina real | Alto (LFPDPPP) | Detector de datos sensibles, aviso previo, redacción, retención (5.7). |
 | Buzón Microsoft 365 aún no existe | Medio | Adaptadores y Mailpit; Graph se prueba con *mocks* hasta tener buzón. |
 | Disponibilidad de PostgreSQL Flexible en Mexico Central | Medio | Alternativa en contenedor documentada (ADR-0005). |
-| El entorno de desarrollo de esta sesión no tiene daemon Docker | Bajo | Pruebas de integración con Postgres/Redis locales; Compose se valida en CI. |
+| El entorno de desarrollo de esta sesión no tiene daemon Docker | Medio | Pruebas con Postgres/Redis locales; Dockerfile y Compose sin ejecutar todavía: se validan en el job `compose` del CI. |
+| `prisma migrate dev` propone borrar el `DEFAULT` de columnas generadas | Bajo | Documentado en `apps/api/prisma/README.md`; revisar cada migración nueva. |
 | Definición de niveles N1/N2/N3 y SLAs por cliente pendiente | Bajo | Valores por defecto configurables (sección 10). |

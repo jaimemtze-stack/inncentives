@@ -5,42 +5,42 @@
 
 | ASVS | Requisito | Implementación | Prueba | Estado |
 |---|---|---|---|---|
-| V1.4.1 | Control de acceso aplicado en un punto de confianza (servidor) | `apps/api/src/common/auth/permission.guard.ts` | `permission.guard.spec.ts`, `routes-coverage.spec.ts` | ✅ |
+| V1.4.1 | Control de acceso aplicado en un punto de confianza (servidor), con separación de hosts | `apps/api/src/common/auth/access.guard.ts` | `test/routes-coverage.spec.ts`, `test/auth.e2e.spec.ts` | ✅ |
 | V1.4.4 | Mecanismo único de control de acceso | `apps/api/src/common/policy/policy.service.ts` | `policy.service.spec.ts` | ✅ |
-| V2.1.1 | Contraseña ≥ 12 caracteres | `packages/shared/src/schemas/auth.ts` | `auth.schema.spec.ts` | ✅ |
-| V2.1.7 | Verificación contra contraseñas filtradas | `apps/api/src/modules/auth/password.service.ts` (HIBP k-anonymity) | `password.service.spec.ts` | ✅ |
-| V2.1.9 | Sin reglas de composición | `packages/shared/src/schemas/auth.ts` | `auth.schema.spec.ts` | ✅ |
-| V2.2.1 | Controles anti-automatización | `apps/api/src/modules/auth/login-throttle.service.ts` | `login-throttle.service.spec.ts` | ✅ |
-| V2.4.1 | Almacenamiento de contraseñas resistente (Argon2id) | `password.service.ts` | `password.service.spec.ts` | ✅ |
-| V2.5.2 | Sin preguntas secretas; recuperación por token | `auth.service.ts` | `auth.e2e.spec.ts` | ✅ |
-| V2.5.6 | Token de recuperación de un solo uso con caducidad | `one-time-token.service.ts` | `auth.e2e.spec.ts` | ✅ |
-| V2.8.1 | TOTP con ventana limitada | `totp.service.ts` | `totp.service.spec.ts` | ✅ |
-| V3.2.1 | Nuevo token de sesión al autenticarse | `session.service.ts` (`rotate`) | `auth.e2e.spec.ts` | ✅ |
-| V3.3.1 | Logout invalida la sesión | `session.service.ts` | `auth.e2e.spec.ts` | ✅ |
-| V3.3.2 | Expiración por inactividad y absoluta | `session.service.ts` | `session.service.spec.ts` | ✅ |
-| V3.3.4 | Ver y revocar sesiones activas | `sessions.controller.ts` | `auth.e2e.spec.ts` | ✅ |
-| V3.4.1–3 | Cookie Secure, HttpOnly, SameSite | `session.cookie.ts` | `auth.e2e.spec.ts` | ✅ |
-| V3.4.4 | Prefijo `__Host-` | `session.cookie.ts` | `auth.e2e.spec.ts` | ✅ |
-| V3.7.1 | Reautenticación para acciones sensibles | `reauth.guard.ts` | `auth.e2e.spec.ts` | ✅ |
+| V2.1.1 | Contraseña ≥ 12 caracteres | `packages/shared/src/schemas/auth.ts` | `auth.spec.ts` | ✅ |
+| V2.1.7 | Verificación contra contraseñas filtradas | `apps/api/src/modules/auth/password.service.ts` (HIBP k-anonymity) | `test/session-throttle.spec.ts` | ✅ |
+| V2.1.9 | Sin reglas de composición | `packages/shared/src/schemas/auth.ts` | `auth.spec.ts` | ✅ |
+| V2.2.1 | Controles anti-automatización | `apps/api/src/modules/auth/login-throttle.service.ts` | `test/session-throttle.spec.ts`, `test/auth.e2e.spec.ts` | ✅ |
+| V2.4.1 | Almacenamiento de contraseñas resistente (Argon2id) | `password.service.ts` | `test/session-throttle.spec.ts` | ✅ |
+| V2.5.2 | Sin preguntas secretas; recuperación por token | `auth.service.ts` | `test/auth.e2e.spec.ts` | ✅ |
+| V2.5.6 | Token de recuperación de un solo uso con caducidad | `one-time-token.service.ts` | `test/auth.e2e.spec.ts` | ✅ |
+| V2.8.1 | TOTP con ventana limitada y anti-repetición | `totp.ts`, `auth.service.ts` | `totp.spec.ts`, `test/auth.e2e.spec.ts` | ✅ |
+| V3.2.1 | Nuevo token de sesión al autenticarse | `session.service.ts` (`rotate`) | `test/auth.e2e.spec.ts` | ✅ |
+| V3.3.1 | Logout invalida la sesión | `session.service.ts` | `test/auth.e2e.spec.ts` | ✅ |
+| V3.3.2 | Expiración por inactividad y absoluta | `session.service.ts` | `test/session-throttle.spec.ts` | ✅ |
+| V3.3.4 | Ver y revocar sesiones activas | `sessions.controller.ts` | `test/auth.e2e.spec.ts` | ✅ |
+| V3.4.1–3 | Cookie Secure, HttpOnly, SameSite | `common/auth/cookies.ts` | `test/auth.e2e.spec.ts` | ✅ |
+| V3.4.4 | Prefijo `__Host-` | `common/auth/cookies.ts` | `test/auth.e2e.spec.ts` | ✅ |
+| V3.7.1 | Reautenticación para acciones sensibles | `access.guard.ts` (`@RequireReauth`), `auth.controller.ts` | `test/auth.e2e.spec.ts` | ✅ |
 | V4.1.3 | Mínimo privilegio | Roles/permisos por grupo | `policy.service.spec.ts` | 🟡 |
-| V4.1.5 | Denegar por defecto | `permission.guard.ts` | `routes-coverage.spec.ts` | ✅ |
+| V4.1.5 | Denegar por defecto | `access.guard.ts` | `test/routes-coverage.spec.ts` | ✅ |
 | V4.2.1 | Protección IDOR | `PolicyService` | Matriz de autorización (fase 1) | 🟡 |
-| V4.2.2 | Protección CSRF | `csrf.guard.ts` | `auth.e2e.spec.ts` | ✅ |
+| V4.2.2 | Protección CSRF | `csrf.service.ts`, `access.guard.ts` | `test/auth.e2e.spec.ts` | ✅ |
 | V5.1.3 | Validación de entrada positiva (lista blanca) | Esquemas Zod en `packages/shared` | Pruebas de esquemas | ✅ |
-| V5.2.1 | Sanitización de HTML no confiable | `packages/shared/src/html/sanitize.ts` | `sanitize.spec.ts` | 🟡 |
+| V5.2.1 | Sanitización de HTML no confiable | `packages/shared/src/html/sanitize.ts` (21 vectores OWASP) | `sanitize.spec.ts` | 🟡 (falta aplicarla a correos y editor en fase 1) |
 | V5.2.6 | Protección SSRF | Fase 1/2 | — | ⬜ |
-| V5.3.4 | Consultas parametrizadas | Prisma; regla Semgrep | CI | ✅ |
-| V7.1.1 | No registrar credenciales ni tokens | `logger.ts` (redacción) | `logger.spec.ts` | ✅ |
-| V7.1.3 | Registrar eventos de seguridad | `audit.service.ts` | `audit.service.spec.ts` | ✅ |
-| V7.3.4 | Protección de integridad de logs | Cadena de hash + trigger BD | `audit.service.spec.ts` | ✅ |
-| V8.3.4 | Datos sensibles identificados y con política | Detector `packages/shared/src/sensitive` | `detector.spec.ts` | 🟡 |
-| V9.1.1 | TLS en todo el tráfico externo | Cloudflare + HSTS | Cabeceras | ✅ |
+| V5.3.4 | Consultas parametrizadas | Prisma; regla ESLint `no-restricted-properties` + Semgrep | ESLint local; Semgrep en CI | ✅ |
+| V7.1.1 | No registrar credenciales ni tokens | `common/logger.ts` (redacción) | `logger.spec.ts` | ✅ |
+| V7.1.3 | Registrar eventos de seguridad | `audit.service.ts` | `test/audit.spec.ts`, `test/auth.e2e.spec.ts` | ✅ |
+| V7.3.4 | Protección de integridad de logs | Cadena de hash + trigger BD | `test/audit.spec.ts` | ✅ |
+| V8.3.4 | Datos sensibles identificados y con política | Detector `packages/shared/src/sensitive` (falta conectarlo a artículos/adjuntos en fase 1) | `detector.spec.ts` | 🟡 |
+| V9.1.1 | TLS en todo el tráfico externo | Cloudflare + HSTS | Cabeceras (TLS se valida en despliegue) | 🟡 |
 | V12.1.1 | Límite de tamaño de archivos | `ATTACHMENT_MAX_BYTES` | Fase 1 | ⬜ |
 | V12.4.1 | Archivos fuera del webroot, privados | ADR-0003 | Fase 1 | ⬜ |
-| V13.2.3 | CORS restringido | `main.ts` | `security-headers.e2e.spec.ts` | ✅ |
-| V14.2.1 | Dependencias actualizadas | Dependabot + `pnpm audit` | CI | ✅ |
-| V14.4.3 | CSP | `security-headers.ts` | `security-headers.e2e.spec.ts` | ✅ |
-| V14.4.5 | HSTS | `security-headers.ts` | `security-headers.e2e.spec.ts` | ✅ |
+| V13.2.3 | CORS restringido | `app.factory.ts` (sin CORS) | `test/security-headers.e2e.spec.ts` | ✅ |
+| V14.2.1 | Dependencias actualizadas | Dependabot + `pnpm audit` | CI (pendiente de primera ejecución) | 🟡 |
+| V14.4.3 | CSP | `common/http/security-headers.ts`, `apps/web/nginx.conf` | `test/security-headers.e2e.spec.ts` | ✅ |
+| V14.4.5 | HSTS | `common/http/security-headers.ts`, `apps/web/nginx.conf` | `test/security-headers.e2e.spec.ts` | ✅ |
 
 ## ISO 27001:2022 Anexo A (controles relacionados)
 

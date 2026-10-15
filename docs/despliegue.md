@@ -7,16 +7,24 @@ Requisitos: Docker con Compose v2, Node 22, pnpm 10.
 ```bash
 cp .env.example .env            # valores de desarrollo, sin secretos reales
 pnpm install
+mkdir -p secrets && echo "change-me-local" > secrets/postgres_password.txt && openssl rand -hex 16 > secrets/minio_password.txt
 docker compose up -d postgres redis minio clamav mailpit
+export $(grep -v '^#' .env | xargs)   # o usa direnv
 pnpm --filter @inn/api prisma:migrate:deploy
 pnpm --filter @inn/api seed
 pnpm dev                         # api :3000, web :5173, worker
 ```
 
-O todo en contenedores:
+O todo en contenedores (portal en http://localhost:8080):
 
 ```bash
 docker compose --profile app up --build
+```
+
+Pruebas en navegador (con el stack levantado y el seed recién cargado):
+
+```bash
+PW_CHROMIUM_PATH=/ruta/a/chromium pnpm --filter @inn/e2e e2e
 ```
 
 Servicios locales:
@@ -24,6 +32,7 @@ Servicios locales:
 | Servicio | URL |
 |---|---|
 | Portal (web) | http://localhost:5173 |
+| Área de agentes (web) | http://agents.localhost:5173 |
 | API | http://localhost:3000/api/v1 · `/health` · `/ready` |
 | Mailpit | http://localhost:8025 |
 | MinIO | http://localhost:9001 |
@@ -64,7 +73,7 @@ Lista completa en `.env.example`.
 ```bash
 git clone … && cd inncentives
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile app up -d
-docker compose exec api node dist/prisma/migrate.js   # migraciones
+docker compose --profile app run --rm migrate          # migraciones (job one-shot)
 ```
 
 ### 2.4 Correo (SPF/DKIM/DMARC)
