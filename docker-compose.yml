@@ -98,8 +98,8 @@ services:
     environment:
       PORTAL_HOST: ${PORTAL_HOST:-localhost}
       AGENT_HOST: ${AGENT_HOST:-agents.localhost}
-    # conf.d is rendered from the template at start, so it must be writable.
-    tmpfs: [/tmp, /var/cache/nginx, /var/run, /etc/nginx/conf.d]
+    # conf.d is rendered from the template at start, so it must be writable by nginx (uid 101).
+    tmpfs: [/tmp, /var/cache/nginx, /var/run, '/etc/nginx/conf.d:uid=101,gid=101,mode=0755']
     ports: ['127.0.0.1:8080:8080']
     depends_on: [api]
 

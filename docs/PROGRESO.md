@@ -63,8 +63,8 @@ Detalle y riesgos: [`docs/fases/fase-0.md`](fases/fase-0.md).
 - ✅ Playwright: 4 flujos en navegador real contra API + SPA (login, error genérico, idioma, alta de MFA de agente en host separado).
 
 ### Pendiente para cerrar la fase 0 (Definición de terminado)
-- ⬜ Primera ejecución del CI en GitHub Actions y corrección de hallazgos (Semgrep, `pnpm audit`, Trivy, Compose).
-- ⬜ `docker compose --profile app up` verificado desde cero en un host con Docker (este entorno no tiene daemon).
+- 🟡 CI en GitHub Actions: primera ejecución hecha y hallazgos corregidos (dependencias, Semgrep, Trivy, Docker); pendiente la ronda en verde.
+- ✅ `docker compose --profile app up` verificado desde cero con Docker real: migraciones, API, worker, nginx y 4 pruebas E2E contra el stack; Trivy local sin hallazgos altos ni críticos.
 - ⬜ Integrar Playwright al CI (requiere el stack de Compose).
 - ⬜ Rol de BD de la aplicación separado del propietario + `REVOKE UPDATE, DELETE` en `audit_logs`.
 
@@ -135,6 +135,6 @@ Detalle y riesgos: [`docs/fases/fase-0.md`](fases/fase-0.md).
 | Clientes adjuntan nómina real | Alto (LFPDPPP) | Detector de datos sensibles, aviso previo, redacción, retención (5.7). |
 | Buzón Microsoft 365 aún no existe | Medio | Adaptadores y Mailpit; Graph se prueba con *mocks* hasta tener buzón. |
 | Disponibilidad de PostgreSQL Flexible en Mexico Central | Medio | Alternativa en contenedor documentada (ADR-0005). |
-| El entorno de desarrollo de esta sesión no tiene daemon Docker | Medio | Pruebas con Postgres/Redis locales; Dockerfile y Compose sin ejecutar todavía: se validan en el job `compose` del CI. |
+| El entorno de desarrollo bloquea `deb.debian.org` | Bajo | Validación local de Docker con una variante no versionada; el CI construye el `Dockerfile` real. |
 | `prisma migrate dev` propone borrar el `DEFAULT` de columnas generadas | Bajo | Documentado en `apps/api/prisma/README.md`; revisar cada migración nueva. |
 | Definición de niveles N1/N2/N3 y SLAs por cliente pendiente | Bajo | Valores por defecto configurables (sección 10). |

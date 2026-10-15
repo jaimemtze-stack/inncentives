@@ -109,14 +109,19 @@ jobs:
           sed -i "s|^FIELD_ENCRYPTION_KEYS=.*|FIELD_ENCRYPTION_KEYS=$(openssl rand -base64 32)|" .env
           sed -i "s|^CSRF_SECRET=.*|CSRF_SECRET=$(openssl rand -base64 32)|" .env
           sed -i "s|^DATABASE_URL=.*|DATABASE_URL=postgresql://inn:change-me-local@postgres:5432/inn_support|" .env
-      - run: docker compose --profile app up -d --build postgres redis migrate api worker web
+      - name: Start the stack
+        run: |
+          docker compose --profile app up -d --build postgres redis migrate api worker web || {
+            docker compose --profile app logs migrate api worker web
+            exit 1
+          }
       - name: Wait for readiness
         run: |
           for i in $(seq 1 60); do
             curl -fsS -H 'Host: localhost' http://127.0.0.1:8080/api/v1/auth/csrf && exit 0
             sleep 3
           done
-          docker compose logs api migrate
+          docker compose --profile app logs migrate api web
           exit 1
       - if: always()
         run: docker compose --profile app down -v

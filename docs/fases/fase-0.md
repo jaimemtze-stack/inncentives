@@ -26,7 +26,7 @@ TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/inn_support_test
 
 ## Lo que quedó fuera (y por qué)
 
-- **Validación de Docker/Compose y del CI en GitHub:** el entorno donde se desarrolló no tiene daemon Docker. El `Dockerfile` y `docker-compose.yml` están escritos pero no se han ejecutado; el job `compose` del CI es la primera validación.
+- **Docker/Compose:** validado con Docker real (stack completo + E2E + Trivy). Encontró y corrigió: corepack con llaves vencidas, Prisma sin `libssl` en imágenes *slim*, `conf.d` de nginx no escribible por uid 101, OpenSSL vulnerable en distroless Debian 12 (se pasó a Debian 13) e import de `@nestjs/testing` en código de producción.
 - **Playwright en CI:** las pruebas existen y pasan localmente contra la API compilada + Vite; falta orquestarlas en CI con el stack de Compose.
 - **Rol de BD separado:** el trigger bloquea UPDATE/DELETE en `audit_logs`, pero en producción el rol de la aplicación no debe ser propietario de las tablas (pendiente de `docs/despliegue.md` y script de aprovisionamiento).
 - **Adaptadores de almacenamiento (S3/Azure Blob) y ClamAV:** el contrato está en ADR-0003; la implementación entra con adjuntos en la fase 1.

@@ -2,6 +2,8 @@
 # Multi-stage build for api, worker and web. Targets: api, worker, web.
 FROM node:22.23.3-bookworm-slim AS base
 ENV CI=true
+# Prisma needs libssl3 and the openssl binary to pick its engine; slim images ship neither.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 # pnpm from the npm registry (corepack's bundled signing keys go stale in older images).
 RUN npm install -g pnpm@10.28.0 && pnpm --version
 WORKDIR /repo
@@ -30,7 +32,7 @@ RUN pnpm --filter @inn/shared build \
  && cp -r apps/worker/dist /out/worker/ \
  && cd /out/api && npx prisma@5.22.0 generate --schema prisma/schema.prisma
 
-FROM gcr.io/distroless/nodejs22-debian12:nonroot AS api
+FROM gcr.io/distroless/nodejs22-debian13:nonroot AS api
 WORKDIR /app
 COPY --from=build --chown=nonroot:nonroot /out/api /app
 ENV NODE_ENV=production
@@ -44,7 +46,7 @@ WORKDIR /repo/apps/api
 USER node
 CMD ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
 
-FROM gcr.io/distroless/nodejs22-debian12:nonroot AS worker
+FROM gcr.io/distroless/nodejs22-debian13:nonroot AS worker
 WORKDIR /app
 COPY --from=build --chown=nonroot:nonroot /out/worker /app
 ENV NODE_ENV=production
