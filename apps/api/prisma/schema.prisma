@@ -1,0 +1,846 @@
+// Inncentives support desk — domain model (see docs/decisiones/0001, 0002).
+// Conventions: UUID ids, timestamps in UTC (timestamptz), snake_case tables.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Identity & access ─────────────────────────
+
+enum UserStatus {
+  invited
+  active
+  blocked
+}
+
+enum MfaPolicy {
+  disabled
+  recommended
+  required
+}
+
+model Organization {
+  id               String                      @id @default(uuid()) @db.Uuid
+  name             String                      @unique
+  domains          String[]
+  supportPlanId    String?                     @db.Uuid
+  supportPlan      SupportPlan?                @relation(fields: [supportPlanId], references: [id])
+  notes            String?
+  active           Boolean                     @default(true)
+  mfaPolicy        MfaPolicy                   @default(recommended)
+  customFields     Json                        @default("{}")
+  createdAt        DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                    @updatedAt @db.Timestamptz(3)
+  members          User[]                      @relation("primaryOrganization")
+  secondaryMembers UserSecondaryOrganization[]
+  tickets          Ticket[]
+
+  /// Generated column (see migration *_audit_append_only_and_fts).
+  searchVector Unsupported("tsvector")? @default(dbgenerated()) @map("search_vector")
+
+  @@index([searchVector], type: Gin, map: "organizations_search_idx")
+  @@map("organizations")
+}
+
+model User {
+  id                       String                      @id @default(uuid()) @db.Uuid
+  email                    String                      @unique
+  firstname                String
+  lastname                 String
+  phones                   String[]
+  /// Normalized digits of phones for lookup (CTI / manual call logging).
+  phoneDigits              String[]
+  locale                   String                      @default("es-MX")
+  timezone                 String                      @default("America/Mexico_City")
+  status                   UserStatus                  @default(invited)
+  passwordHash             String?
+  passwordChangedAt        DateTime?                   @db.Timestamptz(3)
+  mfaEnabled               Boolean                     @default(false)
+  /// AES-256-GCM encrypted TOTP secret (see FieldCrypto).
+  mfaSecretEnc             String?
+  mfaRecoveryCodes         String[]
+  organizationId           String?                     @db.Uuid
+  organization             Organization?               @relation("primaryOrganization", fields: [organizationId], references: [id])
+  secondaryOrganizations   UserSecondaryOrganization[]
+  /// Customer may see all tickets of their organization(s).
+  sharedOrganization       Boolean                     @default(false)
+  notificationPrefs        Json                        @default("{}")
+  outOfOffice              Boolean                     @default(false)
+  outOfOfficeStart         DateTime?                   @db.Date
+  outOfOfficeEnd           DateTime?                   @db.Date
+  outOfOfficeReplacementId String?                     @db.Uuid
+  outOfOfficeReplacement   User?                       @relation("oooReplacement", fields: [outOfOfficeReplacementId], references: [id])
+  replacing                User[]                      @relation("oooReplacement")
+  customFields             Json                        @default("{}")
+  lastLoginAt              DateTime?                   @db.Timestamptz(3)
+  createdAt                DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime                    @updatedAt @db.Timestamptz(3)
+  /// Set when anonymized by a data-privacy task.
+  anonymizedAt             DateTime?                   @db.Timestamptz(3)
+
+  roles           UserRole[]
+  groupAccess     GroupAccess[]
+  ownedTickets    Ticket[]                 @relation("ticketOwner")
+  customerTickets Ticket[]                 @relation("ticketCustomer")
+  articles        Article[]                @relation("articleAuthor")
+  oneTimeTokens   OneTimeToken[]
+  apiTokens       ApiToken[]
+  timeEntries     TimeEntry[]
+  mentions        Mention[]
+  subscriptions   Subscription[]
+  knownDevices    KnownDevice[]
+  /// Generated column (see migration *_audit_append_only_and_fts).
+  searchVector    Unsupported("tsvector")? @map("search_vector")
+
+  @@index([organizationId])
+  @@index([phoneDigits], type: Gin)
+  @@index([searchVector], type: Gin, map: "users_search_idx")
+  @@map("users")
+}
+
+model UserSecondaryOrganization {
+  userId         String       @db.Uuid
+  organizationId String       @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, organizationId])
+  @@map("user_secondary_organizations")
+}
+
+model Role {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @unique
+  description String?
+  /// Permission names, e.g. ["ticket.agent", "user_preferences"].
+  permissions String[]
+  builtIn     Boolean    @default(false)
+  active      Boolean    @default(true)
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId String @db.Uuid
+  roleId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+enum GroupAccessLevel {
+  read
+  create
+  change
+  overview
+  full
+}
+
+model Group {
+  id             String        @id @default(uuid()) @db.Uuid
+  name           String        @unique
+  emailAddress   String?
+  signatureId    String?       @db.Uuid
+  signature      Signature?    @relation(fields: [signatureId], references: [id])
+  /// Auto-assignment of unowned tickets when an agent opens them.
+  autoAssignment Boolean       @default(false)
+  /// Internal group for unverified senders ("Por verificar").
+  isVerification Boolean       @default(false)
+  active         Boolean       @default(true)
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+  access         GroupAccess[]
+  tickets        Ticket[]
+
+  @@map("groups")
+}
+
+model GroupAccess {
+  userId  String             @db.Uuid
+  groupId String             @db.Uuid
+  levels  GroupAccessLevel[]
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group   Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+  @@map("group_access")
+}
+
+enum OneTimeTokenPurpose {
+  invitation
+  password_reset
+}
+
+model OneTimeToken {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @db.Uuid
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose   OneTimeTokenPurpose
+  /// SHA-256 of the token; the raw token is never stored.
+  tokenHash String              @unique
+  expiresAt DateTime            @db.Timestamptz(3)
+  usedAt    DateTime?           @db.Timestamptz(3)
+  createdAt DateTime            @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, purpose])
+  @@map("one_time_tokens")
+}
+
+model KnownDevice {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 of a long-lived device cookie.
+  fingerprint String
+  userAgent   String?
+  lastSeenAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([userId, fingerprint])
+  @@map("known_devices")
+}
+
+model ApiToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  tokenHash  String    @unique
+  /// Last 4 characters for identification in the UI.
+  hint       String
+  scopes     String[]
+  expiresAt  DateTime  @db.Timestamptz(3)
+  lastUsedAt DateTime? @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@map("api_tokens")
+}
+
+// ───────────────────────── Tickets ─────────────────────────
+
+model TicketState {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// new | open | pending_reminder | pending_close | resolved | closed | merged
+  name      String   @unique
+  /// open | pending | closed | merged — drives SLA and overviews.
+  category  String
+  /// Requires a pending-until timestamp.
+  isPending Boolean  @default(false)
+  active    Boolean  @default(true)
+  tickets   Ticket[]
+
+  @@map("ticket_states")
+}
+
+model TicketPriority {
+  id      String   @id @default(uuid()) @db.Uuid
+  value   Int      @unique
+  name    String   @unique
+  active  Boolean  @default(true)
+  tickets Ticket[]
+
+  @@map("ticket_priorities")
+}
+
+/// Atomic per-day counter for ticket numbers.
+model TicketCounter {
+  day     String @id
+  counter Int    @default(0)
+
+  @@map("ticket_counters")
+}
+
+model Ticket {
+  id                    String         @id @default(uuid()) @db.Uuid
+  number                String         @unique
+  title                 String
+  stateId               String         @db.Uuid
+  state                 TicketState    @relation(fields: [stateId], references: [id])
+  priorityId            String         @db.Uuid
+  priority              TicketPriority @relation(fields: [priorityId], references: [id])
+  groupId               String         @db.Uuid
+  group                 Group          @relation(fields: [groupId], references: [id])
+  ownerId               String?        @db.Uuid
+  owner                 User?          @relation("ticketOwner", fields: [ownerId], references: [id])
+  customerId            String         @db.Uuid
+  customer              User           @relation("ticketCustomer", fields: [customerId], references: [id])
+  organizationId        String?        @db.Uuid
+  organization          Organization?  @relation(fields: [organizationId], references: [id])
+  tags                  String[]
+  pendingUntil          DateTime?      @db.Timestamptz(3)
+  slaId                 String?        @db.Uuid
+  sla                   Sla?           @relation(fields: [slaId], references: [id])
+  firstResponseAt       DateTime?      @db.Timestamptz(3)
+  firstResponseDueAt    DateTime?      @db.Timestamptz(3)
+  updateDueAt           DateTime?      @db.Timestamptz(3)
+  solutionDueAt         DateTime?      @db.Timestamptz(3)
+  escalationAt          DateTime?      @db.Timestamptz(3)
+  lastContactAt         DateTime?      @db.Timestamptz(3)
+  lastContactCustomerAt DateTime?      @db.Timestamptz(3)
+  lastContactAgentAt    DateTime?      @db.Timestamptz(3)
+  closedAt              DateTime?      @db.Timestamptz(3)
+  timeAccountedMinutes  Int            @default(0)
+  mergedIntoId          String?        @db.Uuid
+  mergedInto            Ticket?        @relation("merge", fields: [mergedIntoId], references: [id])
+  mergedFrom            Ticket[]       @relation("merge")
+  /// Unverified sender awaiting agent validation.
+  needsVerification     Boolean        @default(false)
+  containsSensitiveData Boolean        @default(false)
+  customFields          Json           @default("{}")
+  createdById           String?        @db.Uuid
+  createdAt             DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime       @updatedAt @db.Timestamptz(3)
+
+  articles      Article[]
+  linksFrom     TicketLink[]             @relation("linkSource")
+  linksTo       TicketLink[]             @relation("linkTarget")
+  mentions      Mention[]
+  subscriptions Subscription[]
+  sharedDrafts  SharedDraft[]
+  checklist     Checklist?
+  timeEntries   TimeEntry[]
+  slaPauses     SlaPause[]
+  /// Generated column (see migration *_audit_append_only_and_fts).
+  searchVector  Unsupported("tsvector")? @map("search_vector")
+
+  @@index([groupId, stateId])
+  @@index([customerId])
+  @@index([organizationId])
+  @@index([ownerId])
+  @@index([escalationAt])
+  @@index([tags], type: Gin)
+  @@index([searchVector], type: Gin, map: "tickets_search_idx")
+  @@map("tickets")
+}
+
+/// Pending intervals used to pause the SLA solution clock.
+model SlaPause {
+  id       String    @id @default(uuid()) @db.Uuid
+  ticketId String    @db.Uuid
+  ticket   Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  start    DateTime  @db.Timestamptz(3)
+  end      DateTime? @db.Timestamptz(3)
+
+  @@index([ticketId])
+  @@map("sla_pauses")
+}
+
+enum ArticleType {
+  email
+  phone
+  note
+  web
+  system
+}
+
+enum ArticleVisibility {
+  public
+  internal
+}
+
+enum ArticleSender {
+  customer
+  agent
+  system
+}
+
+enum DeliveryStatus {
+  none
+  queued
+  sent
+  failed
+}
+
+model Article {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  ticketId              String                   @db.Uuid
+  ticket                Ticket                   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  type                  ArticleType
+  visibility            ArticleVisibility
+  sender                ArticleSender
+  authorId              String?                  @db.Uuid
+  author                User?                    @relation("articleAuthor", fields: [authorId], references: [id])
+  from                  String?
+  to                    String?
+  cc                    String?
+  subject               String?
+  /// Sanitized HTML.
+  bodyHtml              String
+  bodyText              String
+  messageId             String?                  @unique
+  inReplyTo             String?
+  references            String[]
+  emailHeaders          Json?
+  deliveryStatus        DeliveryStatus           @default(none)
+  deliveryError         String?
+  /// Phone articles
+  callDirection         String?
+  callNumber            String?
+  callDurationSec       Int?
+  callResult            String?
+  containsSensitiveData Boolean                  @default(false)
+  redactedAt            DateTime?                @db.Timestamptz(3)
+  createdAt             DateTime                 @default(now()) @db.Timestamptz(3)
+  attachments           Attachment[]
+  timeEntries           TimeEntry[]
+  /// Generated column (see migration *_audit_append_only_and_fts).
+  searchVector          Unsupported("tsvector")? @map("search_vector")
+
+  @@index([ticketId, createdAt])
+  @@index([inReplyTo])
+  @@index([searchVector], type: Gin, map: "articles_search_idx")
+  @@map("articles")
+}
+
+enum ScanStatus {
+  pending
+  clean
+  infected
+  error
+}
+
+model Attachment {
+  id                    String     @id @default(uuid()) @db.Uuid
+  articleId             String?    @db.Uuid
+  article               Article?   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  filename              String
+  contentType           String
+  size                  Int
+  sha256                String
+  storageKey            String     @unique
+  scanStatus            ScanStatus @default(pending)
+  scanDetail            String?
+  possibleSensitiveData Boolean    @default(false)
+  sensitiveFindings     Json?
+  inline                Boolean    @default(false)
+  contentId             String?
+  deletedAt             DateTime?  @db.Timestamptz(3)
+  createdAt             DateTime   @default(now()) @db.Timestamptz(3)
+
+  @@index([articleId])
+  @@map("attachments")
+}
+
+enum TicketLinkType {
+  parent
+  child
+  related
+}
+
+model TicketLink {
+  id       String         @id @default(uuid()) @db.Uuid
+  sourceId String         @db.Uuid
+  targetId String         @db.Uuid
+  type     TicketLinkType
+  source   Ticket         @relation("linkSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  target   Ticket         @relation("linkTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, targetId, type])
+  @@map("ticket_links")
+}
+
+model Mention {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @db.Uuid
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([ticketId, userId])
+  @@map("mentions")
+}
+
+model Subscription {
+  ticketId String @db.Uuid
+  userId   String @db.Uuid
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ticketId, userId])
+  @@map("subscriptions")
+}
+
+model SharedDraft {
+  id          String   @id @default(uuid()) @db.Uuid
+  ticketId    String   @db.Uuid
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  content     Json
+  updatedById String   @db.Uuid
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("shared_drafts")
+}
+
+model Checklist {
+  id       String          @id @default(uuid()) @db.Uuid
+  ticketId String          @unique @db.Uuid
+  ticket   Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  name     String?
+  items    ChecklistItem[]
+
+  @@map("checklists")
+}
+
+model ChecklistItem {
+  id          String    @id @default(uuid()) @db.Uuid
+  checklistId String    @db.Uuid
+  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  text        String
+  checked     Boolean   @default(false)
+  position    Int
+
+  @@map("checklist_items")
+}
+
+model TimeActivityType {
+  id      String      @id @default(uuid()) @db.Uuid
+  name    String      @unique
+  active  Boolean     @default(true)
+  entries TimeEntry[]
+
+  @@map("time_activity_types")
+}
+
+model TimeEntry {
+  id             String            @id @default(uuid()) @db.Uuid
+  ticketId       String            @db.Uuid
+  ticket         Ticket            @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  articleId      String?           @db.Uuid
+  article        Article?          @relation(fields: [articleId], references: [id])
+  agentId        String            @db.Uuid
+  agent          User              @relation(fields: [agentId], references: [id])
+  minutes        Int
+  activityTypeId String?           @db.Uuid
+  activityType   TimeActivityType? @relation(fields: [activityTypeId], references: [id])
+  billable       Boolean           @default(true)
+  createdAt      DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@index([ticketId])
+  @@map("time_entries")
+}
+
+// ───────────────────────── Productivity ─────────────────────────
+
+model Macro {
+  id       String   @id @default(uuid()) @db.Uuid
+  name     String   @unique
+  /// Ticket field changes and optional article (template text).
+  perform  Json
+  groupIds String[] @db.Uuid
+  active   Boolean  @default(true)
+
+  @@map("macros")
+}
+
+model TextModule {
+  id       String   @id @default(uuid()) @db.Uuid
+  name     String
+  keyword  String
+  locale   String   @default("es-MX")
+  content  String
+  groupIds String[] @db.Uuid
+  active   Boolean  @default(true)
+
+  @@unique([keyword, locale])
+  @@map("text_modules")
+}
+
+model TicketTemplate {
+  id      String  @id @default(uuid()) @db.Uuid
+  name    String  @unique
+  options Json
+  active  Boolean @default(true)
+
+  @@map("ticket_templates")
+}
+
+model Signature {
+  id     String  @id @default(uuid()) @db.Uuid
+  name   String  @unique
+  body   String
+  active Boolean @default(true)
+  groups Group[]
+
+  @@map("signatures")
+}
+
+model Overview {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  link      String   @unique
+  position  Int
+  condition Json
+  columns   String[]
+  orderBy   String   @default("created_at")
+  orderDir  String   @default("asc")
+  groupBy   String?
+  roleIds   String[] @db.Uuid
+  active    Boolean  @default(true)
+
+  @@map("overviews")
+}
+
+// ───────────────────────── Automation & SLA ─────────────────────────
+
+model Trigger {
+  id        String  @id @default(uuid()) @db.Uuid
+  name      String  @unique
+  /// "create" | "update" | "create_or_update"
+  activator String
+  condition Json
+  perform   Json
+  position  Int     @default(0)
+  active    Boolean @default(true)
+
+  @@map("triggers")
+}
+
+model Scheduler {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @unique
+  /// Interval/timeplan definition.
+  timeplan  Json
+  condition Json
+  perform   Json
+  active    Boolean   @default(true)
+  lastRunAt DateTime? @db.Timestamptz(3)
+
+  @@map("schedulers")
+}
+
+model CoreWorkflow {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String   @unique
+  /// "Ticket" | "User" | "Organization"
+  object         String
+  /// "create" | "edit" (+ "agent" / "customer")
+  screens        String[]
+  condition      Json
+  perform        Json
+  priority       Int      @default(500)
+  stopAfterMatch Boolean  @default(false)
+  active         Boolean  @default(true)
+
+  @@map("core_workflows")
+}
+
+model BusinessCalendar {
+  id        String  @id @default(uuid()) @db.Uuid
+  name      String  @unique
+  /// BusinessCalendarConfig from @inn/shared.
+  config    Json
+  isDefault Boolean @default(false)
+  slas      Sla[]
+
+  @@map("business_calendars")
+}
+
+model SupportPlan {
+  id                   String         @id @default(uuid()) @db.Uuid
+  name                 String         @unique
+  includedHoursMonthly Int?
+  hourlyRateCents      Int?
+  currency             String         @default("MXN")
+  organizations        Organization[]
+  slas                 Sla[]
+
+  @@map("support_plans")
+}
+
+model Sla {
+  id             String           @id @default(uuid()) @db.Uuid
+  name           String           @unique
+  /// Conditions (organization, plan, priority, category) evaluated by the condition engine.
+  condition      Json
+  /// Targets per priority value: { "4": { firstResponseMinutes, updateMinutes, solutionMinutes } }
+  targets        Json
+  warningPercent Int              @default(80)
+  pauseOnPending Boolean          @default(true)
+  calendarId     String           @db.Uuid
+  calendar       BusinessCalendar @relation(fields: [calendarId], references: [id])
+  supportPlanId  String?          @db.Uuid
+  supportPlan    SupportPlan?     @relation(fields: [supportPlanId], references: [id])
+  position       Int              @default(0)
+  active         Boolean          @default(true)
+  tickets        Ticket[]
+
+  @@map("slas")
+}
+
+model ObjectAttribute {
+  id              String  @id @default(uuid()) @db.Uuid
+  /// "Ticket" | "User" | "Organization"
+  object          String
+  name            String
+  display         Json
+  /// input | select | multiselect | boolean | date | datetime | integer | textarea
+  dataType        String
+  options         Json    @default("{}")
+  /// Field visibility for customers.
+  customerVisible Boolean @default(false)
+  internal        Boolean @default(false)
+  position        Int     @default(0)
+  active          Boolean @default(true)
+  builtIn         Boolean @default(false)
+
+  @@unique([object, name])
+  @@map("object_attributes")
+}
+
+model PostmasterFilter {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String  @unique
+  match    Json
+  perform  Json
+  position Int     @default(0)
+  active   Boolean @default(true)
+
+  @@map("postmaster_filters")
+}
+
+// ───────────────────────── Integrations ─────────────────────────
+
+model Webhook {
+  id            String            @id @default(uuid()) @db.Uuid
+  name          String            @unique
+  endpoint      String
+  /// Encrypted HMAC secret.
+  secretEnc     String
+  customPayload Json?
+  active        Boolean           @default(true)
+  deliveries    WebhookDelivery[]
+
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id         String   @id @default(uuid()) @db.Uuid
+  webhookId  String   @db.Uuid
+  webhook    Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  event      String
+  statusCode Int?
+  error      String?
+  attempt    Int      @default(1)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([webhookId, createdAt])
+  @@map("webhook_deliveries")
+}
+
+model Integration {
+  id         String  @id @default(uuid()) @db.Uuid
+  /// "azure_devops" | "teams" | "telephony" | "oidc" | "inncentives"
+  kind       String  @unique
+  settings   Json    @default("{}")
+  /// Encrypted secrets blob.
+  secretsEnc String?
+  active     Boolean @default(false)
+
+  @@map("integrations")
+}
+
+// ───────────────────────── Knowledge base (phase 2) ─────────────────────────
+
+model KnowledgeBase {
+  id         String       @id @default(uuid()) @db.Uuid
+  locales    String[]
+  categories KbCategory[]
+
+  @@map("knowledge_bases")
+}
+
+model KbCategory {
+  id       String        @id @default(uuid()) @db.Uuid
+  kbId     String        @db.Uuid
+  kb       KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade)
+  parentId String?       @db.Uuid
+  parent   KbCategory?   @relation("kbTree", fields: [parentId], references: [id])
+  children KbCategory[]  @relation("kbTree")
+  titles   Json
+  position Int           @default(0)
+  answers  KbAnswer[]
+
+  @@map("kb_categories")
+}
+
+model KbAnswer {
+  id           String                @id @default(uuid()) @db.Uuid
+  categoryId   String                @db.Uuid
+  category     KbCategory            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  internal     Boolean               @default(false)
+  publishAt    DateTime?             @db.Timestamptz(3)
+  archivedAt   DateTime?             @db.Timestamptz(3)
+  translations KbAnswerTranslation[]
+
+  @@map("kb_answers")
+}
+
+model KbAnswerTranslation {
+  id        String   @id @default(uuid()) @db.Uuid
+  answerId  String   @db.Uuid
+  answer    KbAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  locale    String
+  title     String
+  bodyHtml  String
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([answerId, locale])
+  @@map("kb_answer_translations")
+}
+
+// ───────────────────────── Audit, history, settings ─────────────────────────
+
+/// Append-only. UPDATE/DELETE are rejected by a database trigger (see migration).
+model AuditLog {
+  id            BigInt   @id @default(autoincrement())
+  occurredAt    DateTime @default(now()) @db.Timestamptz(3)
+  actorId       String?  @db.Uuid
+  actorType     String
+  action        String
+  objectType    String?
+  objectId      String?
+  before        Json?
+  after         Json?
+  ip            String?
+  userAgent     String?
+  correlationId String?
+  prevHash      String
+  hash          String   @unique
+
+  @@index([occurredAt])
+  @@index([actorId])
+  @@index([objectType, objectId])
+  @@map("audit_logs")
+}
+
+model History {
+  id         BigInt   @id @default(autoincrement())
+  objectType String
+  objectId   String   @db.Uuid
+  actorId    String?  @db.Uuid
+  attribute  String?
+  valueFrom  String?
+  valueTo    String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([objectType, objectId])
+  @@map("histories")
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("settings")
+}
