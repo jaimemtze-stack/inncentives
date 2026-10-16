@@ -184,6 +184,59 @@ Así un atacante necesita superar **dos** barreras (Entra ID y la app) para lleg
 6. Configurar el monitoreo, las alertas a Teams, Azure Backup y la primera prueba de restauración.
 7. Hacer una prueba de penetración ligera (OWASP ZAP + revisión manual de autorización) antes de invitar a los primeros clientes.
 
+## 6. Alternativas de menor costo con la misma funcionalidad y seguridad
+
+Lo que la app necesita de la nube es poco y genérico: un servidor Linux en México, almacenamiento de objetos con inmutabilidad, una bóveda de secretos, acceso sin llaves desde el servidor a esos servicios y respaldos. Todo lo demás es independiente del proveedor: Cloudflare (WAF, Tunnel, Access con Entra ID), el buzón de Microsoft 365 por Graph, Teams y Azure DevOps. Por eso hay dos formas de bajar el costo sin perder controles.
+
+### 6.1 Oracle Cloud (OCI), región Querétaro o Monterrey: la más barata
+
+| Necesidad | Azure (opción A) | Equivalente en OCI | Costo en OCI |
+|---|---|---|---|
+| Servidor 2 vCPU / 8 GB | VM B2as_v2 | VM Ampere A1 (ARM) de 2 OCPU / 12 GB | **$0** dentro de *Always Free* (2 OCPU y 12 GB desde junio de 2026) |
+| Disco | Standard SSD | Block Volume (200 GB gratis) | $0 |
+| PostgreSQL con restauración a un punto | Flexible Server B1ms | PostgreSQL en contenedor + **pgBackRest** (WAL continuo) a Object Storage | $0 |
+| Adjuntos y respaldos inmutables | Blob + inmutabilidad | Object Storage + *retention rules* (WORM) | $0 hasta ~10 GB por nivel; después ~$0.0255/GB |
+| Secretos y llaves | Key Vault | OCI Vault (llaves en HSM y secretos incluidos en *Always Free*) | $0 |
+| Acceso sin llaves desde el servidor | Managed Identity | *Instance principals* + políticas IAM | $0 |
+| Acceso administrativo | Cloudflare Access SSH / Bastion | Igual (Cloudflare Access) u OCI Bastion | $0 |
+| Postura y vulnerabilidades | Defender CSPM | Cloud Guard + Vulnerability Scanning Service | $0 |
+| EDR en el servidor | Defender for Servers P1 | El mismo Defender for Servers P1 vía **Azure Arc**, que también habilita el login con Entra ID en Linux | ~$5 |
+| Políticas de gobierno | Azure Policy | Security Zones | $0 |
+| Logs | Log Analytics | OCI Logging (10 GB/mes gratis) | $0 |
+| **Total aprox.** | **$100–130** | | **~$5–15/mes** |
+
+Requisitos y riesgos que hay que aceptar:
+
+- **Usar el ARM.** Node.js, PostgreSQL, Redis y ClamAV tienen imágenes para ARM64; el CI debe construir imágenes `linux/arm64`.
+- **Convertir la cuenta a *Pay As You Go*** (con alertas de presupuesto). Las cuentas solo gratuitas pueden perder servidores que Oracle considere inactivos. Los recursos *Always Free* siguen sin costo en una cuenta de pago. La app no debería caer en "inactiva", porque la memoria usada supera el 20 %, pero no conviene depender de eso.
+- **La región de origen se elige al crear la cuenta y no se puede cambiar.** Debe ser Querétaro o Monterrey para que los datos queden en México. Verifica que haya capacidad de Ampere A1 en esa región; hay reportes de falta de capacidad.
+- **Oracle puede recortar el *Always Free* otra vez** (lo partió a la mitad en junio de 2026). Si desaparece, el mismo servidor pagado cuesta unos **$30–40/mes**, todavía por debajo de Azure.
+- **Sin SLA de cómputo en recursos gratuitos.** En la práctica no cambia mucho: la opción A también era un solo servidor sin alta disponibilidad. El RTO se cubre con infraestructura como código (Terraform) y respaldos fuera del servidor.
+- **Proveedor nuevo** para el inventario de proveedores de ISO 27001 (OCI tiene ISO 27001 y SOC 2), y una curva de aprendizaje para el equipo.
+- **PostgreSQL lo opera Neitek:** parches, pgBackRest y prueba de restauración. Las tareas quedan automatizadas, pero la responsabilidad deja de ser del proveedor.
+- **Despliegue sin credenciales en GitHub:** el servidor *jala* las imágenes publicadas, verifica su firma con cosign y despliega solo versiones aprobadas. No se guarda ninguna llave de OCI en GitHub.
+
+### 6.2 Azure optimizado: misma nube, mitad de precio
+
+Si prefieren no sumar un proveedor:
+
+| Ajuste | Ahorro aprox. |
+|---|---|
+| Reserva de 3 años de la VM (o Savings Plan), en vez de pago por uso | de ~$60 a ~$25–30 |
+| PostgreSQL en contenedor con pgBackRest a Blob inmutable, en vez de Flexible Server (misma restauración a un punto) | −$17–25 |
+| Sin Azure Backup de la VM: se reconstruye con Terraform y los datos se recuperan de los respaldos de la base y de Blob | −$5–10 |
+| **Total** | **~$45–60/mes** |
+
+Mantiene Managed Identity, Key Vault, Defender, Azure Policy, la región Mexico Central y todo el esquema de acceso de la sección 4. Solo cambia quién opera PostgreSQL.
+
+### 6.3 Comparativo final
+
+| Opción | USD/mes | Seguridad y funciones | Esfuerzo de operación |
+|---|---|---|---|
+| A. Azure (recomendación original) | 100–130 | Completa | Bajo (base de datos administrada) |
+| A'. Azure optimizado | 45–60 | Completa | Medio (PostgreSQL propio) |
+| **O. OCI México con *Always Free*** | **5–15** (30–40 si se pierde el *Always Free*) | Completa | Medio (PostgreSQL propio, ARM y un proveedor nuevo) |
+
 ## Fuentes de precios consultadas
 
 - Azure VM B2as_v2 por región: [azurespeed.com](https://www.azurespeed.com/AzureVmPricing/Standard_B2as_v2), [cloudprice.net](https://cloudprice.net/vm/Standard_B2as_v2)
@@ -193,4 +246,8 @@ Así un atacante necesita superar **dos** barreras (Entra ID y la app) para lleg
 - DigitalOcean: [infratally.com (Droplets)](https://infratally.com/articles/digitalocean-droplet-pricing-guide-2026/), [infratally.com (PostgreSQL)](https://infratally.com/articles/digitalocean-managed-postgres-deep-dive/)
 - AWS Lightsail: [kuberns.com](https://kuberns.com/blogs/aws-lightsail-pricing-your-comprehensive-guide/)
 - Cloudflare Zero Trust y planes: [costbench.com (Zero Trust Free)](https://costbench.com/software/business-vpn/cloudflare-zero-trust/free-plan/), [eastondev.com](https://eastondev.com/blog/en/posts/dev/20251201-cloudflare-pricing-compare/)
+- Oracle Cloud Always Free (recorte de junio de 2026 y reclamación por inactividad): [linuxiac.com](https://linuxiac.com/oracle-quietly-cuts-free-tier-ampere-a1-resources-in-half/), [braindetox.kr](https://braindetox.kr/en/posts/oracle_always_free_tier_reduced_2026.html), [docs.oracle.com](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
+- Vault y Bastion gratuitos en OCI: [fullmetalbrackets.com](https://fullmetalbrackets.com/blog/oci-free-tier-breakdown)
+- Regiones de Oracle en México: [datacenterdynamics.com](https://datacenterdynamics.com/en/news/oracle-launches-second-mexican-cloud-region)
+- Precio de Ampere A1 en pago por uso: [developer.arm.com](https://developer.arm.com/community/arm-community-blogs/b/servers-and-cloud-computing-blog/posts/oracle-cloud-infrastructure-arm-based-a1)
 - Exchange Online RBAC for Applications: [learn.microsoft.com](https://learn.microsoft.com/graph/auth-limit-mailbox-access)
