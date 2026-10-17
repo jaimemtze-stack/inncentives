@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 import { createApp } from '../src/bootstrap';
 import { MailService } from '../src/mail/mail.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { OutboundService } from '../src/queue/outbound.service';
 
 export const PORTAL = 'soporte.test';
 export const AGENT = 'agentes.soporte.test';
@@ -16,6 +17,8 @@ export interface TestApp {
   app: NestFastifyApplication;
   prisma: PrismaService;
   mails: MailJob[];
+  /** Article ids queued for outbound e-mail. */
+  outbound: string[];
   close(): Promise<void>;
 }
 
@@ -26,7 +29,11 @@ export async function startApp(): Promise<TestApp> {
   vi.spyOn(mail, 'send').mockImplementation(async (job: MailJob) => {
     mails.push(job);
   });
-  return { app, prisma: app.get(PrismaService), mails, close: () => app.close() };
+  const outbound: string[] = [];
+  vi.spyOn(app.get(OutboundService), 'enqueue').mockImplementation(async (id: string) => {
+    outbound.push(id);
+  });
+  return { app, prisma: app.get(PrismaService), mails, outbound, close: () => app.close() };
 }
 
 export function uniqueEmail(prefix: string): string {
@@ -61,6 +68,7 @@ export async function makeUser(
   prisma: PrismaService,
   role: 'ADMIN' | 'AGENT' | 'CUSTOMER',
   organizationId: string,
+  extra: { orgTicketAccess?: boolean; phone?: string } = {},
 ) {
   return prisma.user.create({
     data: {
@@ -69,7 +77,26 @@ export async function makeUser(
       role,
       organizationId,
       passwordHash: await passwordHash(),
+      ...extra,
     },
+  });
+}
+
+/** Default groups created by the phase 1 migration. */
+export const GROUP_N1 = '00000000-0000-4000-8000-000000000301';
+export const GROUP_N2 = '00000000-0000-4000-8000-000000000302';
+export const GROUP_TRIAGE = '00000000-0000-4000-8000-000000000304';
+
+export async function grantGroup(
+  prisma: PrismaService,
+  userId: string,
+  groupId: string,
+  levels = ['full'],
+) {
+  await prisma.groupAccess.upsert({
+    where: { userId_groupId: { userId, groupId } },
+    create: { userId, groupId, levels },
+    update: { levels },
   });
 }
 
@@ -130,6 +157,12 @@ export class Client {
   }
   post(url: string, body?: unknown, opts?: Parameters<Client['request']>[3]) {
     return this.request('POST', url, body ?? {}, opts);
+  }
+  patch(url: string, body?: unknown, opts?: Parameters<Client['request']>[3]) {
+    return this.request('PATCH', url, body ?? {}, opts);
+  }
+  put(url: string, body?: unknown, opts?: Parameters<Client['request']>[3]) {
+    return this.request('PUT', url, body ?? {}, opts);
   }
   delete(url: string, opts?: Parameters<Client['request']>[3]) {
     return this.request('DELETE', url, undefined, opts);

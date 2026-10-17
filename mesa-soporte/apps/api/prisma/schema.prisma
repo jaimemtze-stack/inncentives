@@ -446,8 +446,9 @@ model Article {
 
 model Attachment {
   id            String    @id @default(uuid()) @db.Uuid
-  ticketId      String    @map("ticket_id") @db.Uuid
-  ticket        Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  /// Null while an upload is staged (not yet attached to an article).
+  ticketId      String?   @map("ticket_id") @db.Uuid
+  ticket        Ticket?   @relation(fields: [ticketId], references: [id], onDelete: SetNull)
   articleId     String?   @map("article_id") @db.Uuid
   article       Article?  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   storageKey    String    @unique @map("storage_key") @db.VarChar(200)

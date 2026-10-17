@@ -14,6 +14,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { SecurityModule } from './security/security.module';
 import { StorageModule } from './storage/storage.module';
+import { EventsModule } from './events/ticket-events';
+import { SettingsModule } from './settings/settings.module';
+import { TicketsModule } from './tickets/tickets.module';
 
 const featureModules = [
   PrismaModule,
@@ -26,6 +29,9 @@ const featureModules = [
   HealthModule,
   AuthModule,
   AdminModule,
+  EventsModule,
+  SettingsModule,
+  TicketsModule,
 ];
 
 @Module({})

@@ -146,6 +146,16 @@ function bodyFor(job: MailJob, l: Lang): Body {
             ],
           };
     }
+    case 'ticket_notification': {
+      // Subject and body were rendered by the API from admin templates; they
+      // are plain text here and escaped like every other value.
+      const p = job.params;
+      return {
+        subject: p.subject,
+        lines: [l === 'en' ? `Hello ${p.name},` : `Hola ${p.name}:`, ...p.body.split('\n')],
+        link: { href: p.link, label: l === 'en' ? 'Open ticket' : 'Abrir ticket' },
+      };
+    }
   }
 }
 

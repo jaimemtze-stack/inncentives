@@ -74,9 +74,15 @@ describe('BusinessCalendar (Mon–Fri 09:00–18:30, America/Mexico_City)', () =
   });
 
   it('measures business minutes between instants', () => {
-    expect(cal.businessMinutesBetween(mx('2026-10-16T18:00:00'), mx('2026-10-19T09:30:00'))).toBe(60);
-    expect(cal.businessMinutesBetween(mx('2026-10-17T10:00:00'), mx('2026-10-18T10:00:00'))).toBe(0);
-    expect(cal.businessMinutesBetween(mx('2026-10-14T10:00:00'), mx('2026-10-14T09:00:00'))).toBe(0);
+    expect(cal.businessMinutesBetween(mx('2026-10-16T18:00:00'), mx('2026-10-19T09:30:00'))).toBe(
+      60,
+    );
+    expect(cal.businessMinutesBetween(mx('2026-10-17T10:00:00'), mx('2026-10-18T10:00:00'))).toBe(
+      0,
+    );
+    expect(cal.businessMinutesBetween(mx('2026-10-14T10:00:00'), mx('2026-10-14T09:00:00'))).toBe(
+      0,
+    );
   });
 
   it('is consistent: between(start, add(start, n)) == n', () => {
@@ -88,16 +94,33 @@ describe('BusinessCalendar (Mon–Fri 09:00–18:30, America/Mexico_City)', () =
 
   it('handles zones with daylight saving time', () => {
     // New York: 2026-03-08 02:00 jumps to 03:00 (UTC-5 -> UTC-4).
-    expect(zonedTimeToUtc(2026, 3, 9, 9, 0, 'America/New_York').toISOString()).toBe('2026-03-09T13:00:00.000Z');
-    expect(zonedTimeToUtc(2026, 3, 6, 9, 0, 'America/New_York').toISOString()).toBe('2026-03-06T14:00:00.000Z');
-    const ny = new BusinessCalendar({ ...DEFAULT_MEXICO_CALENDAR, timezone: 'America/New_York', mexicoStatutory: false });
+    expect(zonedTimeToUtc(2026, 3, 9, 9, 0, 'America/New_York').toISOString()).toBe(
+      '2026-03-09T13:00:00.000Z',
+    );
+    expect(zonedTimeToUtc(2026, 3, 6, 9, 0, 'America/New_York').toISOString()).toBe(
+      '2026-03-06T14:00:00.000Z',
+    );
+    const ny = new BusinessCalendar({
+      ...DEFAULT_MEXICO_CALENDAR,
+      timezone: 'America/New_York',
+      mexicoStatutory: false,
+    });
     // Friday 18:00 EST + 60 = Monday 09:30 EDT.
-    expect(ny.addBusinessMinutes(new Date('2026-03-06T23:00:00Z'), 60).toISOString()).toBe('2026-03-09T13:30:00.000Z');
+    expect(ny.addBusinessMinutes(new Date('2026-03-06T23:00:00Z'), 60).toISOString()).toBe(
+      '2026-03-09T13:30:00.000Z',
+    );
   });
 
   it('rejects invalid definitions', () => {
-    expect(() => new BusinessCalendar({ ...DEFAULT_MEXICO_CALENDAR, timezone: 'Mars/Olympus' })).toThrow();
-    expect(() => new BusinessCalendar({ ...DEFAULT_MEXICO_CALENDAR, hours: { 1: [['18:00', '09:00']] } })).toThrow();
-    expect(() => new BusinessCalendar({ ...DEFAULT_MEXICO_CALENDAR, holidays: ['25/12/2026'] })).toThrow();
+    expect(
+      () => new BusinessCalendar({ ...DEFAULT_MEXICO_CALENDAR, timezone: 'Mars/Olympus' }),
+    ).toThrow();
+    expect(
+      () =>
+        new BusinessCalendar({ ...DEFAULT_MEXICO_CALENDAR, hours: { 1: [['18:00', '09:00']] } }),
+    ).toThrow();
+    expect(
+      () => new BusinessCalendar({ ...DEFAULT_MEXICO_CALENDAR, holidays: ['25/12/2026'] }),
+    ).toThrow();
   });
 });

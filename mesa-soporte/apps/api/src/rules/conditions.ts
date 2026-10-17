@@ -51,23 +51,40 @@ function ticketValue(t: TicketSnapshot | undefined, key: string): unknown {
   if (!t) return undefined;
   if (key.startsWith('custom.')) return t.customFields[key.slice(7)];
   switch (key) {
-    case 'number': return t.number;
-    case 'title': return t.title;
-    case 'state': return t.state;
-    case 'priority_id': return t.priorityId;
-    case 'group_id': return t.groupId;
-    case 'owner_id': return t.ownerId;
-    case 'customer_id': return t.customerId;
-    case 'organization_id': return t.organizationId;
-    case 'tags': return t.tags;
-    case 'channel': return t.channel;
-    case 'pending_until': return t.pendingUntil;
-    case 'escalation_at': return t.escalationAt;
-    case 'created_at': return t.createdAt;
-    case 'updated_at': return t.updatedAt;
-    case 'last_customer_contact_at': return t.lastCustomerContactAt;
-    case 'sensitive_data': return t.sensitiveData;
-    default: return undefined;
+    case 'number':
+      return t.number;
+    case 'title':
+      return t.title;
+    case 'state':
+      return t.state;
+    case 'priority_id':
+      return t.priorityId;
+    case 'group_id':
+      return t.groupId;
+    case 'owner_id':
+      return t.ownerId;
+    case 'customer_id':
+      return t.customerId;
+    case 'organization_id':
+      return t.organizationId;
+    case 'tags':
+      return t.tags;
+    case 'channel':
+      return t.channel;
+    case 'pending_until':
+      return t.pendingUntil;
+    case 'escalation_at':
+      return t.escalationAt;
+    case 'created_at':
+      return t.createdAt;
+    case 'updated_at':
+      return t.updatedAt;
+    case 'last_customer_contact_at':
+      return t.lastCustomerContactAt;
+    case 'sensitive_data':
+      return t.sensitiveData;
+    default:
+      return undefined;
   }
 }
 
@@ -75,21 +92,27 @@ function fieldValue(field: string, ctx: RuleContext, previous = false): unknown 
   const [scope, ...rest] = field.split('.');
   const key = rest.join('.');
   switch (scope) {
-    case 'ticket': return ticketValue(previous ? ctx.previous : ctx.ticket, key);
+    case 'ticket':
+      return ticketValue(previous ? ctx.previous : ctx.ticket, key);
     case 'article': {
       const a = ctx.article;
       if (!a) return undefined;
       return key === 'body' ? a.bodyText : (a as unknown as Record<string, unknown>)[key];
     }
-    case 'customer': return key === 'email' ? ctx.customer?.email : undefined;
-    case 'organization': return key === 'support_plan_id' ? ctx.organization?.supportPlanId ?? null : undefined;
-    default: return undefined;
+    case 'customer':
+      return key === 'email' ? ctx.customer?.email : undefined;
+    case 'organization':
+      return key === 'support_plan_id' ? (ctx.organization?.supportPlanId ?? null) : undefined;
+    default:
+      return undefined;
   }
 }
 
 const norm = (v: unknown) => (v === undefined || v === null ? '' : String(v).toLowerCase());
-const resolve = (v: unknown, ctx: RuleContext) => (v === CURRENT_USER ? ctx.currentUserId ?? '__none__' : v);
-const isEmpty = (v: unknown) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
+const resolve = (v: unknown, ctx: RuleContext) =>
+  v === CURRENT_USER ? (ctx.currentUserId ?? '__none__') : v;
+const isEmpty = (v: unknown) =>
+  v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
 
 function asTime(v: unknown): number | null {
   if (v instanceof Date) return v.getTime();
@@ -102,7 +125,9 @@ function asTime(v: unknown): number | null {
 
 function evalLeaf(c: LeafCondition, ctx: RuleContext): boolean {
   const actual = fieldValue(c.field, ctx);
-  const expected = Array.isArray(c.value) ? c.value.map((v) => resolve(v, ctx)) : resolve(c.value, ctx);
+  const expected = Array.isArray(c.value)
+    ? c.value.map((v) => resolve(v, ctx))
+    : resolve(c.value, ctx);
   const now = (ctx.now ?? new Date()).getTime();
   switch (c.operator) {
     case 'is':
@@ -158,7 +183,11 @@ function evalLeaf(c: LeafCondition, ctx: RuleContext): boolean {
     case 'changed':
       return !!ctx.previous && norm(fieldValue(c.field, ctx, true)) !== norm(actual);
     case 'changed_to':
-      return !!ctx.previous && norm(fieldValue(c.field, ctx, true)) !== norm(actual) && norm(actual) === norm(expected);
+      return (
+        !!ctx.previous &&
+        norm(fieldValue(c.field, ctx, true)) !== norm(actual) &&
+        norm(actual) === norm(expected)
+      );
     default:
       return false;
   }
@@ -196,58 +225,86 @@ const columnMap: Record<string, keyof Prisma.TicketWhereInput> = {
   'ticket.sensitive_data': 'sensitiveData',
 };
 
-function leafToWhere(c: LeafCondition, opts: { currentUserId?: string; now?: Date }): Prisma.TicketWhereInput {
-  const resolveV = (v: unknown) => (v === CURRENT_USER ? opts.currentUserId ?? '00000000-0000-0000-0000-000000000000' : v);
+function leafToWhere(
+  c: LeafCondition,
+  opts: { currentUserId?: string; now?: Date },
+): Prisma.TicketWhereInput {
+  const resolveV = (v: unknown) =>
+    v === CURRENT_USER ? (opts.currentUserId ?? '00000000-0000-0000-0000-000000000000') : v;
   const value = Array.isArray(c.value) ? c.value.map(resolveV) : resolveV(c.value);
   const now = (opts.now ?? new Date()).getTime();
 
   if (c.field === 'ticket.tags') {
     const tags = (value as string[]).map((t) => String(t).toLowerCase());
-    if (c.operator === 'contains_all') return { AND: tags.map((name) => ({ tags: { some: { name } } })) };
+    if (c.operator === 'contains_all')
+      return { AND: tags.map((name) => ({ tags: { some: { name } } })) };
     if (c.operator === 'contains_one') return { tags: { some: { name: { in: tags } } } };
     return { tags: { none: { name: { in: tags } } } };
   }
   if (c.field === 'organization.support_plan_id') {
     if (c.operator === 'is_set') return { organization: { supportPlanId: { not: null } } };
-    if (c.operator === 'not_set') return { OR: [{ organizationId: null }, { organization: { supportPlanId: null } }] };
+    if (c.operator === 'not_set')
+      return { OR: [{ organizationId: null }, { organization: { supportPlanId: null } }] };
     if (c.operator === 'in') return { organization: { supportPlanId: { in: value as string[] } } };
-    if (c.operator === 'not_in') return { NOT: { organization: { supportPlanId: { in: value as string[] } } } };
-    if (c.operator === 'is_not') return { NOT: { organization: { supportPlanId: value as string } } };
+    if (c.operator === 'not_in')
+      return { NOT: { organization: { supportPlanId: { in: value as string[] } } } };
+    if (c.operator === 'is_not')
+      return { NOT: { organization: { supportPlanId: value as string } } };
     return { organization: { supportPlanId: value as string } };
   }
   if (c.field.startsWith(CUSTOM_FIELD_PREFIX)) {
     const path = [c.field.slice(CUSTOM_FIELD_PREFIX.length)];
     switch (c.operator) {
-      case 'is': return { customFields: { path, equals: value as Prisma.InputJsonValue } };
-      case 'is_not': return { NOT: { customFields: { path, equals: value as Prisma.InputJsonValue } } };
-      case 'contains': return { customFields: { path, string_contains: String(value) } };
-      case 'is_set': return { NOT: { customFields: { path, equals: Prisma.AnyNull } } };
-      case 'not_set': return { customFields: { path, equals: Prisma.AnyNull } };
-      default: throw new Error(`Unsupported operator ${c.operator} for custom fields`);
+      case 'is':
+        return { customFields: { path, equals: value as Prisma.InputJsonValue } };
+      case 'is_not':
+        return { NOT: { customFields: { path, equals: value as Prisma.InputJsonValue } } };
+      case 'contains':
+        return { customFields: { path, string_contains: String(value) } };
+      case 'is_set':
+        return { NOT: { customFields: { path, equals: Prisma.AnyNull } } };
+      case 'not_set':
+        return { customFields: { path, equals: Prisma.AnyNull } };
+      default:
+        throw new Error(`Unsupported operator ${c.operator} for custom fields`);
     }
   }
   const col = columnMap[c.field];
   if (!col) throw new Error(`Field ${c.field} is not queryable`);
   const text = (filter: Record<string, unknown>) => ({ [col]: { ...filter, mode: 'insensitive' } });
   switch (c.operator) {
-    case 'is': return { [col]: value };
-    case 'is_not': return { NOT: { [col]: value } };
-    case 'in': return { [col]: { in: value } };
-    case 'not_in': return { NOT: { [col]: { in: value } } };
-    case 'contains': return text({ contains: String(value) });
-    case 'not_contains': return { NOT: text({ contains: String(value) }) };
-    case 'starts_with': return text({ startsWith: String(value) });
-    case 'ends_with': return text({ endsWith: String(value) });
-    case 'is_set': return { NOT: { [col]: null } };
-    case 'not_set': return { [col]: null };
-    case 'before': return { [col]: { lt: new Date(String(value)) } };
-    case 'after': return { [col]: { gt: new Date(String(value)) } };
-    case 'before_relative': return { [col]: { lt: new Date(now + (c.value as { minutes: number }).minutes * 60_000) } };
-    case 'after_relative': return { [col]: { gt: new Date(now + (c.value as { minutes: number }).minutes * 60_000) } };
-    default: throw new Error(`Operator ${c.operator} cannot be queried`);
+    case 'is':
+      return { [col]: value };
+    case 'is_not':
+      return { NOT: { [col]: value } };
+    case 'in':
+      return { [col]: { in: value } };
+    case 'not_in':
+      return { NOT: { [col]: { in: value } } };
+    case 'contains':
+      return text({ contains: String(value) });
+    case 'not_contains':
+      return { NOT: text({ contains: String(value) }) };
+    case 'starts_with':
+      return text({ startsWith: String(value) });
+    case 'ends_with':
+      return text({ endsWith: String(value) });
+    case 'is_set':
+      return { NOT: { [col]: null } };
+    case 'not_set':
+      return { [col]: null };
+    case 'before':
+      return { [col]: { lt: new Date(String(value)) } };
+    case 'after':
+      return { [col]: { gt: new Date(String(value)) } };
+    case 'before_relative':
+      return { [col]: { lt: new Date(now + (c.value as { minutes: number }).minutes * 60_000) } };
+    case 'after_relative':
+      return { [col]: { gt: new Date(now + (c.value as { minutes: number }).minutes * 60_000) } };
+    default:
+      throw new Error(`Operator ${c.operator} cannot be queried`);
   }
 }
-
 
 /** Translates a (validated, queryable) condition into a Prisma where clause. */
 export function toTicketWhere(

@@ -2,22 +2,15 @@ import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { MAIL_QUEUE, type HostArea, type MailJob } from '@mesa/shared';
 import { Queue } from 'bullmq';
 import { APP_CONFIG, AppConfig } from '../config/config';
+import { bullConnection } from '../queue/bull-connection';
 
 @Injectable()
 export class MailService implements OnModuleDestroy {
   private readonly queue: Queue<MailJob>;
 
   constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {
-    const url = new URL(config.redisUrl);
     this.queue = new Queue<MailJob>(MAIL_QUEUE, {
-      connection: {
-        host: url.hostname,
-        port: Number(url.port || 6379),
-        username: url.username || undefined,
-        password: url.password ? decodeURIComponent(url.password) : undefined,
-        db: url.pathname.length > 1 ? Number(url.pathname.slice(1)) : 0,
-        tls: url.protocol === 'rediss:' ? {} : undefined,
-      },
+      connection: bullConnection(config.redisUrl),
       defaultJobOptions: {
         attempts: 5,
         backoff: { type: 'exponential', delay: 10_000 },

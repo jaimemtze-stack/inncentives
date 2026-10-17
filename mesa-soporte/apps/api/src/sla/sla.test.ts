@@ -26,21 +26,44 @@ describe('computeSlaDues', () => {
   });
 
   it('after the first answer, tracks updates only while the customer waits', () => {
-    const answered = { ...base, state: 'open', firstResponseAt: mx('2026-10-19T10:30:00'), lastAgentContactAt: mx('2026-10-19T10:30:00') };
+    const answered = {
+      ...base,
+      state: 'open',
+      firstResponseAt: mx('2026-10-19T10:30:00'),
+      lastAgentContactAt: mx('2026-10-19T10:30:00'),
+    };
     expect(computeSlaDues(answered, targets, cal, opts).updateDueAt).toBeNull();
     const customerReplied = { ...answered, lastCustomerContactAt: mx('2026-10-19T17:30:00') };
     // 60 business minutes left today (till 18:30), 60 more next day.
-    expect(computeSlaDues(customerReplied, targets, cal, opts).updateDueAt?.toISOString()).toBe(mx('2026-10-20T10:00:00').toISOString());
+    expect(computeSlaDues(customerReplied, targets, cal, opts).updateDueAt?.toISOString()).toBe(
+      mx('2026-10-20T10:00:00').toISOString(),
+    );
   });
 
   it('pauses while pending and shifts the solution by the paused business minutes', () => {
-    expect(computeSlaDues({ ...base, state: 'pending_reminder' }, targets, cal, opts).escalationAt).toBeNull();
-    const resumed = computeSlaDues({ ...base, state: 'open', firstResponseAt: base.createdAt, slaPausedMinutes: 120 }, targets, cal, opts);
+    expect(
+      computeSlaDues({ ...base, state: 'pending_reminder' }, targets, cal, opts).escalationAt,
+    ).toBeNull();
+    const resumed = computeSlaDues(
+      { ...base, state: 'open', firstResponseAt: base.createdAt, slaPausedMinutes: 120 },
+      targets,
+      cal,
+      opts,
+    );
     expect(resumed.solutionDueAt?.toISOString()).toBe(mx('2026-10-20T10:30:00').toISOString());
   });
 
   it('stops for resolved/closed tickets and when no targets apply', () => {
-    expect(computeSlaDues({ ...base, state: 'closed' }, targets, cal, opts).escalationAt).toBeNull();
-    expect(computeSlaDues(base, { firstResponseMinutes: null, updateMinutes: null, solutionMinutes: null }, cal, opts).escalationAt).toBeNull();
+    expect(
+      computeSlaDues({ ...base, state: 'closed' }, targets, cal, opts).escalationAt,
+    ).toBeNull();
+    expect(
+      computeSlaDues(
+        base,
+        { firstResponseMinutes: null, updateMinutes: null, solutionMinutes: null },
+        cal,
+        opts,
+      ).escalationAt,
+    ).toBeNull();
   });
 });

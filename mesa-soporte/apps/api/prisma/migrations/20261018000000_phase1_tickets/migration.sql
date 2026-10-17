@@ -250,7 +250,7 @@ CREATE TABLE "articles" (
 -- CreateTable
 CREATE TABLE "attachments" (
     "id" UUID NOT NULL,
-    "ticket_id" UUID NOT NULL,
+    "ticket_id" UUID,
     "article_id" UUID,
     "storage_key" VARCHAR(200) NOT NULL,
     "filename" VARCHAR(255) NOT NULL,
@@ -806,7 +806,7 @@ ALTER TABLE "ticket_tags" ADD CONSTRAINT "ticket_tags_ticket_id_fkey" FOREIGN KE
 ALTER TABLE "articles" ADD CONSTRAINT "articles_ticket_id_fkey" FOREIGN KEY ("ticket_id") REFERENCES "tickets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "attachments" ADD CONSTRAINT "attachments_ticket_id_fkey" FOREIGN KEY ("ticket_id") REFERENCES "tickets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "attachments" ADD CONSTRAINT "attachments_ticket_id_fkey" FOREIGN KEY ("ticket_id") REFERENCES "tickets"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_article_id_fkey" FOREIGN KEY ("article_id") REFERENCES "articles"("id") ON DELETE CASCADE ON UPDATE CASCADE;

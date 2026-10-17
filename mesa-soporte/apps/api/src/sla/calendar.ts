@@ -84,7 +84,11 @@ export interface ZonedParts {
 }
 
 export function zonedParts(date: Date, tz: string): ZonedParts {
-  const parts = Object.fromEntries(formatter(tz).formatToParts(date).map((p) => [p.type, p.value]));
+  const parts = Object.fromEntries(
+    formatter(tz)
+      .formatToParts(date)
+      .map((p) => [p.type, p.value]),
+  );
   return {
     year: Number(parts.year),
     month: Number(parts.month),
@@ -102,7 +106,14 @@ function offsetMs(instant: number, tz: string): number {
 }
 
 /** Converts a wall-clock time in `tz` to a UTC instant (handles DST shifts). */
-export function zonedTimeToUtc(y: number, m: number, d: number, h: number, mi: number, tz: string): Date {
+export function zonedTimeToUtc(
+  y: number,
+  m: number,
+  d: number,
+  h: number,
+  mi: number,
+  tz: string,
+): Date {
   const guess = Date.UTC(y, m - 1, d, h, mi);
   let t = guess - offsetMs(guess, tz);
   const second = guess - offsetMs(t, tz);
@@ -117,12 +128,17 @@ export function validateCalendar(cal: CalendarDefinition): void {
     const n = Number(day);
     if (!Number.isInteger(n) || n < 0 || n > 6) throw new Error(`Invalid weekday ${day}`);
     for (const [from, to] of intervals) {
-      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(from) || !/^([01]\d|2[0-4]):[0-5]\d$/.test(to) || from >= to) {
+      if (
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(from) ||
+        !/^([01]\d|2[0-4]):[0-5]\d$/.test(to) ||
+        from >= to
+      ) {
         throw new Error(`Invalid interval ${from}-${to}`);
       }
     }
   }
-  for (const h of cal.holidays) if (!/^\d{4}-\d{2}-\d{2}$/.test(h)) throw new Error(`Invalid holiday ${h}`);
+  for (const h of cal.holidays)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(h)) throw new Error(`Invalid holiday ${h}`);
 }
 
 export class BusinessCalendar {

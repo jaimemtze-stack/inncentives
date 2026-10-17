@@ -90,4 +90,5 @@ INSERT INTO "app_settings" ("key", "value", "updated_at") VALUES
   ('time_accounting', '{"enabled":true,"required":false}', now()),
   ('customer_can_close', 'true', now()),
   ('auto_reply_limit_per_hour', '5', now()),
+  ('portal_group_id', '"00000000-0000-4000-8000-000000000301"', now()),
   ('privacy_notice', '{"es":"Tratamos tus datos personales conforme a nuestro aviso de privacidad. Evita compartir datos de empleados (RFC, CURP, NSS, CLABE o sueldos) en los tickets.","en":"We process your personal data according to our privacy notice. Do not share employee data (tax IDs, social security numbers, bank accounts or salaries) in tickets."}', now());

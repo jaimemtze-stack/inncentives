@@ -24,7 +24,13 @@ export interface SlaDues {
   slaWarningAt: Date | null;
 }
 
-const NONE: SlaDues = { firstResponseDueAt: null, updateDueAt: null, solutionDueAt: null, escalationAt: null, slaWarningAt: null };
+const NONE: SlaDues = {
+  firstResponseDueAt: null,
+  updateDueAt: null,
+  solutionDueAt: null,
+  escalationAt: null,
+  slaWarningAt: null,
+};
 const CLOSED_STATES = ['resolved', 'closed', 'merged'];
 
 /**
@@ -52,7 +58,9 @@ export function computeSlaDues(
   };
 
   const firstResponseDueAt =
-    targets.firstResponseMinutes != null && !t.firstResponseAt ? make(t.createdAt, targets.firstResponseMinutes) : null;
+    targets.firstResponseMinutes != null && !t.firstResponseAt
+      ? make(t.createdAt, targets.firstResponseMinutes)
+      : null;
 
   const customerWaiting =
     t.lastCustomerContactAt !== null &&
@@ -63,9 +71,12 @@ export function computeSlaDues(
       : null;
 
   const solutionDueAt =
-    targets.solutionMinutes != null ? make(t.createdAt, targets.solutionMinutes + t.slaPausedMinutes) : null;
+    targets.solutionMinutes != null
+      ? make(t.createdAt, targets.solutionMinutes + t.slaPausedMinutes)
+      : null;
 
-  const min = (xs: Date[]) => (xs.length ? new Date(Math.min(...xs.map((d) => d.getTime()))) : null);
+  const min = (xs: Date[]) =>
+    xs.length ? new Date(Math.min(...xs.map((d) => d.getTime()))) : null;
   return {
     firstResponseDueAt,
     updateDueAt,
