@@ -2,6 +2,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AdminModule } from './admin/admin.module';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { ChannelsModule } from './channels/channels.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AllExceptionsFilter } from './common/exception.filter';
@@ -34,6 +35,7 @@ const featureModules = [
   SettingsModule,
   TicketsModule,
   AttachmentsModule,
+  ChannelsModule,
 ];
 
 @Module({})

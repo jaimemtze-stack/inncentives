@@ -77,3 +77,17 @@ describe('sensitive data detector', () => {
     expect(found).toEqual({ salary_column: 1, curp: 1 });
   });
 });
+
+describe('buildZip', () => {
+  it('round-trips through the ZIP reader', async () => {
+    const { buildZip } = await import('./zip-writer');
+    const { zipEntries, zipRead } = await import('./zip');
+    const zip = buildZip([
+      { name: 'datos.json', data: Buffer.from('{"a":1}') },
+      { name: 'adjuntos/ñ.txt', data: Buffer.from('hola') },
+    ]);
+    const entries = zipEntries(zip);
+    expect(entries.map((e) => e.name)).toEqual(['datos.json', 'adjuntos/ñ.txt']);
+    expect(zipRead(zip, entries[1]!, 100).toString()).toBe('hola');
+  });
+});

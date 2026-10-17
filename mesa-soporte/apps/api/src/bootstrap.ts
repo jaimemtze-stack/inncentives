@@ -61,6 +61,8 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestF
   const app = await NestFactory.create<NestFastifyApplication>(AppModule.forRoot(config), adapter, {
     logger: new PinoNestLogger(logger),
     bufferLogs: true,
+    // Keeps req.rawBody: signed webhooks need the exact bytes that were signed.
+    rawBody: true,
   });
 
   const fastify = app.getHttpAdapter().getInstance();
@@ -110,7 +112,7 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestF
     return payload;
   });
 
-  app.setGlobalPrefix('api/v1', { exclude: ['health', 'ready'] });
+  app.setGlobalPrefix('api/v1', { exclude: ['health', 'ready', 'hooks/cti'] });
   app.enableShutdownHooks();
   await app.init();
   await fastify.ready();

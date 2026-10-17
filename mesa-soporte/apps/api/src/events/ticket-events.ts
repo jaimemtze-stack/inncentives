@@ -12,7 +12,17 @@ export type DomainEvent =
       /** Internal notes are not announced to customers. */
       internal?: boolean;
     }
-  | { type: 'notification.created'; userId: string };
+  | { type: 'notification.created'; userId: string }
+  | {
+      type: 'call.updated';
+      callId: string;
+      state: string;
+      direction: string;
+      number: string;
+      customerId: string | null;
+      /** Agent the call is routed to; null announces it to every agent. */
+      userId: string | null;
+    };
 
 /**
  * In-process domain events, emitted after a transaction commits. The realtime

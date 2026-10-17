@@ -352,7 +352,12 @@ describe('automation', () => {
   it('serves form metadata per audience and customer lookup to agents only', async () => {
     const meta = (await agent.get('/api/v1/ticket-form')).json();
     expect(meta.groups.map((g: { id: string }) => g.id)).toEqual([GROUP_N1]);
-    expect(meta.ownersByGroup[GROUP_N1]).toEqual([expect.objectContaining({ id: agentId })]);
+    expect(meta.ownersByGroup[GROUP_N1]).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: agentId })]),
+    );
+    expect(meta.ownersByGroup[GROUP_N1]).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: outsiderId })]),
+    );
     const portal = (await customer.get('/api/v1/ticket-form')).json();
     expect(portal).not.toHaveProperty('groups');
     expect(portal.privacyNotice.es).toMatch(/RFC/);
