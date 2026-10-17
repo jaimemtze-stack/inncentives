@@ -1,11 +1,15 @@
 # syntax=docker/dockerfile:1.7
 # PostgreSQL 16 + pgBackRest + age on Ubuntu 24.04 (multi-arch). pgBackRest
 # must live next to PostgreSQL because archive_command runs inside it.
-FROM ubuntu:24.04
+FROM ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac
 ARG DEBIAN_FRONTEND=noninteractive
 # The optional "ca" secret is only used when building behind a TLS-inspecting proxy.
+# Fixed uid/gid 5432 so host directories and secret files can be owned by it.
 RUN --mount=type=secret,id=ca,required=false \
-    set -eu; APT_OPTS=""; \
+    set -eu; \
+    groupadd --system --gid 5432 postgres; \
+    useradd --system --uid 5432 --gid postgres --home-dir /var/lib/postgresql --shell /bin/bash postgres; \
+    APT_OPTS=""; \
     if [ -s /run/secrets/ca ]; then \
       sed -i 's#http://#https://#g' /etc/apt/sources.list.d/ubuntu.sources; \
       install -m 0644 /run/secrets/ca /tmp/build-ca.crt; \
@@ -28,5 +32,6 @@ COPY --chmod=0755 pgbackrest-render.sh /usr/local/bin/pgbackrest-render
 COPY --chmod=0755 pgbackrest-restore.sh /usr/local/bin/pgbackrest-restore
 STOPSIGNAL SIGINT
 EXPOSE 5432
-HEALTHCHECK --interval=10s --timeout=5s --retries=5 CMD ["setpriv", "--reuid=postgres", "--regid=postgres", "--init-groups", "pg_isready", "-q", "-h", "/var/run/postgresql"]
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 CMD ["pg_isready", "-q", "-h", "/var/run/postgresql"]
+USER 5432:5432
 ENTRYPOINT ["/usr/local/bin/mesa-postgres-entrypoint"]

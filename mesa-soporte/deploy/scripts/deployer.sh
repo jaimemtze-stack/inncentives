@@ -22,9 +22,14 @@ flock -n 9 || { log "Another deployment is running"; exit 0; }
 auth=()
 [[ -r "$TOKEN_FILE" ]] && auth=(-H "Authorization: Bearer $(cat "$TOKEN_FILE")")
 
-log "Fetching latest release of $GITHUB_REPO"
-release="$(curl -fsS --proto '=https' --tlsv1.2 "${auth[@]}" -H 'Accept: application/vnd.github+json' \
-  "https://api.github.com/repos/$GITHUB_REPO/releases/latest")"
+# The repository may publish other products: only published (non-draft,
+# non-prerelease) releases tagged mesa-v* are considered. A release exists
+# only after the approval gate of the "production" environment.
+log "Fetching latest mesa-soporte release of $GITHUB_REPO"
+releases="$(curl -fsS --proto '=https' --tlsv1.2 "${auth[@]}" -H 'Accept: application/vnd.github+json' \
+  "https://api.github.com/repos/$GITHUB_REPO/releases?per_page=30")"
+release="$(jq -c '[.[] | select(.draft == false and .prerelease == false and (.tag_name | startswith("mesa-v")))] | first // empty' <<<"$releases")"
+[[ -n "$release" ]] || { log "No mesa-soporte release published yet"; exit 0; }
 version="$(jq -r .tag_name <<<"$release")"
 asset_url="$(jq -r '.assets[] | select(.name=="manifest.json") | .url' <<<"$release")"
 [[ -n "$version" && "$version" != null && -n "$asset_url" ]] || die "release without manifest.json"
@@ -66,6 +71,11 @@ new_env="$STATE/images-$version.env"
 previous_env="$COMPOSE_ENV_FILE.previous"
 [[ -f "$COMPOSE_ENV_FILE" ]] && cp -f "$COMPOSE_ENV_FILE" "$previous_env"
 
+# GHCR packages are private: log in only for the pull, then forget the token.
+if [[ -r "$TOKEN_FILE" ]]; then
+  docker login ghcr.io --username mesa-deployer --password-stdin < "$TOKEN_FILE" >/dev/null
+  trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+fi
 COMPOSE_ENV_FILE="$new_env" compose pull api worker web migrator postgres
 
 if [[ -n "$current" ]]; then

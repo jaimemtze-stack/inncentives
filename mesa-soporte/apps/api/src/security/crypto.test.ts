@@ -43,6 +43,13 @@ describe('FieldEncryption', () => {
     expect(() => fe.decrypt(parts.join(':'), 'ctx')).toThrow();
   });
 
+  it('rejects truncated authentication tags', () => {
+    const fe = new FieldEncryption([k1]);
+    const parts = fe.encrypt('secret', 'ctx').split(':');
+    parts[4] = Buffer.from(parts[4]!, 'base64url').subarray(0, 4).toString('base64url');
+    expect(() => fe.decrypt(parts.join(':'), 'ctx')).toThrow(/authentication tag/);
+  });
+
   it('supports key rotation', () => {
     const old = new FieldEncryption([k1]).encrypt('secret', 'ctx');
     const rotated = new FieldEncryption([k2, k1]);

@@ -1,0 +1,49 @@
+# Local development dependencies. The applications run on the host
+# (pnpm dev) and read ../.env (see .env.example). Everything binds to 127.0.0.1.
+name: mesa-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mesa
+      POSTGRES_PASSWORD: mesa_dev_pw
+      POSTGRES_DB: mesa
+    ports: ["127.0.0.1:55432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "mesa"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    ports: ["127.0.0.1:56379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  # S3-compatible object storage (stands in for OCI Object Storage).
+  s3:
+    image: chrislusf/seaweedfs:3.97
+    command: ["server", "-dir=/data", "-master.volumeSizeLimitMB=64", "-volume.max=8", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweedfs/s3.json"]
+    ports: ["127.0.0.1:8333:8333"]
+    volumes:
+      - s3data:/data
+      - ./docker/dev/s3.json:/etc/seaweedfs/s3.json:ro
+
+  # Catches every e-mail sent in development: http://127.0.0.1:8025
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:1025:1025", "127.0.0.1:8025:8025"]
+
+  # Optional (large download, ~1.5 GB RAM): docker compose --profile full up -d
+  clamav:
+    image: clamav/clamav-debian:1.4
+    profiles: ["full"]
+    ports: ["127.0.0.1:3310:3310"]
+
+volumes:
+  pgdata:
+  s3data:

@@ -6,11 +6,11 @@
     "build": "prisma generate && tsc -p tsconfig.build.json",
     "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
     "start": "node dist/main.js",
-    "dev": "tsc -p tsconfig.build.json && node --enable-source-maps dist/main.js",
+    "dev": "tsc -p tsconfig.build.json && node --env-file-if-exists=../../.env --enable-source-maps dist/main.js",
     "test": "vitest run --project unit",
     "test:int": "vitest run --project integration",
-    "db:migrate": "prisma migrate deploy",
-    "db:seed": "tsx src/scripts/seed.ts"
+    "db:migrate": "node --env-file-if-exists=../../.env node_modules/prisma/build/index.js migrate deploy",
+    "db:seed": "node --env-file-if-exists=../../.env --import tsx src/scripts/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1152.0",
@@ -24,7 +24,7 @@
     "@node-rs/argon2": "2.2.2",
     "@prisma/client": "6.19.3",
     "bullmq": "5.81.5",
-    "fastify": "5.11.3",
+    "fastify": "5.12.7",
     "ioredis": "5.11.1",
     "oci-common": "2.143.0",
     "oci-objectstorage": "2.143.0",

@@ -16,7 +16,8 @@ trap 'rm -rf "$work"' EXIT
 
 APP_UID=65532   # distroless nonroot (api, worker, migrator, cloudflared)
 REDIS_UID=999   # redis user in redis:alpine
-ROOT_UID=0      # read by root (postgres entrypoint, deployer)
+PG_UID=5432     # postgres user in the PostgreSQL image (also pgBackRest)
+ROOT_UID=0      # read by root on the host (deployer)
 map_lines=()
 
 create() { # name owner value
@@ -35,9 +36,9 @@ rand() { openssl rand -base64 "$1" | tr -d '\n/+=' | cut -c1-"$2"; }
 ask() { local v; read -r -s -p "$1: " v; echo >&2; printf '%s' "$v"; }
 
 pg_super="$(rand 48 40)"; pg_migrator="$(rand 48 40)"; pg_app="$(rand 48 40)"; redis_pw="$(rand 48 40)"
-create postgres_superuser_password "$ROOT_UID" "$pg_super"
-create postgres_migrator_password "$ROOT_UID" "$pg_migrator"
-create postgres_app_password "$ROOT_UID" "$pg_app"
+create postgres_superuser_password "$PG_UID" "$pg_super"
+create postgres_migrator_password "$PG_UID" "$pg_migrator"
+create postgres_app_password "$PG_UID" "$pg_app"
 # Traffic stays on the private Docker network; TLS encrypts it with the
 # cluster's self-signed certificate (hence sslaccept=accept_invalid_certs).
 create database_url "$APP_UID" "postgresql://app_rw:${pg_app}@postgres:5432/mesa?sslmode=require&sslaccept=accept_invalid_certs&connection_limit=10"
@@ -45,12 +46,12 @@ create migrator_database_url "$APP_UID" "postgresql://app_migrator:${pg_migrator
 create redis_password "$REDIS_UID" "$redis_pw"
 create redis_url "$APP_UID" "redis://:${redis_pw}@redis:6379/0"
 create field_encryption_keys "$APP_UID" "k1:$(openssl rand -base64 32)"
-create pgbackrest_cipher_pass "$ROOT_UID" "$(rand 64 60)"
+create pgbackrest_cipher_pass "$PG_UID" "$(rand 64 60)"
 unset pg_super pg_migrator pg_app redis_pw
 
 echo "Values that come from other systems (input is hidden):" >&2
-create pgbackrest_s3_key "$ROOT_UID" "$(ask 'pgBackRest Customer Secret Key - access key')"
-create pgbackrest_s3_key_secret "$ROOT_UID" "$(ask 'pgBackRest Customer Secret Key - secret')"
+create pgbackrest_s3_key "$PG_UID" "$(ask 'pgBackRest Customer Secret Key - access key')"
+create pgbackrest_s3_key_secret "$PG_UID" "$(ask 'pgBackRest Customer Secret Key - secret')"
 create cloudflared_token "$APP_UID" "$(ask 'Cloudflare Tunnel token')"
 create smtp_username "$APP_UID" "$(ask 'SMTP user (soporte@...)')"
 create smtp_password "$APP_UID" "$(ask 'SMTP password / app credential')"

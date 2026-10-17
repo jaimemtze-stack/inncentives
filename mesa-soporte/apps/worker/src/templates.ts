@@ -149,14 +149,20 @@ function bodyFor(job: MailJob, l: Lang): Body {
   }
 }
 
-/** Renders plain text and HTML. Every interpolated value is HTML-escaped. */
+/**
+ * Renders plain text and HTML. Every interpolated value goes through
+ * escapeHtml (see templates.test.ts), so the template strings below are safe.
+ */
 export function render(job: MailJob): RenderedMail {
   const b = bodyFor(job, lang(job.locale));
   const text = [...b.lines, ...(b.link ? ['', `${b.link.label}: ${b.link.href}`] : [])].join('\n');
+  // nosemgrep: javascript.lang.security.html-in-template-string.html-in-template-string -- values escaped
   const paragraphs = b.lines.map((l) => `<p>${escapeHtml(l)}</p>`).join('\n');
   const button = b.link
-    ? `<p><a href="${escapeHtml(b.link.href)}" style="display:inline-block;padding:10px 16px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:6px">${escapeHtml(b.link.label)}</a></p>`
+    ? // nosemgrep: javascript.lang.security.html-in-template-string.html-in-template-string -- values escaped
+      `<p><a href="${escapeHtml(b.link.href)}" style="display:inline-block;padding:10px 16px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:6px">${escapeHtml(b.link.label)}</a></p>`
     : '';
+  // nosemgrep: javascript.lang.security.html-in-template-string.html-in-template-string -- values escaped
   const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#111">${paragraphs}${button}</body></html>`;
   return { subject: b.subject, text, html };
 }

@@ -1,5 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
+const TAG_LENGTH = 16;
+
 /**
  * AES-256-GCM envelope for sensitive columns: "v1:<keyId>:<iv>:<ciphertext>:<tag>".
  * The associated data binds a ciphertext to its row and purpose, so a value
@@ -17,7 +19,9 @@ export class FieldEncryption {
 
   encrypt(plaintext: string, aad: string): string {
     const iv = randomBytes(12);
-    const cipher = createCipheriv('aes-256-gcm', this.active.key, iv);
+    const cipher = createCipheriv('aes-256-gcm', this.active.key, iv, {
+      authTagLength: TAG_LENGTH,
+    });
     cipher.setAAD(Buffer.from(aad, 'utf8'));
     const ct = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
     const tag = cipher.getAuthTag();
@@ -36,9 +40,14 @@ export class FieldEncryption {
     const [, keyId, iv, ct, tag] = parts as [string, string, string, string, string];
     const key = this.byId.get(keyId);
     if (!key) throw new Error(`Unknown field encryption key: ${keyId}`);
-    const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64url'));
+    // A fixed tag length rejects truncated tags (GCM forgery with short tags).
+    const tagBytes = Buffer.from(tag, 'base64url');
+    if (tagBytes.length !== TAG_LENGTH) throw new Error('Invalid authentication tag');
+    const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64url'), {
+      authTagLength: TAG_LENGTH,
+    });
     decipher.setAAD(Buffer.from(aad, 'utf8'));
-    decipher.setAuthTag(Buffer.from(tag, 'base64url'));
+    decipher.setAuthTag(tagBytes);
     return Buffer.concat([
       decipher.update(Buffer.from(ct, 'base64url')),
       decipher.final(),

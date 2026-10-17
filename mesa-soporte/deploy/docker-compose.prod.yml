@@ -27,11 +27,11 @@ x-app-env: &app-env
   OCI_BUCKET_ATTACHMENTS: ${OCI_BUCKET_ATTACHMENTS:-adjuntos}
 
 networks:
-  # cloudflared <-> web (Caddy) only; no route to the Internet.
+  # cloudflared <-> web (nginx) only; no route to the Internet.
   edge:
     internal: true
     ipam: { config: [{ subnet: 172.30.10.0/24 }] }
-  # web (Caddy) <-> api only.
+  # web (nginx) <-> api only.
   app:
     internal: true
     ipam: { config: [{ subnet: 172.30.15.0/24 }] }
@@ -89,9 +89,8 @@ services:
   web:
     <<: *hardening
     image: ${IMAGE_WEB:?}
-    environment:
-      API_UPSTREAM: api:3000
-    tmpfs: ["/data:size=16m,uid=10001", "/config:size=4m,uid=10001", "/tmp:size=16m"]
+    user: "101:101"
+    tmpfs: ["/tmp:size=32m,uid=101,gid=101"]
     networks:
       edge: {}
       app: { ipv4_address: 172.30.15.10 }
@@ -145,12 +144,9 @@ services:
       postgres: { condition: service_healthy }
 
   postgres:
+    <<: *hardening
     image: ${IMAGE_POSTGRES:?}
-    restart: unless-stopped
-    security_opt: ["no-new-privileges:true"]
-    cap_drop: ["ALL"]
-    # chown/setuid are needed by the entrypoint to drop to the postgres user.
-    cap_add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+    user: "5432:5432"
     environment:
       POSTGRES_DB: mesa
       BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
@@ -170,15 +166,17 @@ services:
       - pgbackrest_cipher_pass
     volumes:
       - ${MESA_DATA_DIR:-/srv/mesa}/pgdata:/var/lib/postgresql/data
-    tmpfs: ["/var/run/postgresql:size=8m,mode=2775"]
+    tmpfs:
+      - /var/run/postgresql:size=8m,uid=5432,gid=5432,mode=2775
+      - /etc/pgbackrest:size=1m,uid=5432,gid=5432,mode=0700
+      - /var/spool/pgbackrest:size=256m,uid=5432,gid=5432,mode=0700
+      - /var/log/pgbackrest:size=64m,uid=5432,gid=5432,mode=0700
+      - /tmp:size=64m,uid=5432,gid=5432
     shm_size: 256m
     # pgBackRest pushes WAL to Object Storage, so this service needs egress.
     networks: [data, egress]
     mem_limit: 3g
     pids_limit: 400
-    logging:
-      driver: json-file
-      options: { max-size: "20m", max-file: "5" }
 
   redis:
     <<: *hardening

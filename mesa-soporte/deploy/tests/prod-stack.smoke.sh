@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Smoke test of the PRODUCTION compose file with locally built images:
 # hardening (read-only, non-root, no secrets in env), network isolation,
-# database least privilege and the request path Caddy -> API -> PostgreSQL.
+# database least privilege and the request path nginx -> API -> PostgreSQL.
 # Needs root (or sudo) to give secret files the owners used in production.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -38,17 +38,19 @@ trap cleanup EXIT
 
 mkdir -p "$MESA_SECRETS_DIR" "$MESA_DATA_DIR/pgdata" "$MESA_DATA_DIR/redis" "$MESA_DATA_DIR/clamav"
 chown 999:1000 "$MESA_DATA_DIR/redis"
+chown 5432:5432 "$MESA_DATA_DIR/pgdata"
 put() { printf '%s' "$3" > "$MESA_SECRETS_DIR/$1"; chown "$2:$2" "$MESA_SECRETS_DIR/$1"; chmod 0400 "$MESA_SECRETS_DIR/$1"; }
 pg_app="$(openssl rand -hex 16)"; pg_mig="$(openssl rand -hex 16)"; redis_pw="$(openssl rand -hex 16)"
-put postgres_superuser_password 0 "$(openssl rand -hex 16)"
-put postgres_migrator_password 0 "$pg_mig"
-put postgres_app_password 0 "$pg_app"
+put postgres_superuser_password 5432 "$(openssl rand -hex 16)"
+put postgres_migrator_password 5432 "$pg_mig"
+put postgres_app_password 5432 "$pg_app"
 put database_url 65532 "postgresql://app_rw:$pg_app@postgres:5432/mesa?sslmode=require&sslaccept=accept_invalid_certs"
 put migrator_database_url 65532 "postgresql://app_migrator:$pg_mig@postgres:5432/mesa?sslmode=require&sslaccept=accept_invalid_certs"
 put redis_password 999 "$redis_pw"
 put redis_url 65532 "redis://:$redis_pw@redis:6379/0"
 put field_encryption_keys 65532 "k1:$(openssl rand -base64 32)"
-for s in smtp_username smtp_password cloudflared_token pgbackrest_s3_key pgbackrest_s3_key_secret pgbackrest_cipher_pass; do put "$s" 0 unused; done
+for s in smtp_username smtp_password cloudflared_token; do put "$s" 0 unused; done
+for s in pgbackrest_s3_key pgbackrest_s3_key_secret pgbackrest_cipher_pass; do put "$s" 5432 unused; done
 
 echo "== start data tier, migrate, start the application"
 dc up -d --wait postgres redis
@@ -58,7 +60,7 @@ ok "stack is up and the API is healthy"
 
 curl_edge() { docker run --rm --network "${P}_edge" curlimages/curl:8.16.0 -s "$@"; }
 
-echo "== request path through Caddy"
+echo "== request path through nginx"
 headers="$(curl_edge -D - -o /dev/null http://web:8080/)"
 grep -qi "content-security-policy: default-src 'self'" <<<"$headers" || fail "CSP header missing on the web app"
 grep -qi "strict-transport-security" <<<"$headers" || fail "HSTS missing"
@@ -69,7 +71,7 @@ login="$(curl_edge -H 'Host: soporte.example.mx' -H 'Origin: https://soporte.exa
 grep -q '"invalid_credentials"' <<<"$login" || fail "login did not reach the database: $login"
 ip="$(dc exec -T -u postgres postgres psql -d mesa -Atc "select ip from audit_logs order by id desc limit 1")"
 [[ "$ip" == "203.0.113.77" ]] || fail "client IP from the tunnel not recorded (got $ip)"
-ok "Caddy serves the app with CSP/HSTS, proxies the API and the client IP is taken from Cloudflare"
+ok "nginx serves the app with CSP/HSTS, proxies the API and the client IP is taken from Cloudflare"
 
 echo "== network isolation"
 if curl_edge -m 3 http://api:3000/health >/dev/null 2>&1; then fail "edge network reaches the API directly"; fi
@@ -85,6 +87,10 @@ docker inspect "$api" --format '{{json .Config.Env}}' | grep -q 'postgresql://' 
 [[ "$(docker inspect "$api" --format '{{.HostConfig.ReadonlyRootfs}} {{.HostConfig.CapDrop}}')" == "true [ALL]" ]] || fail "API not read-only / capabilities not dropped"
 docker inspect "$api" --format '{{json .HostConfig.SecurityOpt}}' | grep -q 'no-new-privileges' || fail "no-new-privileges missing"
 ok "API: uid 65532, read-only root filesystem, all capabilities dropped, secrets only as files"
+pg="$(dc ps -q postgres)"
+[[ "$(docker inspect "$pg" --format '{{.Config.User}} {{.HostConfig.ReadonlyRootfs}} {{.HostConfig.CapDrop}} {{.HostConfig.CapAdd}}')" == "5432:5432 true [ALL] []" ]] \
+  || fail "PostgreSQL is not non-root/read-only/without capabilities"
+ok "PostgreSQL: uid 5432, read-only root filesystem, no capabilities"
 
 echo "== database least privilege"
 q_app() { dc exec -T -u postgres postgres env PGPASSWORD="$pg_app" psql -h 127.0.0.1 -U app_rw -d mesa -v ON_ERROR_STOP=1 -Atc "$1" 2>&1; }

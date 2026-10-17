@@ -1,0 +1,22 @@
+# Weekly dependency updates for the support desk (and its CI).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /mesa-soporte
+    schedule: { interval: weekly, day: monday, time: "07:00", timezone: America/Mexico_City }
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: docker
+    directories: [/mesa-soporte/docker, /mesa-soporte/docker/postgres]
+    schedule: { interval: weekly }
+  - package-ecosystem: docker-compose
+    directories: [/mesa-soporte, /mesa-soporte/deploy]
+    schedule: { interval: weekly }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: terraform
+    directory: /mesa-soporte/infra/terraform
+    schedule: { interval: weekly }

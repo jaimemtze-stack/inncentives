@@ -2,8 +2,9 @@
 # Multi-arch (linux/amd64, linux/arm64) images for the API, the worker and the
 # web assets. Build one target at a time:
 #   docker buildx build -f docker/app.Dockerfile --target api .
-ARG NODE_BUILD_IMAGE=node:22.22.0-bookworm-slim
-ARG NODE_RUNTIME_IMAGE=gcr.io/distroless/nodejs22-debian12:nonroot
+# Base images pinned by digest (multi-arch index); Renovate/Dependabot bump them.
+ARG NODE_BUILD_IMAGE=node:22.22.0-bookworm-slim@sha256:dd9d21971ec4395903fa6143c2b9267d048ae01ca6d3ea96f16cb30df6187d94
+ARG NODE_RUNTIME_IMAGE=gcr.io/distroless/nodejs22-debian13:nonroot@sha256:ec2313763dd43931543bd03830466e0c409ce73a487e8d46f10db72d3b816c1c
 
 FROM ${NODE_BUILD_IMAGE} AS build
 ENV CI=true PNPM_HOME=/pnpm PATH=/pnpm:$PATH
@@ -81,17 +82,12 @@ USER nonroot
 CMD ["--enable-source-maps", "dist/main.js"]
 
 # ---------------------------------------------------------------------- web
-# Static assets served by Caddy (see docker/caddy/Caddyfile).
-FROM caddy:2.10.2-alpine AS web
-COPY docker/caddy/Caddyfile /etc/caddy/Caddyfile
-COPY --from=build /repo/apps/web/dist /srv
-# The upstream binary carries the cap_net_bind_service file capability, which
-# cannot be exec'd under no-new-privileges with all capabilities dropped. We
-# listen on 8080, so a copy without extended attributes is used instead.
-RUN cp /usr/bin/caddy /usr/local/bin/caddy && rm /usr/bin/caddy \
- && addgroup -S -g 10001 web && adduser -S -u 10001 -G web -H web \
- && mkdir -p /data /config && chown -R web:web /data /config
-USER 10001:10001
+# Static assets served by nginx-unprivileged (uid 101), which also proxies the
+# API (see docker/nginx/default.conf).
+FROM nginxinc/nginx-unprivileged:1.30.6-alpine3.24@sha256:782bb89768cc87b7f95c18b95baa1af250e5d451f26794f59363540161147c01 AS web
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx/security-headers.inc /etc/nginx/conf.d/security-headers.inc
+COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
+USER 101:101
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD ["wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
-CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

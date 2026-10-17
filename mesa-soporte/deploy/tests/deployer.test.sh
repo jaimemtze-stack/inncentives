@@ -17,7 +17,9 @@ write_release() { # version digest-seed [unpinned]
   local api; api="$(digest api "$n")"
   [[ "${3:-}" == "unpinned" ]] && api="ghcr.io/neitek/mesa-api:latest"
   cat > "$T/release.json" <<JSON
-{"tag_name":"$v","assets":[{"name":"manifest.json","url":"https://api.github.com/repos/neitek/mesa/releases/assets/1"}]}
+[{"tag_name":"inncentives-v9.9","draft":false,"prerelease":false,"assets":[]},
+ {"tag_name":"mesa-v99","draft":true,"prerelease":false,"assets":[]},
+ {"tag_name":"$v","draft":false,"prerelease":false,"assets":[{"name":"manifest.json","url":"https://api.github.com/repos/neitek/mesa/releases/assets/1"}]}]
 JSON
   cat > "$T/manifest.json" <<JSON
 {"version":"$v","images":{"api":"$api","worker":"$(digest worker "$n")","web":"$(digest web "$n")","migrator":"$(digest migrator "$n")","postgres":"$(digest postgres "$n")"}}
@@ -28,7 +30,7 @@ cat > "$T/bin/curl" <<'EOF2'
 #!/usr/bin/env bash
 for a in "$@"; do
   case "$a" in
-    */releases/latest) cat "$STUB_DIR/release.json"; exit 0 ;;
+    */releases\?per_page=30) cat "$STUB_DIR/release.json"; exit 0 ;;
     */releases/assets/*) cat "$STUB_DIR/manifest.json"; exit 0 ;;
   esac
 done
@@ -58,10 +60,10 @@ export GITHUB_TOKEN_FILE="$T/none" HEALTH_TIMEOUT=10
 run() { "$here/../scripts/deployer.sh" 2>"$T/stderr.log"; }
 
 # 1. First deployment.
-write_release v1.0.0 1
+write_release mesa-v1.0.0 1
 run || fail "first deployment failed: $(cat "$T/stderr.log")"
 grep -q "IMAGE_API=$(digest api 1)" "$COMPOSE_ENV_FILE" || fail "images.env not written"
-[[ "$(cat "$T/state/deploy/current-version")" == v1.0.0 ]] || fail "current-version"
+[[ "$(cat "$T/state/deploy/current-version")" == mesa-v1.0.0 ]] || fail "current-version"
 grep -q "run --rm migrator" "$T/calls.log" || fail "migrations did not run"
 grep -qF -- '--certificate-identity-regexp ^https://github.com/neitek/mesa/.github/workflows/mesa-soporte-release.yml@refs/heads/main$ --certificate-oidc-issuer https://token.actions.githubusercontent.com' "$T/calls.log" \
   || fail "cosign identity not pinned to the release workflow on main"
@@ -76,7 +78,7 @@ grep -q "compose" "$T/calls.log" && fail "no-op touched compose"
 ok "same version is a no-op"
 
 # 3. Bad signature: nothing changes.
-write_release v1.1.0 2
+write_release mesa-v1.1.0 2
 : > "$T/calls.log"
 if COSIGN_RC=1 run; then fail "accepted an unsigned image"; fi
 grep -q "IMAGE_API=$(digest api 1)" "$COMPOSE_ENV_FILE" || fail "images.env changed after signature failure"
@@ -84,19 +86,19 @@ grep -q " up -d" "$T/calls.log" && fail "compose up ran after signature failure"
 ok "signature failure leaves the running version untouched"
 
 # 4. Unpinned image reference is refused.
-write_release v1.1.1 3 unpinned
+write_release mesa-v1.1.1 3 unpinned
 if run; then fail "accepted an image without digest"; fi
 grep -q "must be pinned by digest" "$T/stderr.log" || fail "wrong error for unpinned image"
 ok "images must be pinned by digest"
 
 # 5. Unhealthy new version: backup first, then automatic rollback.
-write_release v1.2.0 4
+write_release mesa-v1.2.0 4
 : > "$T/calls.log"
 if HEALTH=unhealthy run; then fail "unhealthy deployment reported success"; fi
 grep -q "pgbackrest --stanza=mesa --type=incr backup" "$T/calls.log" || fail "no pre-deployment backup"
 grep -q "IMAGE_API=$(digest api 1)" "$COMPOSE_ENV_FILE" || fail "rollback did not restore previous images"
-[[ "$(cat "$T/state/deploy/current-version")" == v1.0.0 ]] || fail "current-version changed after rollback"
-grep -q "v1.2.0 ROLLED_BACK" "$T/state/deploy/history" || fail "rollback not recorded"
+[[ "$(cat "$T/state/deploy/current-version")" == mesa-v1.0.0 ]] || fail "current-version changed after rollback"
+grep -q "mesa-v1.2.0 ROLLED_BACK" "$T/state/deploy/history" || fail "rollback not recorded"
 ok "unhealthy release is rolled back after a pre-deployment backup"
 
 echo "PASS: deployer ($pass checks)"

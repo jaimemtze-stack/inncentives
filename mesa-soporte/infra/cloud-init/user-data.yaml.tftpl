@@ -110,7 +110,7 @@ runcmd:
     mkdir -p /srv/mesa
     grep -q mesa-data /etc/fstab || echo "LABEL=mesa-data /srv/mesa xfs defaults,nofail,noatime,nodev,nosuid 0 2" >> /etc/fstab
     mount -a
-    install -d -m 0700 /srv/mesa/pgdata
+    install -d -m 0700 -o 5432 -g 5432 /srv/mesa/pgdata   # postgres uid in the image
     install -d -m 0750 -o 999 -g 1000 /srv/mesa/redis
     install -d -m 0750 /srv/mesa/clamav
   # Secrets live on a RAM-backed filesystem only.

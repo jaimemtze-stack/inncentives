@@ -1,0 +1,17 @@
+# gitleaks configuration: default rules plus allow-listed TEST fixtures only.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Throw-away credentials used only by local/CI test containers"
+regexes = [
+  '''mesa_dev_pw''',
+  '''testsecret123''',
+  '''frase de prueba e2e 2026''',
+  '''una frase de prueba larga 2026''',
+]
+paths = [
+  '''mesa-soporte/apps/api/test/.*''',
+  '''mesa-soporte/apps/web/e2e/.*''',
+  '''mesa-soporte/deploy/tests/.*''',
+]

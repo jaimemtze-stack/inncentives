@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # End-to-end backup test (CI and local): full backup + continuous WAL to an
 # S3-compatible store, encrypted logical dump, then destroy and restore to a
-# point in time with the production scripts. Requires docker, openssl, age.
+# point in time with the production scripts. Requires docker, openssl, age
+# and root (sudo -E), like restore.sh in production.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 scripts="$here/../scripts"
@@ -21,7 +22,7 @@ cleanup() {
   if [[ $rc -ne 0 ]]; then compose logs --no-color --tail 40 postgres >&2 || true; fi
   compose down -v --remove-orphans >/dev/null 2>&1 || true
   # Files written by containers belong to other uids.
-  docker run --rm -v "$WORK:/w" "${IMAGE_POSTGRES:-mesa-postgres:dev}" rm -rf /w/pgdata /w/pgdata.before-restore-* >/dev/null 2>&1 || true
+  docker run --rm --user 0 --entrypoint rm -v "$WORK:/w" "${IMAGE_POSTGRES:-mesa-postgres:dev}" -rf /w/pgdata /w/pgdata.before-restore-* >/dev/null 2>&1 || true
   rm -rf "$WORK"
 }
 trap cleanup EXIT
@@ -37,6 +38,7 @@ echo testsecret123 > "$WORK/secrets/pgbackrest_s3_key_secret"
 cat > "$WORK/s3conf/s3.json" <<'JSON'
 {"identities":[{"name":"backup","credentials":[{"accessKey":"testkey","secretKey":"testsecret123"}],"actions":["Admin","Read","Write","List","Tagging"]}]}
 JSON
+chown 5432:5432 "$WORK"/secrets/* "$WORK/pgdata"   # postgres uid in the image
 chmod 0400 "$WORK"/secrets/*
 
 # Private CA + certificate for the S3 store (pgBackRest only talks HTTPS to S3).

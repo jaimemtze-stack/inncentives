@@ -34,7 +34,7 @@ compose stop $APP_SERVICES postgres
 aside="${PGDATA_HOST%/}.before-restore-$stamp"
 log "Moving current data directory to $aside"
 mv "$PGDATA_HOST" "$aside"
-install -d -m 0700 "$PGDATA_HOST"
+install -d -m 0700 -o 5432 -g 5432 "$PGDATA_HOST"   # postgres uid/gid in the image
 
 log "Restoring ($mode ${target})"
 if [[ "$mode" == "time" ]]; then

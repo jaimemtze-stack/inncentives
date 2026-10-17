@@ -31,6 +31,21 @@ export function createRootLogger(level: string): Logger {
 export class PinoNestLogger implements LoggerService {
   constructor(private readonly logger: Logger) {}
 
+  private sink(level: 'info' | 'warn' | 'error' | 'debug' | 'trace') {
+    switch (level) {
+      case 'error':
+        return this.logger.error.bind(this.logger);
+      case 'warn':
+        return this.logger.warn.bind(this.logger);
+      case 'debug':
+        return this.logger.debug.bind(this.logger);
+      case 'trace':
+        return this.logger.trace.bind(this.logger);
+      default:
+        return this.logger.info.bind(this.logger);
+    }
+  }
+
   private write(
     level: 'info' | 'warn' | 'error' | 'debug' | 'trace',
     message: unknown,
@@ -38,10 +53,10 @@ export class PinoNestLogger implements LoggerService {
   ) {
     const context =
       typeof params[params.length - 1] === 'string' ? (params.pop() as string) : undefined;
-    if (message instanceof Error) this.logger[level]({ context, err: message }, message.message);
-    else if (message && typeof message === 'object') this.logger[level]({ context, ...message });
-    else
-      this.logger[level]({ context, extra: params.length ? params : undefined }, String(message));
+    const emit = this.sink(level);
+    if (message instanceof Error) emit({ context, err: message }, message.message);
+    else if (message && typeof message === 'object') emit({ context, ...message });
+    else emit({ context, extra: params.length ? params : undefined }, String(message));
   }
 
   log(message: unknown, ...params: unknown[]) {

@@ -6,7 +6,7 @@ SECRETS_DIR="${SECRETS_DIR:-/run/secrets}"
 secret() { tr -d '\n' < "$SECRETS_DIR/$1"; }
 
 : "${BACKUP_S3_ENDPOINT:?}" "${BACKUP_S3_BUCKET:?}" "${BACKUP_S3_REGION:?}"
-conf=/etc/pgbackrest/pgbackrest.conf
+conf=/etc/pgbackrest/pgbackrest.conf  # tmpfs in production (read-only root)
 umask 077
 cat > "$conf" <<CONF
 [global]
@@ -40,5 +40,4 @@ CONF
 if [[ -n "${BACKUP_S3_CA_FILE:-}" ]]; then
   echo "repo1-s3-ca-file=${BACKUP_S3_CA_FILE}" >> "$conf"
 fi
-chown postgres:postgres "$conf"
 chmod 0600 "$conf"

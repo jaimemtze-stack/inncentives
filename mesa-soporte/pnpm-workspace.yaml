@@ -8,3 +8,10 @@ onlyBuiltDependencies:
   - '@swc/core'
   - 'esbuild'
   - 'prisma'
+
+# Security overrides for transitive dependencies (Trivy/pnpm audit findings).
+overrides:
+  # @nestjs/platform-fastify 11.2.7 pins fastify 5.11.3 (HIGH CVEs fixed in 5.12.x).
+  fastify: 5.12.7
+  # @prisma/config pulls deepmerge-ts 7 (CVE-2026-40345, fixed in 8.0.0).
+  deepmerge-ts: 8.0.2
