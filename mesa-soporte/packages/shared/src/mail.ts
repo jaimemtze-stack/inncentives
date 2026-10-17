@@ -1,5 +1,7 @@
 /** Queue shared by the API (producer) and the worker (consumer). */
 export const MAIL_QUEUE = 'mail';
+/** Outbound ticket e-mail (one job per article), processed by the jobs service. */
+export const OUTBOUND_QUEUE = 'outbound';
 
 export type MailJob =
   | {
@@ -28,6 +30,12 @@ export type MailJob =
       to: string;
       locale: string;
       params: { name: string; ip: string; userAgent: string; when: string };
+    }
+  | {
+      template: 'ticket_notification';
+      to: string;
+      locale: string;
+      params: { name: string; subject: string; body: string; link: string };
     };
 
 export type MailTemplate = MailJob['template'];

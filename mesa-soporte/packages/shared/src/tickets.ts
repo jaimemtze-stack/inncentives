@@ -10,7 +10,12 @@ export const TicketStates = [
 export type TicketState = (typeof TicketStates)[number];
 
 /** States in which the ticket is considered open for SLA and views. */
-export const OpenStates: readonly TicketState[] = ['new', 'open', 'pending_reminder', 'pending_close'];
+export const OpenStates: readonly TicketState[] = [
+  'new',
+  'open',
+  'pending_reminder',
+  'pending_close',
+];
 export const PendingStates: readonly TicketState[] = ['pending_reminder', 'pending_close'];
 
 export const TicketChannels = ['email', 'phone', 'web', 'agent'] as const;
@@ -40,5 +45,10 @@ export const ObjectAttributeTypes = [
 ] as const;
 export type ObjectAttributeType = (typeof ObjectAttributeTypes)[number];
 
-export const WorkflowScreens = ['create_agent', 'create_customer', 'edit_agent', 'edit_customer'] as const;
+export const WorkflowScreens = [
+  'create_agent',
+  'create_customer',
+  'edit_agent',
+  'edit_customer',
+] as const;
 export type WorkflowScreen = (typeof WorkflowScreens)[number];

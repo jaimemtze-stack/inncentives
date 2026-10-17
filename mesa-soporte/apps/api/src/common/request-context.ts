@@ -1,4 +1,4 @@
-import type { HostArea, Role } from '@mesa/shared';
+import type { HostArea, Permission, Role } from '@mesa/shared';
 import type { SessionRecord } from '../security/session.service';
 
 export interface AuthenticatedUser {
@@ -9,6 +9,8 @@ export interface AuthenticatedUser {
   organizationId: string;
   locale: string;
   mfaEnabled: boolean;
+  /** Base role permissions plus custom roles (staff only). */
+  permissions: Permission[];
 }
 
 export interface AuthContext {

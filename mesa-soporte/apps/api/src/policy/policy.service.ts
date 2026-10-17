@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Permission, roleHasPermission, type Role } from '@mesa/shared';
+import { Permission, type Role } from '@mesa/shared';
 import type { Prisma } from '@prisma/client';
 import type { AuthenticatedUser } from '../common/request-context';
 
@@ -37,10 +37,8 @@ export class PolicyService {
   /** Whether the actor may invite someone with `role` into an organization. */
   canInvite(actor: AuthenticatedUser, role: Role, organization: { isInternal: boolean }): boolean {
     if (role === 'CUSTOMER') {
-      return (
-        roleHasPermission(actor.role, Permission.UsersInviteCustomer) && !organization.isInternal
-      );
+      return actor.permissions.includes(Permission.UsersInviteCustomer) && !organization.isInternal;
     }
-    return roleHasPermission(actor.role, Permission.UsersInviteStaff) && organization.isInternal;
+    return actor.permissions.includes(Permission.UsersInviteStaff) && organization.isInternal;
   }
 }

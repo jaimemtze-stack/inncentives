@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Inject, Injectable, Logger } from '@nest
 import { Reflector } from '@nestjs/core';
 import {
   areaForRole,
-  roleHasPermission,
+  effectivePermissions,
   type AuthState,
   type HostArea,
   type Permission,
@@ -13,7 +13,14 @@ import { AppError } from '../common/errors';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from '../security/session.service';
 import { safeEqual } from '../security/tokens';
-import { AREA_KEY, PERMISSIONS_KEY, PUBLIC_KEY, REAUTH_KEY, STATES_KEY } from './decorators';
+import {
+  ANY_PERMISSIONS_KEY,
+  AREA_KEY,
+  PERMISSIONS_KEY,
+  PUBLIC_KEY,
+  REAUTH_KEY,
+  STATES_KEY,
+} from './decorators';
 import { SESSION_COOKIE } from './session-cookie';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -41,9 +48,10 @@ export class AuthzGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest<FastifyRequest>();
     const isPublic = this.meta<boolean>(PUBLIC_KEY, ctx) === true;
     const permissions = this.meta<Permission[]>(PERMISSIONS_KEY, ctx);
+    const anyOf = this.meta<Permission[]>(ANY_PERMISSIONS_KEY, ctx);
     const area = this.meta<HostArea | 'any'>(AREA_KEY, ctx);
 
-    if (!isPublic && !permissions) {
+    if (!isPublic && !permissions && !anyOf) {
       this.logger.error(
         `Route without authorization metadata: ${req.method} ${req.routeOptions.url}`,
       );
@@ -87,7 +95,10 @@ export class AuthzGuard implements CanActivate {
     }
 
     for (const p of permissions ?? []) {
-      if (!roleHasPermission(auth.user.role, p)) throw new AppError('forbidden');
+      if (!auth.user.permissions.includes(p)) throw new AppError('forbidden');
+    }
+    if (anyOf && !anyOf.some((p) => auth.user.permissions.includes(p))) {
+      throw new AppError('forbidden');
     }
 
     if (this.meta<boolean>(REAUTH_KEY, ctx)) {
@@ -105,7 +116,10 @@ export class AuthzGuard implements CanActivate {
     strict: boolean,
   ): Promise<void> {
     const { id, record } = resolved;
-    const user = await this.prisma.user.findUnique({ where: { id: record.userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: record.userId },
+      include: { customRoles: { where: { role: { active: true } }, select: { role: true } } },
+    });
     const valid =
       user &&
       user.status === 'ACTIVE' &&
@@ -127,6 +141,10 @@ export class AuthzGuard implements CanActivate {
         organizationId: user.organizationId,
         locale: user.locale,
         mfaEnabled: user.totpEnabledAt !== null,
+        permissions: effectivePermissions(
+          user.role,
+          user.customRoles.flatMap((c) => c.role.permissions),
+        ),
       },
     };
   }

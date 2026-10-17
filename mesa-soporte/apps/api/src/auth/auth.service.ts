@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  RolePermissions,
   areaForRole,
   type AuthState,
   type HostArea,
@@ -344,8 +343,16 @@ export class AuthService {
     return {
       state: auth.session.state,
       area: auth.session.area,
-      user: auth.user,
-      permissions: [...RolePermissions[auth.user.role]],
+      user: {
+        id: auth.user.id,
+        email: auth.user.email,
+        name: auth.user.name,
+        role: auth.user.role,
+        organizationId: auth.user.organizationId,
+        locale: auth.user.locale,
+        mfaEnabled: auth.user.mfaEnabled,
+      },
+      permissions: [...auth.user.permissions],
     };
   }
 

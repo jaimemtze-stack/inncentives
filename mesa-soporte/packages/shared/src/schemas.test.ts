@@ -6,7 +6,7 @@ import {
   OrganizationCreateSchema,
   PasswordSchema,
 } from './schemas';
-import { roleHasPermission, Permission, areaForRole } from './permissions';
+import { effectivePermissions, roleHasPermission, Permission, areaForRole } from './permissions';
 
 describe('schemas', () => {
   it('normalises the login email', () => {
@@ -52,9 +52,23 @@ describe('schemas', () => {
 });
 
 describe('permissions', () => {
-  it('gives customers only self-management', () => {
+  it('gives customers only self-management and their tickets', () => {
     expect(roleHasPermission('CUSTOMER', Permission.SelfManage)).toBe(true);
+    expect(roleHasPermission('CUSTOMER', Permission.TicketsCustomer)).toBe(true);
     expect(roleHasPermission('CUSTOMER', Permission.UsersRead)).toBe(false);
+  });
+
+  it('extends staff with custom roles but never customers', () => {
+    expect(effectivePermissions('AGENT', [Permission.AdminConfig, 'bogus'])).toContain(
+      Permission.AdminConfig,
+    );
+    expect(effectivePermissions('AGENT', ['bogus'])).not.toContain('bogus');
+    expect(effectivePermissions('AGENT', [Permission.TicketsCustomer])).not.toContain(
+      Permission.TicketsCustomer,
+    );
+    expect(effectivePermissions('CUSTOMER', [Permission.AdminConfig])).toEqual(
+      [Permission.SelfManage, Permission.TicketsCustomer].sort(),
+    );
   });
 
   it('does not let agents invite staff or read the audit log', () => {

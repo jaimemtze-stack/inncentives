@@ -1,3 +1,4 @@
+import { effectivePermissions } from '@mesa/shared';
 import { describe, expect, it } from 'vitest';
 import { PolicyService } from './policy.service';
 import type { AuthenticatedUser } from '../common/request-context';
@@ -10,6 +11,7 @@ const user = (role: AuthenticatedUser['role']): AuthenticatedUser => ({
   organizationId: 'o1',
   locale: 'es-MX',
   mfaEnabled: true,
+  permissions: effectivePermissions(role),
 });
 
 describe('PolicyService', () => {

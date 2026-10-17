@@ -3,6 +3,7 @@ import type { AuthState, HostArea, Permission } from '@mesa/shared';
 
 export const PUBLIC_KEY = 'authz:public';
 export const PERMISSIONS_KEY = 'authz:permissions';
+export const ANY_PERMISSIONS_KEY = 'authz:any-permissions';
 export const STATES_KEY = 'authz:states';
 export const AREA_KEY = 'authz:area';
 export const REAUTH_KEY = 'authz:reauth';
@@ -14,6 +15,10 @@ export const Public = (area: HostArea | 'any' = 'any') =>
 /** Requires an authenticated session holding every listed permission. */
 export const RequirePermissions = (...permissions: Permission[]) =>
   SetMetadata(PERMISSIONS_KEY, permissions);
+
+/** Requires an authenticated session holding at least one listed permission. */
+export const RequireAnyPermission = (...permissions: Permission[]) =>
+  SetMetadata(ANY_PERMISSIONS_KEY, permissions);
 
 /** Restricts a route (or controller) to one host area. */
 export const Area = (area: HostArea) => SetMetadata(AREA_KEY, area);

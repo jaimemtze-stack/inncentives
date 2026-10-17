@@ -1,7 +1,7 @@
 import { PATH_METADATA } from '@nestjs/common/constants';
 import { ModulesContainer } from '@nestjs/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PERMISSIONS_KEY, PUBLIC_KEY } from '../src/policy/decorators';
+import { ANY_PERMISSIONS_KEY, PERMISSIONS_KEY, PUBLIC_KEY } from '../src/policy/decorators';
 import { AGENT, Client, PORTAL, startApp, type TestApp } from './helpers';
 
 let t: TestApp;
@@ -11,7 +11,7 @@ beforeAll(async () => {
 afterAll(async () => t.close());
 
 describe('platform', () => {
-  it('every route declares @Public or @RequirePermissions (deny by default)', () => {
+  it('every route declares @Public, @RequirePermissions or @RequireAnyPermission (deny by default)', () => {
     const missing: string[] = [];
     let checked = 0;
     for (const mod of t.app.get(ModulesContainer).values()) {
@@ -30,7 +30,8 @@ describe('platform', () => {
           const has = (key: string) =>
             Reflect.getMetadata(key, handler) !== undefined ||
             Reflect.getMetadata(key, ctrl) !== undefined;
-          if (!has(PUBLIC_KEY) && !has(PERMISSIONS_KEY)) missing.push(`${ctrl.name}.${name}`);
+          if (!has(PUBLIC_KEY) && !has(PERMISSIONS_KEY) && !has(ANY_PERMISSIONS_KEY))
+            missing.push(`${ctrl.name}.${name}`);
         }
       }
     }
