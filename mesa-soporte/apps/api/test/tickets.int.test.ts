@@ -253,6 +253,14 @@ describe('ticket lifecycle', () => {
 });
 
 describe('automation', () => {
+  it('auto-assigns unowned tickets to the first agent who opens them', async () => {
+    await t.prisma.group.update({ where: { id: GROUP_N1 }, data: { autoAssign: true } });
+    const tk = (await agent.post('/api/v1/tickets', phoneTicket())).json();
+    expect(tk.owner).toBeNull();
+    expect((await agent.get(`/api/v1/tickets/${tk.id}?open=true`)).json().owner.id).toBe(agentId);
+    await t.prisma.group.update({ where: { id: GROUP_N1 }, data: { autoAssign: false } });
+  });
+
   it('runs triggers once per chain and enforces core workflows', async () => {
     await t.prisma.trigger.create({
       data: {

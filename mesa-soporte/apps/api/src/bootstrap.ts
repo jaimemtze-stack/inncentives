@@ -4,6 +4,7 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
 import { NestFactory } from '@nestjs/core';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import type { ApiErrorBody, ErrorCode } from '@mesa/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -113,6 +114,7 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestF
   });
 
   app.setGlobalPrefix('api/v1', { exclude: ['health', 'ready', 'hooks/cti'] });
+  app.useWebSocketAdapter(new IoAdapter(app));
   app.enableShutdownHooks();
   await app.init();
   await fastify.ready();

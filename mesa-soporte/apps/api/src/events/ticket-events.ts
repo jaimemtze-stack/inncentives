@@ -1,5 +1,10 @@
-import { Global, Injectable, Module } from '@nestjs/common';
+import { Global, Inject, Injectable, Logger, Module } from '@nestjs/common';
 import { EventEmitter } from 'node:events';
+import type Redis from 'ioredis';
+import { REDIS } from '../redis/redis.module';
+
+/** Redis channel that carries domain events from the API and jobs processes to the realtime gateway. */
+export const EVENTS_CHANNEL = 'mesa:events';
 
 export type DomainEvent =
   | {
@@ -25,19 +30,24 @@ export type DomainEvent =
     };
 
 /**
- * In-process domain events, emitted after a transaction commits. The realtime
- * gateway relays them to browsers; listeners must never throw.
+ * Domain events, emitted after a transaction commits. They are published on
+ * Redis so the realtime gateway also sees events raised by the jobs process
+ * (e-mail, SLA). Listeners must never throw.
  */
 @Injectable()
 export class DomainEvents {
   private readonly emitter = new EventEmitter();
+  private readonly logger = new Logger(DomainEvents.name);
 
-  constructor() {
+  constructor(@Inject(REDIS) private readonly redis: Redis) {
     this.emitter.setMaxListeners(50);
   }
 
   emit(event: DomainEvent): void {
     this.emitter.emit('event', event);
+    this.redis.publish(EVENTS_CHANNEL, JSON.stringify(event)).catch((err: Error) => {
+      this.logger.warn(`event publish failed: ${err.message}`);
+    });
   }
 
   on(listener: (e: DomainEvent) => void): () => void {

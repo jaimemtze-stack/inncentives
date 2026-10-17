@@ -24,6 +24,24 @@ export class TicketExtrasService {
     private readonly events: DomainEvents,
   ) {}
 
+  /**
+   * Opening a ticket in the agent UI: groups with auto-assignment give an
+   * unowned new/open ticket to the first agent who opens it.
+   */
+  async open(actor: AuthenticatedUser, id: string) {
+    const t = await this.access.load(actor, id, 'read', { group: true });
+    if (
+      this.access.isStaff(actor) &&
+      t.group.autoAssign &&
+      !t.ownerId &&
+      (t.state === 'new' || t.state === 'open') &&
+      (await this.access.canInGroup(actor, t.groupId, 'change'))
+    ) {
+      await this.tickets.applyChanges(id, { ownerId: actor.id }, { actorId: actor.id });
+    }
+    return this.get(actor, id);
+  }
+
   async get(actor: AuthenticatedUser, id: string) {
     const t = await this.access.load(actor, id, 'read', ticketDetailInclude);
     if (!this.access.isStaff(actor))

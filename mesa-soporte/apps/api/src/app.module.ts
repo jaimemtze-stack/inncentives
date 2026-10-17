@@ -3,6 +3,8 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AdminModule } from './admin/admin.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { ChannelsModule } from './channels/channels.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AllExceptionsFilter } from './common/exception.filter';
@@ -36,6 +38,8 @@ const featureModules = [
   TicketsModule,
   AttachmentsModule,
   ChannelsModule,
+  NotificationsModule,
+  RealtimeModule,
 ];
 
 @Module({})

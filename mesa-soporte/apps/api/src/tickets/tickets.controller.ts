@@ -44,6 +44,10 @@ import { MacrosService } from './macros.service';
 const IdItem = z.object({ id: z.string().uuid(), itemId: z.string().uuid() });
 const IdTarget = z.object({ id: z.string().uuid(), targetId: z.string().uuid() });
 const IdMacro = z.object({ id: z.string().uuid(), macroId: z.string().uuid() });
+const SearchQuery = z
+  .object({ q: z.string().max(300), limit: z.coerce.number().int().min(1).max(50).default(20) })
+  .strict();
+const GetQuery = z.object({ open: z.enum(['true', 'false']).optional() }).strict();
 const LookupQuery = z.object({ q: z.string().max(100) }).strict();
 const Any = () => RequireAnyPermission(Permission.TicketsAgent, Permission.TicketsCustomer);
 
@@ -89,10 +93,25 @@ export class TicketsController {
     return this.extras.get(actor, id);
   }
 
+  @Get('search')
+  @Any()
+  search(
+    @Req() req: FastifyRequest,
+    @Query(new ZodPipe(SearchQuery)) q: z.infer<typeof SearchQuery>,
+  ) {
+    return this.overviews.search(req.auth!.user, q.q, q.limit);
+  }
+
   @Get('tickets/:id')
   @Any()
-  get(@Req() req: FastifyRequest, @Param(new ZodPipe(UuidParamSchema)) p: { id: string }) {
-    return this.extras.get(req.auth!.user, p.id);
+  get(
+    @Req() req: FastifyRequest,
+    @Param(new ZodPipe(UuidParamSchema)) p: { id: string },
+    @Query(new ZodPipe(GetQuery)) q: z.infer<typeof GetQuery>,
+  ) {
+    return q.open === 'true'
+      ? this.extras.open(req.auth!.user, p.id)
+      : this.extras.get(req.auth!.user, p.id);
   }
 
   @Patch('tickets/:id')
