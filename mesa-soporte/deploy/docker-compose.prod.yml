@@ -187,6 +187,13 @@ services:
       - /var/log/pgbackrest:size=64m,uid=5432,gid=5432,mode=0700
       - /tmp:size=64m,uid=5432,gid=5432
     shm_size: 256m
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-q', '-h', '/var/run/postgresql']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      # First start runs initdb (slow on small or emulated CPUs).
+      start_period: 180s
     # pgBackRest pushes WAL to Object Storage, so this service needs egress.
     networks: [data, egress]
     mem_limit: 3g
