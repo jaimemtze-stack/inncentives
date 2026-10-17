@@ -21,7 +21,7 @@ x-app-env: &app-env
   PUBLIC_SCHEME: https
   TRUST_PROXY: 172.30.15.10
   TRUST_CF_CONNECTING_IP: "true"
-  STORAGE_DRIVER: oci
+  STORAGE_DRIVER: ${STORAGE_DRIVER:-oci}
   OCI_REGION: ${OCI_REGION:-mx-queretaro-1}
   OCI_NAMESPACE: ${OCI_NAMESPACE:?}
   OCI_BUCKET_ATTACHMENTS: ${OCI_BUCKET_ATTACHMENTS:-adjuntos}
@@ -45,20 +45,34 @@ networks:
     ipam: { config: [{ subnet: 172.30.30.0/24 }] }
 
 secrets:
-  database_url: { file: /run/mesa/secrets/database_url }
-  migrator_database_url: { file: /run/mesa/secrets/migrator_database_url }
-  redis_url: { file: /run/mesa/secrets/redis_url }
-  redis_password: { file: /run/mesa/secrets/redis_password }
-  field_encryption_keys: { file: /run/mesa/secrets/field_encryption_keys }
-  smtp_username: { file: /run/mesa/secrets/smtp_username }
-  smtp_password: { file: /run/mesa/secrets/smtp_password }
-  cloudflared_token: { file: /run/mesa/secrets/cloudflared_token }
-  postgres_superuser_password: { file: /run/mesa/secrets/postgres_superuser_password }
-  postgres_migrator_password: { file: /run/mesa/secrets/postgres_migrator_password }
-  postgres_app_password: { file: /run/mesa/secrets/postgres_app_password }
-  pgbackrest_s3_key: { file: /run/mesa/secrets/pgbackrest_s3_key }
-  pgbackrest_s3_key_secret: { file: /run/mesa/secrets/pgbackrest_s3_key_secret }
-  pgbackrest_cipher_pass: { file: /run/mesa/secrets/pgbackrest_cipher_pass }
+  database_url:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/database_url
+  migrator_database_url:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/migrator_database_url
+  redis_url:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/redis_url
+  redis_password:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/redis_password
+  field_encryption_keys:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/field_encryption_keys
+  smtp_username:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/smtp_username
+  smtp_password:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/smtp_password
+  cloudflared_token:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/cloudflared_token
+  postgres_superuser_password:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/postgres_superuser_password
+  postgres_migrator_password:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/postgres_migrator_password
+  postgres_app_password:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/postgres_app_password
+  pgbackrest_s3_key:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/pgbackrest_s3_key
+  pgbackrest_s3_key_secret:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/pgbackrest_s3_key_secret
+  pgbackrest_cipher_pass:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/pgbackrest_cipher_pass
 
 services:
   cloudflared:
@@ -104,7 +118,7 @@ services:
     environment:
       NODE_ENV: production
       SECRETS_DIR: /run/secrets
-      MAIL_TRANSPORT: smtp
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-smtp}
       SMTP_HOST: ${SMTP_HOST:-smtp.office365.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_TLS: starttls
@@ -139,7 +153,7 @@ services:
     cap_add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
     environment:
       POSTGRES_DB: mesa
-      BACKUP_ENABLED: "true"
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
       BACKUP_STANZA: mesa
       BACKUP_S3_ENDPOINT: ${OCI_NAMESPACE:?}.compat.objectstorage.${OCI_REGION:-mx-queretaro-1}.oraclecloud.com
       BACKUP_S3_BUCKET: ${BACKUP_BUCKET:-respaldos-pitr}
@@ -155,7 +169,7 @@ services:
       - pgbackrest_s3_key_secret
       - pgbackrest_cipher_pass
     volumes:
-      - /srv/mesa/pgdata:/var/lib/postgresql/data
+      - ${MESA_DATA_DIR:-/srv/mesa}/pgdata:/var/lib/postgresql/data
     tmpfs: ["/var/run/postgresql:size=8m,mode=2775"]
     shm_size: 256m
     # pgBackRest pushes WAL to Object Storage, so this service needs egress.
@@ -173,7 +187,7 @@ services:
     entrypoint: ["sh", "-c", "exec redis-server --requirepass \"$$(cat /run/secrets/redis_password)\" --appendonly yes --appendfsync everysec --maxmemory 384mb --maxmemory-policy noeviction --protected-mode yes --rename-command FLUSHALL '' --rename-command CONFIG ''"]
     secrets: [redis_password]
     volumes:
-      - /srv/mesa/redis:/data
+      - ${MESA_DATA_DIR:-/srv/mesa}/redis:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" --no-auth-warning ping | grep -q PONG"]
       interval: 10s
@@ -185,11 +199,12 @@ services:
 
   clamav:
     <<: *hardening
+    profiles: ["${CLAMAV_PROFILE:-default}"]
     image: clamav/clamav-debian:1.4
     read_only: false
     cap_add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE"]
     volumes:
-      - /srv/mesa/clamav:/var/lib/clamav
+      - ${MESA_DATA_DIR:-/srv/mesa}/clamav:/var/lib/clamav
     networks: [data, egress]
     mem_limit: 3g
     pids_limit: 200

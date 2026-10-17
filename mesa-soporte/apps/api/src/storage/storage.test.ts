@@ -33,7 +33,7 @@ describe('OciStorage', () => {
   } as unknown as OciObjectClient;
   const storage = new OciStorage(
     { region: 'mx-queretaro-1', namespace: 'ns', bucket: 'adjuntos' },
-    client,
+    async () => client,
   );
 
   it('creates object-scoped read-only PARs capped at five minutes', async () => {
@@ -46,6 +46,19 @@ describe('OciStorage', () => {
     expect(details.accessType).toBe('ObjectRead');
     expect(details.objectName).toBe('k1');
     expect(details.timeExpires.getTime() - before).toBeLessThanOrEqual(300_000 + 1000);
+  });
+
+  it('creates the client lazily and retries after a failure', async () => {
+    let calls = 0;
+    const flaky = new OciStorage({ region: 'r', namespace: 'ns', bucket: 'b' }, async () => {
+      calls++;
+      if (calls === 1) throw new Error('metadata service not ready');
+      return client;
+    });
+    expect(calls).toBe(0);
+    await expect(flaky.ping()).rejects.toThrow('metadata service not ready');
+    await expect(flaky.ping()).resolves.toBeUndefined();
+    expect(calls).toBe(2);
   });
 
   it('passes namespace and bucket on every call', async () => {

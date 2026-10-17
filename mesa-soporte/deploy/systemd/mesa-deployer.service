@@ -1,0 +1,14 @@
+[Unit]
+Description=mesa-soporte: deploy the latest approved and signed release
+Requires=docker.service
+After=mesa-secrets-sync.service
+OnFailure=mesa-alert@%n.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/mesa/deployer.env
+Environment=COMPOSE_ENV_FILE=/opt/mesa/images.env
+ExecStart=/opt/mesa/scripts/deployer.sh
+StandardOutput=append:/var/log/mesa/deployer.log
+StandardError=append:/var/log/mesa/deployer.log
+TimeoutStartSec=1800

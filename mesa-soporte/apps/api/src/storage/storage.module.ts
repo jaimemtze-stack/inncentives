@@ -4,7 +4,7 @@ import { OciStorage } from './oci.storage';
 import { S3Storage } from './s3.storage';
 import { STORAGE, StorageProvider } from './storage.provider';
 
-export async function createStorage(config: AppConfig): Promise<StorageProvider> {
+export function createStorage(config: AppConfig): StorageProvider {
   if (config.STORAGE_DRIVER === 'oci') {
     if (!config.OCI_NAMESPACE) throw new Error('OCI_NAMESPACE is required with STORAGE_DRIVER=oci');
     return OciStorage.withInstancePrincipal({

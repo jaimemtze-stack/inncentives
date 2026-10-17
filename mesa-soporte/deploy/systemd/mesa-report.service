@@ -1,0 +1,8 @@
+[Unit]
+Description=mesa-soporte: publish heartbeat and health metrics
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/mesa/deployer.env
+Environment=COMPOSE_ENV_FILE=/opt/mesa/images.env
+ExecStart=/opt/mesa/scripts/report.sh metrics

@@ -26,20 +26,26 @@ RUN --mount=type=secret,id=ca,required=false \
  && pnpm --filter @mesa/api build \
  && pnpm --filter @mesa/worker build \
  && pnpm --filter @mesa/web build
-# Production-only dependency trees for each service.
+# Production-only dependency trees for each service. The base image has no
+# OpenSSL binary, so Prisma cannot detect the platform: name the engine target
+# explicitly (PRISMA_CLI_BINARY_TARGETS) for the architecture being built.
+ARG TARGETARCH
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     --mount=type=secret,id=ca,required=false \
-    NODE_EXTRA_CA_CERTS=/run/secrets/ca pnpm --filter @mesa/api deploy --prod --legacy /out/api \
- && NODE_EXTRA_CA_CERTS=/run/secrets/ca pnpm --filter @mesa/worker deploy --prod --legacy /out/worker \
- && cd /out/api && NODE_EXTRA_CA_CERTS=/run/secrets/ca node node_modules/prisma/build/index.js generate \
- && rm -rf /out/api/src /out/api/test /out/worker/src
-# Keep only the Prisma query engine of the target architecture. The migrator
-# keeps the Prisma CLI; the API image drops it (and its tooling) entirely.
-ARG TARGETARCH
-RUN case "$TARGETARCH" in arm64) keep=linux-arm64-openssl-3.0.x ;; *) keep=debian-openssl-3.0.x ;; esac \
- && find /out/api/node_modules -name 'libquery_engine-*.so.node' ! -name "*${keep}*" -delete \
- && cp -a /out/api /out/migrator \
- && rm -rf /out/api/node_modules/prisma /out/api/node_modules/.bin \
+    set -eu; \
+    case "$TARGETARCH" in arm64) keep=linux-arm64-openssl-3.0.x ;; *) keep=debian-openssl-3.0.x ;; esac; \
+    export NODE_EXTRA_CA_CERTS=/run/secrets/ca PRISMA_CLI_BINARY_TARGETS="$keep"; \
+    pnpm --filter @mesa/api deploy --prod --legacy /out/api; \
+    pnpm --filter @mesa/worker deploy --prod --legacy /out/worker; \
+    cd /out/api && node node_modules/prisma/build/index.js generate >/dev/null; \
+    rm -rf /out/api/src /out/api/test /out/worker/src; \
+    find /out/api/node_modules -name 'libquery_engine-*.so.node' ! -name "*${keep}*" -delete; \
+    # Migrator: Prisma CLI + the schema engine of this architecture only.
+    cp -a /out/api /out/migrator; \
+    cp "$(find /out/migrator/node_modules/.pnpm -path "*@prisma/engines/schema-engine-$keep" | head -1)" /out/migrator/schema-engine; \
+    find /out/migrator/node_modules/.pnpm -path '*@prisma/engines/schema-engine-*' -delete; \
+    # API: no Prisma CLI, engines package, TypeScript or migrations.
+    rm -rf /out/api/node_modules/prisma /out/api/node_modules/.bin \
            /out/api/node_modules/.pnpm/prisma@* /out/api/node_modules/.pnpm/@prisma+engines@* \
            /out/api/node_modules/.pnpm/typescript@* /out/api/node_modules/.pnpm/effect@* \
            /out/api/prisma/migrations
@@ -58,7 +64,9 @@ CMD ["--enable-source-maps", "dist/main.js"]
 # ---------------------------------------------------------------- migrator
 # Runs `prisma migrate deploy` with the migration role, then exits.
 FROM ${NODE_RUNTIME_IMAGE} AS migrator
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    PRISMA_SCHEMA_ENGINE_BINARY=/app/schema-engine \
+    PRISMA_HIDE_UPDATE_MESSAGE=1
 WORKDIR /app
 COPY --from=build /out/migrator /app
 USER nonroot
@@ -77,7 +85,13 @@ CMD ["--enable-source-maps", "dist/main.js"]
 FROM caddy:2.10.2-alpine AS web
 COPY docker/caddy/Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /repo/apps/web/dist /srv
-RUN addgroup -S -g 10001 web && adduser -S -u 10001 -G web -H web \
+# The upstream binary carries the cap_net_bind_service file capability, which
+# cannot be exec'd under no-new-privileges with all capabilities dropped. We
+# listen on 8080, so a copy without extended attributes is used instead.
+RUN cp /usr/bin/caddy /usr/local/bin/caddy && rm /usr/bin/caddy \
+ && addgroup -S -g 10001 web && adduser -S -u 10001 -G web -H web \
  && mkdir -p /data /config && chown -R web:web /data /config
 USER 10001:10001
 EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD ["wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

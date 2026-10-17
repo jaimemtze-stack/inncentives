@@ -1,0 +1,15 @@
+[Unit]
+Description=mesa-soporte: pgBackRest %i
+Requires=docker.service
+OnFailure=mesa-alert@%n.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/mesa/deployer.env
+Environment=COMPOSE_ENV_FILE=/opt/mesa/images.env
+ExecStart=/opt/mesa/scripts/backup.sh %i
+ExecStartPost=/opt/mesa/scripts/report.sh backup-ok 1
+ExecStopPost=/bin/sh -c '[ "$SERVICE_RESULT" = success ] || /opt/mesa/scripts/report.sh backup-ok 0'
+StandardOutput=append:/var/log/mesa/backup.log
+StandardError=append:/var/log/mesa/backup.log
+TimeoutStartSec=4h

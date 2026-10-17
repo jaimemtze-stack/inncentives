@@ -1,0 +1,15 @@
+[Unit]
+Description=mesa-soporte: daily age-encrypted dump to the immutable bucket
+Requires=docker.service
+OnFailure=mesa-alert@%n.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/mesa/deployer.env
+Environment=COMPOSE_ENV_FILE=/opt/mesa/images.env
+Environment=AGE_RECIPIENT_FILE=/opt/mesa/backup-age-recipient.txt
+ExecStart=/opt/mesa/scripts/dump-immutable.sh
+ExecStartPost=/opt/mesa/scripts/report.sh backup-ok 1
+ExecStopPost=/bin/sh -c '[ "$SERVICE_RESULT" = success ] || /opt/mesa/scripts/report.sh backup-ok 0'
+StandardOutput=append:/var/log/mesa/backup.log
+StandardError=append:/var/log/mesa/backup.log

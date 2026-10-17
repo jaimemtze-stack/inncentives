@@ -1,0 +1,10 @@
+[Unit]
+Description=mesa-soporte: weekly full backup (Sunday 02:00 Mexico City)
+
+[Timer]
+OnCalendar=Sun *-*-* 02:00:00 America/Mexico_City
+Persistent=true
+Unit=mesa-backup@full.service
+
+[Install]
+WantedBy=timers.target
