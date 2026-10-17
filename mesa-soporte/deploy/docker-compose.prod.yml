@@ -1,0 +1,195 @@
+# Production stack for the OCI Ampere A1 VM (2 OCPU / 12 GB, linux/arm64).
+# Images are pinned by digest in images.env (written by deployer.sh).
+# Secrets are files on a tmpfs written by secrets-sync.sh (/run/mesa/secrets).
+name: mesa
+
+x-hardening: &hardening
+  read_only: true
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: { max-size: "20m", max-file: "5" }
+
+x-app-env: &app-env
+  NODE_ENV: production
+  SECRETS_DIR: /run/secrets
+  LOG_LEVEL: info
+  PORTAL_HOST: ${PORTAL_HOST:?}
+  AGENT_HOST: ${AGENT_HOST:?}
+  PUBLIC_SCHEME: https
+  TRUST_PROXY: 172.30.15.10
+  TRUST_CF_CONNECTING_IP: "true"
+  STORAGE_DRIVER: oci
+  OCI_REGION: ${OCI_REGION:-mx-queretaro-1}
+  OCI_NAMESPACE: ${OCI_NAMESPACE:?}
+  OCI_BUCKET_ATTACHMENTS: ${OCI_BUCKET_ATTACHMENTS:-adjuntos}
+
+networks:
+  # cloudflared <-> web (Caddy) only; no route to the Internet.
+  edge:
+    internal: true
+    ipam: { config: [{ subnet: 172.30.10.0/24 }] }
+  # web (Caddy) <-> api only.
+  app:
+    internal: true
+    ipam: { config: [{ subnet: 172.30.15.0/24 }] }
+  # Data tier: no route to the Internet.
+  data:
+    internal: true
+    ipam: { config: [{ subnet: 172.30.20.0/24 }] }
+  # Services that need outbound access (Vault/Object Storage via the Service
+  # Gateway, Microsoft Graph, Cloudflare, ClamAV signature updates).
+  egress:
+    ipam: { config: [{ subnet: 172.30.30.0/24 }] }
+
+secrets:
+  database_url: { file: /run/mesa/secrets/database_url }
+  migrator_database_url: { file: /run/mesa/secrets/migrator_database_url }
+  redis_url: { file: /run/mesa/secrets/redis_url }
+  redis_password: { file: /run/mesa/secrets/redis_password }
+  field_encryption_keys: { file: /run/mesa/secrets/field_encryption_keys }
+  smtp_username: { file: /run/mesa/secrets/smtp_username }
+  smtp_password: { file: /run/mesa/secrets/smtp_password }
+  cloudflared_token: { file: /run/mesa/secrets/cloudflared_token }
+  postgres_superuser_password: { file: /run/mesa/secrets/postgres_superuser_password }
+  postgres_migrator_password: { file: /run/mesa/secrets/postgres_migrator_password }
+  postgres_app_password: { file: /run/mesa/secrets/postgres_app_password }
+  pgbackrest_s3_key: { file: /run/mesa/secrets/pgbackrest_s3_key }
+  pgbackrest_s3_key_secret: { file: /run/mesa/secrets/pgbackrest_s3_key_secret }
+  pgbackrest_cipher_pass: { file: /run/mesa/secrets/pgbackrest_cipher_pass }
+
+services:
+  cloudflared:
+    <<: *hardening
+    image: cloudflare/cloudflared:2025.10.0
+    command: ["tunnel", "--no-autoupdate", "--metrics", "127.0.0.1:20241", "run", "--token-file", "/run/secrets/cloudflared_token"]
+    user: "65532:65532"
+    secrets: [cloudflared_token]
+    networks: [edge, egress]
+    depends_on: [web]
+    mem_limit: 256m
+    pids_limit: 200
+
+  web:
+    <<: *hardening
+    image: ${IMAGE_WEB:?}
+    environment:
+      API_UPSTREAM: api:3000
+    tmpfs: ["/data:size=16m,uid=10001", "/config:size=4m,uid=10001", "/tmp:size=16m"]
+    networks:
+      edge: {}
+      app: { ipv4_address: 172.30.15.10 }
+    depends_on: [api]
+    mem_limit: 256m
+    pids_limit: 200
+
+  api:
+    <<: *hardening
+    image: ${IMAGE_API:?}
+    environment: *app-env
+    secrets: [database_url, redis_url, field_encryption_keys]
+    tmpfs: ["/tmp:size=64m"]
+    networks: [app, data, egress]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    mem_limit: 1g
+    pids_limit: 300
+
+  worker:
+    <<: *hardening
+    image: ${IMAGE_WORKER:?}
+    environment:
+      NODE_ENV: production
+      SECRETS_DIR: /run/secrets
+      MAIL_TRANSPORT: smtp
+      SMTP_HOST: ${SMTP_HOST:-smtp.office365.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_TLS: starttls
+      MAIL_FROM: ${MAIL_FROM:?}
+    secrets: [redis_url, smtp_username, smtp_password]
+    tmpfs: ["/tmp:size=32m"]
+    networks: [egress, data]
+    depends_on:
+      redis: { condition: service_healthy }
+    mem_limit: 512m
+    pids_limit: 200
+
+  # One-shot: `docker compose run --rm migrator` (deployer.sh does it).
+  migrator:
+    <<: *hardening
+    image: ${IMAGE_MIGRATOR:?}
+    restart: "no"
+    profiles: ["migrate"]
+    entrypoint: ["/nodejs/bin/node", "-e", "process.env.DATABASE_URL=require('fs').readFileSync('/run/secrets/migrator_database_url','utf8').trim();require('child_process').execFileSync('/nodejs/bin/node',['node_modules/prisma/build/index.js','migrate','deploy'],{stdio:'inherit'})"]
+    secrets: [migrator_database_url]
+    tmpfs: ["/tmp:size=64m"]
+    networks: [data]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  postgres:
+    image: ${IMAGE_POSTGRES:?}
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    # chown/setuid are needed by the entrypoint to drop to the postgres user.
+    cap_add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+    environment:
+      POSTGRES_DB: mesa
+      BACKUP_ENABLED: "true"
+      BACKUP_STANZA: mesa
+      BACKUP_S3_ENDPOINT: ${OCI_NAMESPACE:?}.compat.objectstorage.${OCI_REGION:-mx-queretaro-1}.oraclecloud.com
+      BACKUP_S3_BUCKET: ${BACKUP_BUCKET:-respaldos-pitr}
+      BACKUP_S3_REGION: ${OCI_REGION:-mx-queretaro-1}
+      BACKUP_RETENTION_DAYS: "35"
+      PG_SHARED_BUFFERS: 1GB
+      PG_EFFECTIVE_CACHE_SIZE: 3GB
+    secrets:
+      - postgres_superuser_password
+      - postgres_migrator_password
+      - postgres_app_password
+      - pgbackrest_s3_key
+      - pgbackrest_s3_key_secret
+      - pgbackrest_cipher_pass
+    volumes:
+      - /srv/mesa/pgdata:/var/lib/postgresql/data
+    tmpfs: ["/var/run/postgresql:size=8m,mode=2775"]
+    shm_size: 256m
+    # pgBackRest pushes WAL to Object Storage, so this service needs egress.
+    networks: [data, egress]
+    mem_limit: 3g
+    pids_limit: 400
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+
+  redis:
+    <<: *hardening
+    image: redis:7.4-alpine
+    user: "999:1000"
+    entrypoint: ["sh", "-c", "exec redis-server --requirepass \"$$(cat /run/secrets/redis_password)\" --appendonly yes --appendfsync everysec --maxmemory 384mb --maxmemory-policy noeviction --protected-mode yes --rename-command FLUSHALL '' --rename-command CONFIG ''"]
+    secrets: [redis_password]
+    volumes:
+      - /srv/mesa/redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [data]
+    mem_limit: 512m
+    pids_limit: 100
+
+  clamav:
+    <<: *hardening
+    image: clamav/clamav-debian:1.4
+    read_only: false
+    cap_add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE"]
+    volumes:
+      - /srv/mesa/clamav:/var/lib/clamav
+    networks: [data, egress]
+    mem_limit: 3g
+    pids_limit: 200
