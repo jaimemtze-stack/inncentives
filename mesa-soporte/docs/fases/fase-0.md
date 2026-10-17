@@ -29,7 +29,7 @@
 | Flujo real de correo (API → Redis → worker → SMTP → Mailpit) | ✅ enlace con token en el fragmento |
 | `backup-restore.test.sh` | ✅ respaldo completo + WAL cifrados a S3 con TLS, borrado "accidental", PITR exacto (500 filas antes / 0 después), volcado `age` ilegible sin llave, restauración en base nueva, se niega a sobrescribir |
 | `deployer.test.sh` / `secrets-sync.test.sh` | ✅ firmas obligatorias, *digests*, reversión automática, *tmpfs*, permisos 0400 |
-| `prod-stack.smoke.sh` (compose de producción con imágenes reales) | ✅ amd64 (ver §5 para arm64): CSP/HSTS, IP del cliente desde Cloudflare, aislamiento de redes, no-root/solo lectura/sin capabilities, sin secretos en el entorno, `app_rw` sin DDL ni UPDATE/DELETE en la bitácora |
+| `prod-stack.smoke.sh` (compose de producción con imágenes reales) | ✅ **amd64 y arm64** (las 5 imágenes compiladas para `linux/arm64` y ejecutadas bajo QEMU): CSP/HSTS, IP del cliente desde Cloudflare, aislamiento de redes, no-root/solo lectura/sin capabilities, sin secretos en el entorno, `app_rw` sin DDL ni UPDATE/DELETE en la bitácora |
 | Terraform `fmt` + `validate` (proveedor oracle/oci 9.10) | ✅ |
 | actionlint, shellcheck | ✅ |
 | gitleaks (historial y árbol) | ✅ sin fugas |
@@ -47,6 +47,7 @@
 5. **PostgreSQL arrancaba como root** (Trivy); ahora corre como uid 5432 con sistema de archivos de solo lectura.
 6. **Vulnerabilidades en dependencias e imágenes base:** se cambió a distroless Debian 13 y se actualizaron fastify, nodemailer y deepmerge-ts.
 7. **pgBackRest leía variables `PGBACKREST_*`** del entorno como opciones propias; se renombraron.
+8. **En arm64, `initdb` excedía el chequeo de salud** en el primer arranque; se agregó un periodo de gracia de 180 s.
 
 ## 4. Decisiones tomadas sin consulta (con ADR)
 
@@ -59,7 +60,7 @@
 
 | # | Tema | Acción requerida | Quién |
 |---|---|---|---|
-| 1 | **Prueba de humo arm64:** las imágenes compilan para arm64 bajo QEMU; el resultado de la prueba de humo con esas imágenes se anota abajo. En CI corre en cada *push* a `main` | Revisar el primer run del workflow | Neitek |
+| 1 | **ARM64 validado bajo emulación**, no en un Ampere real: la primera ejecución en la VM de OCI es la prueba definitiva | Verificar en el primer despliegue | Infra Neitek |
 | 2 | **Nada se ha aplicado en OCI ni en Cloudflare:** Claude Code no tiene credenciales, por diseño | Seguir `docs/despliegue.md` | Infra Neitek |
 | 3 | **El CI no ha corrido en GitHub todavía:** cada componente se validó localmente, pero las versiones de las acciones (v7, v8…) son más nuevas que las conocidas | Revisar el primer run y ajustar entradas si alguna acción cambió | Neitek / fase 1 |
 | 4 | **TLS hacia PostgreSQL sin verificación de certificado**, dentro de la red Docker interna | Aceptado; mejorar con una CA propia | Fase 2 |
