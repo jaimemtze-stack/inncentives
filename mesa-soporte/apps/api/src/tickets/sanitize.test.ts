@@ -8,7 +8,8 @@ describe('sanitizeHtml', () => {
       '<p onclick="x()">Hola<script>alert(1)</script><style>p{}</style></p>' +
         '<a href="javascript:alert(1)">x</a><img src="https://evil.test/p.gif"><iframe src="x"></iframe>',
     );
-    expect(out).not.toMatch(/script|onclick|style|javascript|evil|iframe/);
+    expect(out).not.toMatch(/script|onclick|style|javascript|iframe| src="https/);
+    expect(out).toContain('data-remote-src="https://evil.test/p.gif"');
     expect(out).toContain('<p>Hola</p>');
   });
 

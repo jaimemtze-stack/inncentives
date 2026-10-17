@@ -30,6 +30,7 @@
     "ioredis": "5.11.1",
     "libphonenumber-js": "1.13.15",
     "mailparser": "3.9.40",
+    "nodemailer": "10.1.2",
     "oci-common": "2.143.0",
     "oci-objectstorage": "2.143.0",
     "otplib": "12.0.1",
@@ -39,6 +40,7 @@
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "sanitize-html": "2.18.1",
+    "sharp": "0.35.5",
     "zod": "3.25.76"
   },
   "devDependencies": {
@@ -46,6 +48,7 @@
     "@swc/core": "1.16.18",
     "@types/mailparser": "3.9.0",
     "@types/node": "22.20.5",
+    "@types/nodemailer": "8.0.2",
     "@types/sanitize-html": "2.16.2",
     "tsx": "4.23.15",
     "unplugin-swc": "1.6.0",

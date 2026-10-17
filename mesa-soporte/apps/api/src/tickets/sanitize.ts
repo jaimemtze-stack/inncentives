@@ -4,7 +4,7 @@ import sanitize from 'sanitize-html';
  * Allow-list HTML sanitiser for article bodies (e-mail, portal, agent
  * replies). Scripts, styles, event handlers, forms, iframes and remote images
  * are dropped; links get rel="noopener noreferrer nofollow". Inline images are
- * only kept as cid: references, which the API rewrites to attachment URLs.
+ * kept as cid: references, which the API rewrites to attachment URLs.
  */
 const OPTIONS: sanitize.IOptions = {
   allowedTags: [
@@ -43,7 +43,7 @@ const OPTIONS: sanitize.IOptions = {
   ],
   allowedAttributes: {
     a: ['href', 'title'],
-    img: ['src', 'alt', 'width', 'height'],
+    img: ['src', 'alt', 'width', 'height', 'data-remote-src'],
     td: ['colspan', 'rowspan'],
     th: ['colspan', 'rowspan'],
   },
@@ -53,6 +53,14 @@ const OPTIONS: sanitize.IOptions = {
   disallowedTagsMode: 'discard',
   nonTextTags: ['style', 'script', 'textarea', 'option', 'noscript', 'title', 'head'],
   transformTags: {
+    // Remote images are blocked by default (tracking pixels, IP leaks): the
+    // URL moves to data-remote-src and the UI loads it only on request.
+    img: (tagName, attribs) => {
+      const { src, ...rest } = attribs;
+      if (src && /^https?:\/\//i.test(src))
+        return { tagName, attribs: { ...rest, 'data-remote-src': src.slice(0, 2000) } };
+      return { tagName, attribs: src ? { ...rest, src } : rest };
+    },
     a: (tagName, attribs) => ({
       tagName,
       attribs: { ...attribs, rel: 'noopener noreferrer nofollow', target: '_blank' },

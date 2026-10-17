@@ -7,7 +7,7 @@ import { vi } from 'vitest';
 import { createApp } from '../src/bootstrap';
 import { MailService } from '../src/mail/mail.service';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { OutboundService } from '../src/queue/outbound.service';
+import { JobQueuesService, type WebhookJob } from '../src/queue/job-queues.service';
 
 export const PORTAL = 'soporte.test';
 export const AGENT = 'agentes.soporte.test';
@@ -19,6 +19,9 @@ export interface TestApp {
   mails: MailJob[];
   /** Article ids queued for outbound e-mail. */
   outbound: string[];
+  webhooks: WebhookJob[];
+  /** Attachment ids queued for scanning. */
+  scans: string[];
   close(): Promise<void>;
 }
 
@@ -30,10 +33,27 @@ export async function startApp(): Promise<TestApp> {
     mails.push(job);
   });
   const outbound: string[] = [];
-  vi.spyOn(app.get(OutboundService), 'enqueue').mockImplementation(async (id: string) => {
+  const webhooks: WebhookJob[] = [];
+  const scans: string[] = [];
+  const queues = app.get(JobQueuesService);
+  vi.spyOn(queues, 'outbound').mockImplementation(async (id: string) => {
     outbound.push(id);
   });
-  return { app, prisma: app.get(PrismaService), mails, outbound, close: () => app.close() };
+  vi.spyOn(queues, 'webhook').mockImplementation(async (job) => {
+    webhooks.push(job);
+  });
+  vi.spyOn(queues, 'scan').mockImplementation(async (id: string) => {
+    scans.push(id);
+  });
+  return {
+    app,
+    prisma: app.get(PrismaService),
+    mails,
+    outbound,
+    webhooks,
+    scans,
+    close: () => app.close(),
+  };
 }
 
 export function uniqueEmail(prefix: string): string {

@@ -273,17 +273,18 @@ model TicketPriority {
 }
 
 model BusinessCalendar {
-  id              String   @id @default(uuid()) @db.Uuid
-  name            String   @unique @db.VarChar(120)
-  timezone        String   @db.VarChar(64)
+  id              String      @id @default(uuid()) @db.Uuid
+  name            String      @unique @db.VarChar(120)
+  timezone        String      @db.VarChar(64)
   /// {"1":[["09:00","18:30"]], …} — 0 = Sunday.
   hours           Json
-  holidays        String[] @default([])
-  mexicoStatutory Boolean  @default(true) @map("mexico_statutory")
-  isDefault       Boolean  @default(false) @map("is_default")
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  holidays        String[]    @default([])
+  mexicoStatutory Boolean     @default(true) @map("mexico_statutory")
+  isDefault       Boolean     @default(false) @map("is_default")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
   slas            Sla[]
+  schedulers      Scheduler[]
 
   @@map("business_calendars")
 }
@@ -647,16 +648,19 @@ model Trigger {
 }
 
 model Scheduler {
-  id              String    @id @default(uuid()) @db.Uuid
-  name            String    @unique @db.VarChar(120)
+  id              String            @id @default(uuid()) @db.Uuid
+  name            String            @unique @db.VarChar(120)
   conditions      Json
   actions         Json
-  intervalMinutes Int       @default(60) @map("interval_minutes")
-  limitPerRun     Int       @default(500) @map("limit_per_run")
-  lastRunAt       DateTime? @map("last_run_at") @db.Timestamptz(3)
-  active          Boolean   @default(true)
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  intervalMinutes Int               @default(60) @map("interval_minutes")
+  /// Only runs inside this calendar's business hours when set.
+  calendarId      String?           @map("calendar_id") @db.Uuid
+  calendar        BusinessCalendar? @relation(fields: [calendarId], references: [id], onDelete: SetNull)
+  limitPerRun     Int               @default(500) @map("limit_per_run")
+  lastRunAt       DateTime?         @map("last_run_at") @db.Timestamptz(3)
+  active          Boolean           @default(true)
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("schedulers")
 }
@@ -826,4 +830,21 @@ model AppSetting {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("app_settings")
+}
+
+/// Outgoing webhook called by trigger actions (HTTPS only, signed with HMAC).
+model Webhook {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @unique @db.VarChar(120)
+  url          String    @db.VarChar(500)
+  /// HMAC-SHA256 signing secret, encrypted with the field encryption key.
+  secretEnc    String?   @map("secret_enc") @db.Text
+  active       Boolean   @default(true)
+  lastStatus   Int?      @map("last_status")
+  lastError    String?   @map("last_error") @db.VarChar(500)
+  lastCalledAt DateTime? @map("last_called_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("webhooks")
 }

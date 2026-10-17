@@ -13,7 +13,10 @@ type LimiterName =
   | 'forgotIp'
   | 'forgotAccount'
   | 'tokenIp'
-  | 'reauth';
+  | 'reauth'
+  | 'upload'
+  | 'sensitiveCheck'
+  | 'download';
 
 /**
  * Progressive throttling for authentication endpoints (ASVS 2.2.1). Keys that
@@ -41,6 +44,9 @@ export class RateLimitService {
       forgotAccount: make('forgot_acct', 3, 3600),
       tokenIp: make('token_ip', 30, 3600),
       reauth: make('reauth', 5, 15 * 60, 15 * 60),
+      upload: make('upload', 120, 3600),
+      sensitiveCheck: make('sensitive_check', 600, 3600),
+      download: make('download', 600, 3600),
     };
   }
 

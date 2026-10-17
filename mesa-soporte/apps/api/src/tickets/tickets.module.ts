@@ -4,7 +4,7 @@ import { TriggersService } from '../automation/triggers.service';
 import { WorkflowsService } from '../automation/workflows.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { OverviewsService } from '../overviews/overviews.service';
-import { OutboundService } from '../queue/outbound.service';
+import { JobQueuesService } from '../queue/job-queues.service';
 import { TicketAccessService } from './access.service';
 import { FormService } from './form.service';
 import { MacrosService } from './macros.service';
@@ -25,8 +25,8 @@ import { TicketsController } from './tickets.controller';
     TriggersService,
     WorkflowsService,
     NotificationsService,
-    OutboundService,
+    JobQueuesService,
   ],
-  exports: [TicketAccessService, TicketService, SlaService, NotificationsService, OutboundService],
+  exports: [TicketAccessService, TicketService, SlaService, NotificationsService, JobQueuesService],
 })
 export class TicketsModule {}

@@ -38,6 +38,11 @@ const EnvSchema = z.object({
   OCI_NAMESPACE: z.string().optional(),
   OCI_BUCKET_ATTACHMENTS: z.string().default('adjuntos'),
   APP_NAME: z.string().default('Soporte Inncentives'),
+  ATTACHMENT_MAX_MB: z.coerce.number().int().min(1).max(100).default(25),
+  EMAIL_MAX_MB: z.coerce.number().int().min(1).max(150).default(40),
+  /** clamd host; without it attachments stay unscanned (never downloadable in production). */
+  CLAMAV_HOST: z.string().optional(),
+  CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

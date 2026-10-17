@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import fastifyCookie from '@fastify/cookie';
 import fastifyHelmet from '@fastify/helmet';
+import fastifyMultipart from '@fastify/multipart';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import type { ApiErrorBody, ErrorCode } from '@mesa/shared';
@@ -64,6 +65,15 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestF
 
   const fastify = app.getHttpAdapter().getInstance();
   await fastify.register(fastifyCookie);
+  await fastify.register(fastifyMultipart, {
+    limits: {
+      fileSize: config.ATTACHMENT_MAX_MB * 1024 * 1024,
+      files: 1,
+      fields: 0,
+      parts: 1,
+      headerPairs: 50,
+    },
+  });
   await fastify.register(fastifyHelmet, {
     contentSecurityPolicy: {
       useDefaults: false,

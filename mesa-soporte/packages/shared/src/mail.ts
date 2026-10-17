@@ -1,7 +1,16 @@
 /** Queue shared by the API (producer) and the worker (consumer). */
 export const MAIL_QUEUE = 'mail';
-/** Outbound ticket e-mail (one job per article), processed by the jobs service. */
-export const OUTBOUND_QUEUE = 'outbound';
+/** Queues processed by the jobs service (same code base as the API). */
+export const JobQueues = {
+  /** Outbound ticket e-mail, one job per article. */
+  outbound: 'outbound',
+  /** Trigger webhooks. */
+  webhooks: 'webhooks',
+  /** Antivirus and sensitive-data scan of new attachments. */
+  scan: 'scan',
+  /** Periodic work: mail fetch, SLA checks, schedulers, retention. */
+  maintenance: 'maintenance',
+} as const;
 
 export type MailJob =
   | {

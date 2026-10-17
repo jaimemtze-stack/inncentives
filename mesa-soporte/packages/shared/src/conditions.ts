@@ -313,6 +313,7 @@ export const ActionSchema = z.discriminatedUnion('type', [
     })
     .strict(),
   z.object({ type: z.literal('add_note'), body: z.string().min(1).max(5000) }).strict(),
+  z.object({ type: z.literal('webhook'), webhookId: z.string().uuid() }).strict(),
   z
     .object({
       type: z.literal('reply_customer'),

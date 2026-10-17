@@ -225,10 +225,14 @@ const columnMap: Record<string, keyof Prisma.TicketWhereInput> = {
   'ticket.sensitive_data': 'sensitiveData',
 };
 
-function leafToWhere(
-  c: LeafCondition,
-  opts: { currentUserId?: string; now?: Date },
-): Prisma.TicketWhereInput {
+export interface WhereOptions {
+  currentUserId?: string;
+  /** Out-of-office agents the current user stands in for ("current_user" also matches them). */
+  standInFor?: string[];
+  now?: Date;
+}
+
+function leafToWhere(c: LeafCondition, opts: WhereOptions): Prisma.TicketWhereInput {
   const resolveV = (v: unknown) =>
     v === CURRENT_USER ? (opts.currentUserId ?? '00000000-0000-0000-0000-000000000000') : v;
   const value = Array.isArray(c.value) ? c.value.map(resolveV) : resolveV(c.value);
@@ -271,6 +275,14 @@ function leafToWhere(
   }
   const col = columnMap[c.field];
   if (!col) throw new Error(`Field ${c.field} is not queryable`);
+  if (
+    c.value === CURRENT_USER &&
+    opts.standInFor?.length &&
+    (c.operator === 'is' || c.operator === 'is_not')
+  ) {
+    const ids = { in: [value as string, ...opts.standInFor] };
+    return c.operator === 'is' ? { [col]: ids } : { NOT: { [col]: ids } };
+  }
   const text = (filter: Record<string, unknown>) => ({ [col]: { ...filter, mode: 'insensitive' } });
   switch (c.operator) {
     case 'is':
@@ -309,7 +321,7 @@ function leafToWhere(
 /** Translates a (validated, queryable) condition into a Prisma where clause. */
 export function toTicketWhere(
   node: ConditionNode | null | undefined,
-  opts: { currentUserId?: string; now?: Date } = {},
+  opts: WhereOptions = {},
 ): Prisma.TicketWhereInput {
   if (!node) return {};
   if (isGroup(node)) {
