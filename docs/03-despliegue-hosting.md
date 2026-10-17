@@ -1,5 +1,7 @@
 # Despliegue de la mesa de soporte: opción de hospedaje, acceso y seguridad
 
+> **Decisión (17 de octubre de 2026):** Neitek eligió **Oracle Cloud (OCI), región Querétaro, con recursos *Always Free*** (sección 6.1). La arquitectura final está en la sección 2.1 del prompt (`02-prompt-mesa-soporte.md`). Las secciones 2–5 y el documento `04-azure-optimizado.md` quedan como análisis de alternativas.
+
 > Precios de referencia consultados en octubre de 2026, en USD/mes, antes de impuestos. Casi todos vienen de rastreadores de precios de terceros. **Confírmalos en la calculadora de cada proveedor antes de contratar.**
 
 ## 1. Supuestos de dimensionamiento

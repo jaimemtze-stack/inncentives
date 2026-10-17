@@ -17,6 +17,8 @@ Reglas de trabajo:
 5. **La seguridad no es una fase.** Los requisitos de la sección 5 aplican desde el primer commit, y cada endpoint nuevo lleva sus pruebas de autorización.
 6. **No inventes requisitos de negocio.** Si algo no está aquí ni tiene un valor por defecto, elige la opción más simple y segura, hazla configurable y documéntala.
 7. **Idiomas:** el código, los identificadores y los comentarios van en inglés. La interfaz va en **español (México) e inglés**, con español por defecto. La documentación del proyecto va en español.
+8. **Nunca apliques cambios a infraestructura real.** Escribes y validas la infraestructura como código (sección 2.1), pero no tienes credenciales de nube y no debes pedirlas. Una persona de Neitek ejecuta el aprovisionamiento siguiendo `docs/despliegue.md`.
+9. **Al terminar una fase, detente** y deja en `docs/fases/fase-N.md` un resumen para revisión humana. No empieces la siguiente fase sin aprobación explícita.
 
 ---
 
@@ -49,22 +51,95 @@ El criterio es **seguridad + bajo costo de operación + portabilidad**. Usa este
 | Colas y tiempo real | Redis 7 + BullMQ; Socket.IO con adaptador Redis | Jobs de correo, SLAs, planificadores, escaneo de adjuntos; presencia y colisión. |
 | Frontend | React 18 + Vite + TanStack Router/Query + Tailwind + shadcn/ui + i18next | SPA ligera; una sola app con áreas separadas para agentes, clientes y administración. |
 | Editor | TipTap con sanitización en el servidor | Texto enriquecido seguro. |
-| Archivos | Almacenamiento compatible con S3 (MinIO en local; en producción Azure Blob, Cloudflare R2 o similar) | Barato y portable. |
-| Antimalware | ClamAV (contenedor `clamd`) | Escaneo de todos los adjuntos. |
+| Archivos | Interfaz `StorageProvider` con dos adaptadores: **S3** (MinIO en local y pruebas) y **OCI Object Storage nativo** (SDK de OCI con *instance principals*, sin llaves) en producción | Producción sin credenciales de larga duración; local y CI sin depender de la nube. |
+| Secretos | Interfaz `SecretsProvider`: la app **solo lee archivos** en `/run/secrets` (Docker secrets). En producción, un servicio del host (`secrets-sync`) los obtiene de **OCI Vault** con *instance principals* y los escribe en `tmpfs` | La app no depende del proveedor de secretos y nunca recibe secretos por variables de entorno. |
+| Antimalware | ClamAV (contenedor `clamd`; usar una imagen con soporte `linux/arm64`, como `clamav/clamav-debian`, y verificarlo en la fase 0) | Escaneo de todos los adjuntos. |
 | Correo | Microsoft Graph API sobre un buzón de Microsoft 365 (entrada y salida), con una interfaz de adaptadores para IMAP/SMTP | El buzón de soporte todavía no existe; aún así, el desarrollo y las pruebas no deben depender de él (usa Mailpit en local). |
 | Pruebas | Vitest (unidad), Supertest (API), Playwright (E2E), Testcontainers (integración con Postgres/Redis) | — |
 | Observabilidad | Logs JSON estructurados (pino), OpenTelemetry, endpoint `/health` y `/ready` | — |
-| Empaquetado | Docker multi-stage con imágenes no-root y distroless/slim; `docker-compose.yml` para local y para un despliegue en una sola VM | — |
+| Empaquetado | Docker multi-stage con imágenes no-root y distroless/slim, **multi-arquitectura (`linux/amd64` y `linux/arm64`)**, firmadas con cosign y con SBOM; `docker-compose.yml` para local y `docker-compose.prod.yml` para el servidor | Producción corre en ARM (Ampere A1); los desarrolladores pueden estar en x86. |
+| Infraestructura como código | Terraform con el provider `oci`; cloud-init para el servidor; scripts de operación en `deploy/` (Bash con `set -euo pipefail`, validados con shellcheck) | Reproducible: el servidor se puede reconstruir desde cero. |
+| Respaldos | pgBackRest (PITR con WAL continuo) + volcado diario cifrado a un bucket inmutable | Restauración a un punto en el tiempo y protección contra ransomware. |
 
-**Despliegue objetivo (ver `03-despliegue-hosting.md`; documentarlo en `docs/despliegue.md`):**
+**Requisitos de la app derivados del despliegue:**
 
-- **Producción:** Azure, región Mexico Central. Una VM Linux (2 vCPU, 8 GB) con Docker Compose para api, web, worker, Redis y ClamAV; Azure Database for PostgreSQL Flexible Server con acceso privado (o PostgreSQL en contenedor si el servicio no está disponible en la región); Blob Storage para adjuntos y respaldos; Key Vault con Managed Identity.
-- **Entrada:** Cloudflare (WAF, DDoS, TLS) mediante Cloudflare Tunnel, sin puertos entrantes en la VM. El área de agentes y admin se protege además con Cloudflare Access (Entra ID).
-- **Requisito derivado:** la app debe poder servir el **portal de clientes y el área de agentes/admin en hosts distintos** (por ejemplo `soporte.` y `agentes.soporte.`), con cookies separadas por host. Los endpoints de agentes y admin solo responden en su host, y los webhooks entrantes van bajo `/hooks/*`.
-- **Almacenamiento y secretos:** adaptadores para Azure Blob Storage y Key Vault con Managed Identity (sin claves compartidas). MinIO y archivos de secretos se usan en local.
-- **Portabilidad:** mantén la app portable (Docker Compose funciona en cualquier VM) para poder moverla a Azure Container Apps si el volumen crece.
+- Servir el **portal de clientes y el área de agentes/admin en hosts distintos** (configurables, por ejemplo `soporte.inncentives.com` y `agentes.soporte.inncentives.com`), con cookies separadas por host. Los endpoints de agentes y admin solo responden en su host.
+- Los webhooks entrantes van bajo `/hooks/*` (el proxy de entrada los excluye de la autenticación de red y los protege con WAF y firma).
+- Confiar en la IP del cliente solo desde la cabecera `CF-Connecting-IP` y solo si la petición llega por el túnel (configurable), para que el *rate limiting* y la auditoría usen la IP real.
+- Todo debe funcionar en ARM64.
 
-La aplicación sigue los principios *12-factor*: toda la configuración va por variables de entorno y los secretos se leen de un proveedor de secretos (archivo montado, Docker secrets o Key Vault), nunca del repositorio.
+La aplicación sigue los principios *12-factor*: toda la configuración va por variables de entorno y los secretos se leen de un proveedor de secretos como archivos montados (Docker secrets; en producción vienen de OCI Vault), nunca de variables de entorno ni del repositorio.
+
+### 2.1 Infraestructura de producción: Oracle Cloud (OCI), región México
+
+Decisión tomada por Neitek: **OCI en la región Querétaro (`mx-queretaro-1`)**, o Monterrey si no hay capacidad, aprovechando los recursos *Always Free* para un costo de ~$5–15 USD/mes. La cuenta es de **pago por uso** (*Pay As You Go*) con presupuesto y alertas, para que Oracle no reclame recursos inactivos. Si Oracle retira el *Always Free*, la misma arquitectura cuesta ~$30–40 USD/mes, sin cambios de código.
+
+Arquitectura:
+
+```
+ soporte.inncentives.com (clientes)        agentes.soporte.inncentives.com (Neitek)
+              │                                          │
+ ┌──────────────────────────────── Cloudflare ─────────────────────────────────┐
+ │ DNS · TLS · WAF · DDoS · rate limiting · Access (Entra ID) para agentes y SSH │
+ └───────────────────────────────────┬─────────────────────────────────────────┘
+                                     │ Cloudflare Tunnel (conexión saliente)
+ ┌──────────── OCI · mx-queretaro-1 · compartimento "soporte-prod" ─────────────┐
+ │ VCN · subred PRIVADA (sin IP pública)                                         │
+ │  NAT Gateway (salida a Internet) · Service Gateway (Object Storage y Vault)    │
+ │  ┌──── VM.Standard.A1.Flex · 2 OCPU · 12 GB · Ubuntu 24.04 aarch64 ────────┐  │
+ │  │ cloudflared · caddy · web · api · worker · redis · clamav · postgres    │  │
+ │  │ pgbackrest · secrets-sync · deployer   (cloud-init + Docker Compose)    │  │
+ │  │ Volumen de arranque 50 GB · volumen de bloque 100 GB para PostgreSQL     │  │
+ │  └─────────────────────────────────────────────────────────────────────────┘  │
+ │  Buckets: adjuntos (versionado) · respaldos-pitr (versionado)                 │
+ │           respaldos-inmutables (retention rule, bloqueada por una persona)    │
+ │  Vault (llave maestra en HSM + secretos) · Bastion · Cloud Guard ·            │
+ │  Security Zone · Logging · Monitoring/Alarms · Notifications · Budgets        │
+ └──────────────────────────────────────────────────────────────────────────────┘
+```
+
+Entregables de infraestructura en el repositorio (fase 0):
+
+1. **`infra/terraform/`** (provider `oci`, versiones fijadas):
+   - Compartimento, VCN, subred privada, NAT Gateway, Service Gateway, tablas de rutas y **NSG sin ninguna regla de entrada** salvo SSH desde la IP privada de OCI Bastion.
+   - Instancia `VM.Standard.A1.Flex` (2 OCPU, 12 GB) dentro de los límites *Always Free*, con volumen de bloque separado para los datos de PostgreSQL, cifrado en tránsito del volumen y *Secure Boot* si la imagen lo admite.
+   - **Vault** con una llave maestra en HSM, secretos vacíos (los valores los carga una persona, nunca Terraform) y los buckets cifrados con esa llave.
+   - Buckets privados: `adjuntos` (versionado), `respaldos-pitr` (versionado) y `respaldos-inmutables` con una *retention rule* de 30 días **sin bloquear** (bloquearla es un paso manual documentado, posterior a la primera prueba de restauración). Política de ciclo de vida para borrar respaldos después de 90 días.
+   - **Dynamic group** de la instancia y políticas IAM de mínimo privilegio: leer solo sus secretos, leer/escribir objetos solo en sus buckets, crear objetos (sin borrar ni sobrescribir) en `respaldos-inmutables`, y nada más.
+   - Grupos IAM `soporte-infra` y `soporte-auditoria`, preparados para federarse con Microsoft Entra ID.
+   - OCI Bastion, Cloud Guard (objetivo sobre el compartimento), Security Zone con la receta recomendada, Vulnerability Scanning, Logging (agente unificado), alarmas de Monitoring, *topic* de Notifications (por correo al canal de Teams) y **Budget con alertas** al 50 %, 80 % y 100 % de un monto configurable.
+   - *Backend* remoto del estado en un bucket de OCI con versionado; el estado nunca va al repositorio.
+   - Valida con `terraform fmt -check`, `terraform validate`, `tflint` y un escaneo de configuración (Trivy o Checkov) en CI. **No ejecutes `apply`.**
+2. **`infra/cloud-init/`**: Docker y Compose, `ufw` (entrada denegada), `unattended-upgrades` (solo seguridad), `auditd`, endurecimiento CIS nivel 1 donde no rompa nada, OCI CLI, montaje del volumen de datos, usuarios Linux sin contraseña, `sshd` solo con certificados firmados por la CA de Cloudflare Access, y las unidades de systemd de `secrets-sync`, `deployer` y los respaldos.
+3. **`deploy/`**:
+   - `docker-compose.prod.yml`: imágenes por *digest*, `read_only`, `no-new-privileges`, límites de memoria por servicio (en total < 11 GB), redes internas, solo `cloudflared` con salida al exterior, PostgreSQL sin puertos publicados, secretos como Docker secrets.
+   - `secrets-sync`: obtiene los secretos de OCI Vault con *instance principals* y los escribe en `tmpfs` con permisos `0400`.
+   - `deployer` (*pull-based*, sin credenciales de nube en GitHub): un *timer* lee el manifiesto de la versión aprobada, verifica la firma cosign de cada imagen contra la identidad del workflow de GitHub, hace respaldo previo, ejecuta migraciones con el usuario de migraciones, levanta la nueva versión, espera `/ready` y, si falla, **revierte** a los *digests* anteriores. El token de lectura del registro de imágenes vive en Vault.
+   - **pgBackRest**: repositorio en `respaldos-pitr` vía la API compatible con S3 de OCI (requiere una *Customer Secret Key* de un usuario de servicio limitado a ese bucket, guardada en Vault y con rotación cada 90 días). Completo semanal, diferencial diario, WAL continuo (`archive_timeout=60s`), cifrado del lado del cliente, retención de 35 días y `pgbackrest check` cada hora.
+   - **Volcado inmutable**: `pg_dump` diario cifrado con `age` (llave pública en el servidor; la privada fuera del servidor) subido con nombre único a `respaldos-inmutables`. Nunca se sobrescribe, así que es compatible con la *retention rule*.
+   - `restore.sh` y `docs/runbooks/restauracion.md`: restauración completa y a un punto en el tiempo.
+4. **Prueba automática de respaldo y restauración en CI**: con Docker Compose y MinIO como sustituto de Object Storage, crear datos → respaldar → destruir → restaurar a un punto en el tiempo → verificar. Así los scripts se prueban sin nube.
+5. **`docs/despliegue.md`**: guía paso a paso para la persona que aprovisiona:
+   - crear la cuenta de pago con región de origen Querétaro;
+   - comprobar la capacidad de Ampere A1;
+   - federar OCI con Entra ID;
+   - `terraform apply`;
+   - cargar los secretos;
+   - configurar Cloudflare (Tunnel, WAF, Access con Entra ID para agentes y SSH);
+   - crear el buzón `soporte@` en Microsoft 365, con el registro de aplicación acotado a ese buzón mediante *RBAC for Applications* de Exchange Online y SPF/DKIM/DMARC;
+   - primer despliegue;
+   - prueba de restauración;
+   - **bloqueo** de la *retention rule*.
+
+Accesos:
+
+| Quién | Cómo |
+|---|---|
+| Clientes | `soporte.` público detrás de Cloudflare WAF; la app exige su cuenta por invitación + MFA |
+| Agentes y admins | `agentes.` detrás de **Cloudflare Access** (Entra ID con MFA) **y además** el login de la app |
+| Operadores de infraestructura | SSH vía Cloudflare Access con certificados de corta duración; emergencia: OCI Bastion (sesión con caducidad) o consola serie. Consola de OCI federada con Entra ID |
+| La app y el servidor | *Instance principals* (sin llaves) para Vault y Object Storage; la única llave de larga duración es la del usuario de servicio de pgBackRest, acotada a un bucket y rotada cada 90 días |
+| GitHub | Ninguna credencial de OCI: solo publica imágenes firmadas y el manifiesto; el servidor jala la versión |
 
 ---
 
@@ -284,7 +359,8 @@ Referencia: **OWASP ASVS 4.0 nivel 2** y los controles de ISO 27001:2022 Anexo A
 - TLS 1.2+ (preferible 1.3) en todo el tráfico externo; entre servicios internos, TLS o red privada aislada.
 - Cifrado en reposo del disco, de la base de datos y del almacenamiento de objetos. Cifrado a nivel de campo (AES-256-GCM, con llave de un proveedor de secretos) para secretos de integraciones, semillas TOTP y tokens de terceros.
 - Tokens de API guardados como hash, mostrados una sola vez, con *scopes*, expiración obligatoria y fecha de último uso.
-- Ningún secreto en el repositorio, en imágenes Docker ni en logs. Escaneo de secretos en CI (gitleaks).
+- Ningún secreto en el repositorio, en imágenes Docker, en variables de entorno, en el estado de Terraform ni en logs. Escaneo de secretos en CI (gitleaks).
+- En producción, los secretos viven en OCI Vault (llave maestra en HSM) y llegan a la app como archivos en `tmpfs` (sección 2.1). Los buckets y volúmenes se cifran con la llave del Vault.
 
 ### 5.9 Auditoría y registros
 
@@ -295,14 +371,17 @@ Referencia: **OWASP ASVS 4.0 nivel 2** y los controles de ISO 27001:2022 Anexo A
 
 ### 5.10 Disponibilidad y continuidad
 
-- Respaldos automáticos cifrados de PostgreSQL y del almacenamiento de objetos, fuera del servidor, con retención configurable y un **script de restauración probado** en CI o en un procedimiento documentado.
-- Objetivos iniciales: RPO ≤ 24 h y RTO ≤ 8 h (a confirmar).
+- Respaldos automáticos cifrados de PostgreSQL fuera del servidor: pgBackRest con restauración a un punto en el tiempo (35 días) y un volcado diario en un bucket inmutable (90 días). Los adjuntos viven en Object Storage con versionado, fuera del servidor.
+- **Script de restauración probado automáticamente en CI** (sección 2.1, punto 4) y prueba real trimestral documentada.
+- Objetivos: RPO ≤ 5 min (WAL continuo; ≤ 24 h en el peor caso, restaurando desde el bucket inmutable) y RTO ≤ 4 h (reconstrucción del servidor con Terraform y cloud-init + restauración).
 - *Health checks*, reinicio automático de contenedores y alertas básicas (caída del servicio, cola de correo atascada, fallos de escaneo, espacio en disco).
 
 ### 5.11 Ciclo de desarrollo seguro
 
 - CI (GitHub Actions o Azure Pipelines; dejar GitHub Actions por defecto): lint, typecheck, pruebas, cobertura mínima del 80 % en `packages/shared` y en los servicios de autorización/SLA, SAST (Semgrep o CodeQL), auditoría de dependencias (`pnpm audit` + Dependabot/Renovate), escaneo de secretos (gitleaks), escaneo de imágenes (Trivy), y DAST básico (OWASP ZAP baseline) contra el entorno de pruebas en fase 2.
 - Dependencias fijadas por *lockfile*; contenedores no-root, sistema de archivos de solo lectura donde sea posible y sin capacidades extra.
+- Imágenes multi-arquitectura (`amd64` + `arm64`) firmadas con cosign (*keyless*, identidad OIDC del workflow) y con SBOM adjunto. Producción solo acepta imágenes firmadas por el workflow de `main`.
+- Infraestructura como código revisada en CI: `terraform validate`, `tflint`, escaneo de configuración (Trivy/Checkov) y `shellcheck` para los scripts de `deploy/`.
 - `SECURITY.md` con el proceso de reporte de vulnerabilidades y `docs/seguridad/respuesta-incidentes.md` con el procedimiento de incidentes y la notificación a afectados según la ley.
 - Modelo de amenazas (STRIDE) en `docs/seguridad/modelo-amenazas.md`, actualizado al final de cada fase.
 
@@ -320,10 +399,14 @@ Referencia: **OWASP ASVS 4.0 nivel 2** y los controles de ISO 27001:2022 Anexo A
 
 ### Fase 0: Cimientos (antes de cualquier funcionalidad)
 
-- Monorepo, Docker Compose local (Postgres, Redis, MinIO, ClamAV, Mailpit), CI completo de la sección 5.11, convenciones de código.
+- Monorepo, Docker Compose local (Postgres, Redis, MinIO, ClamAV, Mailpit), CI completo de la sección 5.11 con imágenes `amd64`/`arm64` firmadas, convenciones de código.
 - Módulos transversales: configuración, logger con redacción, manejo de errores, validación, *policy service* de autorización, auditoría, i18n, *seeding* de datos de demostración.
+- Adaptadores de infraestructura: `StorageProvider` (S3/MinIO y OCI nativo con *instance principals*) y `SecretsProvider` (archivos), con pruebas.
+- Hosts separados para portal de clientes y área de agentes/admin, y manejo de `CF-Connecting-IP`.
 - Autenticación local + TOTP + sesiones + invitaciones + recuperación de contraseña.
-- ADRs iniciales, `docs/PROGRESO.md`, modelo de amenazas inicial.
+- **Infraestructura de OCI como código, cloud-init, `deploy/` (compose de producción, `secrets-sync`, `deployer` con verificación de firmas y *rollback*, pgBackRest, volcado inmutable, restauración) y la prueba automática de respaldo/restauración en CI** (sección 2.1).
+- `docs/despliegue.md` y runbooks (restauración, rotación de secretos, respuesta a incidentes).
+- ADRs iniciales, `docs/PROGRESO.md`, modelo de amenazas inicial (incluida la infraestructura).
 
 ### Fase 1: MVP
 
@@ -389,6 +472,13 @@ Una fase está terminada cuando:
 4. `docs/PROGRESO.md`, la matriz ASVS, el modelo de amenazas y los ADRs están actualizados.
 5. Existe un resumen de la fase en `docs/fases/fase-N.md` con lo entregado, lo que quedó fuera y los riesgos conocidos.
 
+Además, para la **fase 0**:
+
+6. Las imágenes se construyen y arrancan en `linux/arm64` (al menos una prueba de humo bajo emulación o en un *runner* ARM).
+7. Terraform pasa `fmt`, `validate`, `tflint` y el escaneo de configuración sin hallazgos altos; los scripts pasan `shellcheck`.
+8. La prueba automática de respaldo → destrucción → restauración a un punto en el tiempo pasa en CI.
+9. `docs/despliegue.md` permite a una persona sin contexto aprovisionar todo, con una lista de verificación final.
+
 ---
 
 ## 10. Decisiones pendientes (usar el valor por defecto y dejarlo configurable)
@@ -402,16 +492,19 @@ Una fase está terminada cuando:
 | 5 | MFA para clientes | Recomendado, no obligatorio; configurable por organización. |
 | 6 | Buzón y dominio de correo | Variables de entorno; adaptador Graph y adaptador IMAP/SMTP; Mailpit en local. |
 | 7 | Proveedor de telefonía | Registro manual y webhook CTI genérico. |
-| 8 | Infraestructura y residencia de datos | Azure Mexico Central (VM + PostgreSQL Flexible) detrás de Cloudflare; ver `03-despliegue-hosting.md`. |
+| 8 | Infraestructura y residencia de datos | **Decidido:** OCI región Querétaro (*Always Free*, cuenta de pago por uso) detrás de Cloudflare (sección 2.1). |
 | 9 | Retención de datos y alcance ISO 27001 | Mecanismo implementado pero deshabilitado; sin borrado automático hasta que se configure. |
 | 10 | IA | Deshabilitada; no se implementa antes de la fase 3. |
-| 11 | RPO/RTO | RPO 24 h, RTO 8 h. |
+| 11 | RPO/RTO | RPO ≤ 5 min (≤ 24 h en el peor caso), RTO ≤ 4 h. |
+| 12 | Entorno de *staging* | Sin servidor propio por ahora: CI y Docker Compose local. La configuración de Terraform admite un segundo entorno (`staging`) con variables. |
+| 13 | Plan de Cloudflare | Free; documentar qué reglas de WAF añade Pro para decidir después. |
+| 14 | Monto del presupuesto y destinatarios de alertas | Variables de Terraform sin valor por defecto; la persona que aprovisiona las define. |
 
 ---
 
 ## 11. Primer paso
 
 1. Lee todo este documento y genera `docs/PROGRESO.md` con el desglose de tareas de la fase 0 y la fase 1.
-2. Escribe los ADRs iniciales (stack, autorización, almacenamiento de archivos, correo, despliegue).
+2. Escribe los ADRs iniciales (stack, autorización, almacenamiento de archivos, secretos, correo, infraestructura en OCI, despliegue *pull-based*, respaldos).
 3. Escribe el modelo de amenazas inicial.
-4. Empieza la fase 0.
+4. Empieza la fase 0. Al terminarla, **detente** y espera aprobación antes de la fase 1.
