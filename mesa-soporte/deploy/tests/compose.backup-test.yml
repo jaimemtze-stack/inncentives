@@ -21,14 +21,28 @@ services:
   # S3-compatible store with TLS (SeaweedFS; MinIO no longer ships images).
   s3:
     image: chrislusf/seaweedfs:3.97
-    command: ["server", "-dir=/data", "-master.volumeSizeLimitMB=64", "-volume.max=8", "-s3", "-s3.port=8333", "-s3.config=/conf/s3.json",
-              "-s3.cert.file=/certs/public.crt", "-s3.key.file=/certs/private.key"]
+    command:
+      [
+        'server',
+        '-dir=/data',
+        '-master.volumeSizeLimitMB=64',
+        '-volume.max=100',
+        '-s3',
+        '-s3.port=8333',
+        '-s3.config=/conf/s3.json',
+        '-s3.cert.file=/certs/public.crt',
+        '-s3.key.file=/certs/private.key',
+      ]
     volumes:
       - ${WORK:?}/certs:/certs:ro
       - ${WORK:?}/s3conf:/conf:ro
     networks: { default: { aliases: [s3.test] } }
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --no-check-certificate -O /dev/null https://localhost:8333/status || wget -q -O /dev/null http://localhost:9333/cluster/status"]
+      test:
+        [
+          'CMD-SHELL',
+          'wget -q --no-check-certificate -O /dev/null https://localhost:8333/status || wget -q -O /dev/null http://localhost:9333/cluster/status',
+        ]
       interval: 2s
       retries: 40
 
@@ -36,7 +50,7 @@ services:
     image: ${IMAGE_POSTGRES:-mesa-postgres:dev}
     environment:
       POSTGRES_DB: mesa
-      BACKUP_ENABLED: "true"
+      BACKUP_ENABLED: 'true'
       BACKUP_STANZA: mesa
       BACKUP_S3_ENDPOINT: s3.test:8333
       BACKUP_S3_BUCKET: respaldos-pitr

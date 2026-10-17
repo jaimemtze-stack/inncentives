@@ -1,6 +1,6 @@
-import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3';
+import { CreateBucketCommand, DeleteBucketCommand, S3Client } from '@aws-sdk/client-s3';
 import { randomBytes } from 'node:crypto';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { S3Storage } from '../src/storage/s3.storage';
 
 // Runs against any S3-compatible endpoint (SeaweedFS locally and in CI).
@@ -10,6 +10,7 @@ const credentials = {
   secretAccessKey: process.env.TEST_S3_SECRET ?? 'devsecret123',
 };
 const bucket = `test-${randomBytes(4).toString('hex')}`;
+const client = new S3Client({ endpoint, region: 'us-east-1', forcePathStyle: true, credentials });
 const storage = new S3Storage({
   endpoint,
   region: 'us-east-1',
@@ -19,7 +20,6 @@ const storage = new S3Storage({
 });
 
 beforeAll(async () => {
-  const client = new S3Client({ endpoint, region: 'us-east-1', forcePathStyle: true, credentials });
   // The store may still be starting (CI service, fresh container): retry.
   for (let attempt = 1; ; attempt++) {
     try {
@@ -31,6 +31,11 @@ beforeAll(async () => {
     }
   }
 }, 60_000);
+
+// Remove the throw-away bucket (its objects were deleted by the test).
+afterAll(async () => {
+  await client.send(new DeleteBucketCommand({ Bucket: bucket })).catch(() => undefined);
+});
 
 describe('S3Storage', () => {
   it('stores, reads, signs and deletes objects', async () => {

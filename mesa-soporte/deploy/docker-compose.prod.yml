@@ -5,12 +5,12 @@ name: mesa
 
 x-hardening: &hardening
   read_only: true
-  security_opt: ["no-new-privileges:true"]
-  cap_drop: ["ALL"]
+  security_opt: ['no-new-privileges:true']
+  cap_drop: ['ALL']
   restart: unless-stopped
   logging:
     driver: json-file
-    options: { max-size: "20m", max-file: "5" }
+    options: { max-size: '20m', max-file: '5' }
 
 x-app-env: &app-env
   NODE_ENV: production
@@ -20,7 +20,7 @@ x-app-env: &app-env
   AGENT_HOST: ${AGENT_HOST:?}
   PUBLIC_SCHEME: https
   TRUST_PROXY: 172.30.15.10
-  TRUST_CF_CONNECTING_IP: "true"
+  TRUST_CF_CONNECTING_IP: 'true'
   STORAGE_DRIVER: ${STORAGE_DRIVER:-oci}
   OCI_REGION: ${OCI_REGION:-mx-queretaro-1}
   OCI_NAMESPACE: ${OCI_NAMESPACE:?}
@@ -78,8 +78,17 @@ services:
   cloudflared:
     <<: *hardening
     image: cloudflare/cloudflared:2025.10.0
-    command: ["tunnel", "--no-autoupdate", "--metrics", "127.0.0.1:20241", "run", "--token-file", "/run/secrets/cloudflared_token"]
-    user: "65532:65532"
+    command:
+      [
+        'tunnel',
+        '--no-autoupdate',
+        '--metrics',
+        '127.0.0.1:20241',
+        'run',
+        '--token-file',
+        '/run/secrets/cloudflared_token',
+      ]
+    user: '65532:65532'
     secrets: [cloudflared_token]
     networks: [edge, egress]
     depends_on: [web]
@@ -89,8 +98,8 @@ services:
   web:
     <<: *hardening
     image: ${IMAGE_WEB:?}
-    user: "101:101"
-    tmpfs: ["/tmp:size=32m,uid=101,gid=101"]
+    user: '101:101'
+    tmpfs: ['/tmp:size=32m,uid=101,gid=101']
     networks:
       edge: {}
       app: { ipv4_address: 172.30.15.10 }
@@ -103,7 +112,7 @@ services:
     image: ${IMAGE_API:?}
     environment: *app-env
     secrets: [database_url, redis_url, field_encryption_keys]
-    tmpfs: ["/tmp:size=64m"]
+    tmpfs: ['/tmp:size=64m']
     networks: [app, data, egress]
     depends_on:
       postgres: { condition: service_healthy }
@@ -123,7 +132,7 @@ services:
       SMTP_TLS: starttls
       MAIL_FROM: ${MAIL_FROM:?}
     secrets: [redis_url, smtp_username, smtp_password]
-    tmpfs: ["/tmp:size=32m"]
+    tmpfs: ['/tmp:size=32m']
     networks: [egress, data]
     depends_on:
       redis: { condition: service_healthy }
@@ -134,11 +143,16 @@ services:
   migrator:
     <<: *hardening
     image: ${IMAGE_MIGRATOR:?}
-    restart: "no"
-    profiles: ["migrate"]
-    entrypoint: ["/nodejs/bin/node", "-e", "process.env.DATABASE_URL=require('fs').readFileSync('/run/secrets/migrator_database_url','utf8').trim();require('child_process').execFileSync('/nodejs/bin/node',['node_modules/prisma/build/index.js','migrate','deploy'],{stdio:'inherit'})"]
+    restart: 'no'
+    profiles: ['migrate']
+    entrypoint:
+      [
+        '/nodejs/bin/node',
+        '-e',
+        "process.env.DATABASE_URL=require('fs').readFileSync('/run/secrets/migrator_database_url','utf8').trim();require('child_process').execFileSync('/nodejs/bin/node',['node_modules/prisma/build/index.js','migrate','deploy'],{stdio:'inherit'})",
+      ]
     secrets: [migrator_database_url]
-    tmpfs: ["/tmp:size=64m"]
+    tmpfs: ['/tmp:size=64m']
     networks: [data]
     depends_on:
       postgres: { condition: service_healthy }
@@ -146,7 +160,7 @@ services:
   postgres:
     <<: *hardening
     image: ${IMAGE_POSTGRES:?}
-    user: "5432:5432"
+    user: '5432:5432'
     environment:
       POSTGRES_DB: mesa
       BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
@@ -154,7 +168,7 @@ services:
       BACKUP_S3_ENDPOINT: ${OCI_NAMESPACE:?}.compat.objectstorage.${OCI_REGION:-mx-queretaro-1}.oraclecloud.com
       BACKUP_S3_BUCKET: ${BACKUP_BUCKET:-respaldos-pitr}
       BACKUP_S3_REGION: ${OCI_REGION:-mx-queretaro-1}
-      BACKUP_RETENTION_DAYS: "35"
+      BACKUP_RETENTION_DAYS: '35'
       PG_SHARED_BUFFERS: 1GB
       PG_EFFECTIVE_CACHE_SIZE: 3GB
     secrets:
@@ -181,13 +195,22 @@ services:
   redis:
     <<: *hardening
     image: redis:7.4-alpine
-    user: "999:1000"
-    entrypoint: ["sh", "-c", "exec redis-server --requirepass \"$$(cat /run/secrets/redis_password)\" --appendonly yes --appendfsync everysec --maxmemory 384mb --maxmemory-policy noeviction --protected-mode yes --rename-command FLUSHALL '' --rename-command CONFIG ''"]
+    user: '999:1000'
+    entrypoint:
+      [
+        'sh',
+        '-c',
+        'exec redis-server --requirepass "$$(cat /run/secrets/redis_password)" --appendonly yes --appendfsync everysec --maxmemory 384mb --maxmemory-policy noeviction --protected-mode yes --rename-command FLUSHALL '''' --rename-command CONFIG ''''',
+      ]
     secrets: [redis_password]
     volumes:
       - ${MESA_DATA_DIR:-/srv/mesa}/redis:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" --no-auth-warning ping | grep -q PONG"]
+      test:
+        [
+          'CMD-SHELL',
+          'redis-cli -a "$$(cat /run/secrets/redis_password)" --no-auth-warning ping | grep -q PONG',
+        ]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -197,10 +220,10 @@ services:
 
   clamav:
     <<: *hardening
-    profiles: ["${CLAMAV_PROFILE:-default}"]
+    profiles: ['${CLAMAV_PROFILE:-default}']
     image: clamav/clamav-debian:1.4
     read_only: false
-    cap_add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE"]
+    cap_add: ['CHOWN', 'SETUID', 'SETGID', 'DAC_OVERRIDE']
     volumes:
       - ${MESA_DATA_DIR:-/srv/mesa}/clamav:/var/lib/clamav
     networks: [data, egress]

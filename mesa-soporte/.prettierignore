@@ -7,3 +7,4 @@ infra/terraform/.terraform
 playwright-report
 test-results
 *.md
+docker/nginx/*.inc
