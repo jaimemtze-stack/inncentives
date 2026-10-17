@@ -1,0 +1,143 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  AGENT
+  CUSTOMER
+}
+
+enum UserStatus {
+  ACTIVE
+  LOCKED
+  DISABLED
+}
+
+model Organization {
+  id                      String       @id @default(uuid()) @db.Uuid
+  name                    String       @db.VarChar(160)
+  domains                 String[]     @default([])
+  isInternal              Boolean      @default(false) @map("is_internal")
+  mfaRequiredForCustomers Boolean      @default(false) @map("mfa_required_for_customers")
+  active                  Boolean      @default(true)
+  createdAt               DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  users                   User[]
+  invitations             Invitation[]
+
+  @@map("organizations")
+}
+
+model User {
+  id                String              @id @default(uuid()) @db.Uuid
+  email             String              @unique @db.VarChar(254)
+  name              String              @db.VarChar(120)
+  role              UserRole
+  status            UserStatus          @default(ACTIVE)
+  organizationId    String              @map("organization_id") @db.Uuid
+  organization      Organization        @relation(fields: [organizationId], references: [id])
+  passwordHash      String              @map("password_hash")
+  passwordChangedAt DateTime            @default(now()) @map("password_changed_at") @db.Timestamptz(3)
+  /// AES-256-GCM envelope (see FieldEncryption). Never returned by the API.
+  totpSecretEnc     String?             @map("totp_secret_enc")
+  totpEnabledAt     DateTime?           @map("totp_enabled_at") @db.Timestamptz(3)
+  locale            String              @default("es-MX") @db.VarChar(10)
+  timezone          String              @default("America/Mexico_City") @db.VarChar(64)
+  lastLoginAt       DateTime?           @map("last_login_at") @db.Timestamptz(3)
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  recoveryCodes     RecoveryCode[]
+  resetTokens       PasswordResetToken[]
+  devices           UserDevice[]
+  invitationsSent   Invitation[]        @relation("InvitedBy")
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+model RecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String    @map("code_hash") @db.Char(64)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([userId, codeHash])
+  @@map("recovery_codes")
+}
+
+model Invitation {
+  id             String       @id @default(uuid()) @db.Uuid
+  tokenHash      String       @unique @map("token_hash") @db.Char(64)
+  email          String       @db.VarChar(254)
+  name           String       @db.VarChar(120)
+  role           UserRole
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  invitedById    String       @map("invited_by_id") @db.Uuid
+  invitedBy      User         @relation("InvitedBy", fields: [invitedById], references: [id])
+  expiresAt      DateTime     @map("expires_at") @db.Timestamptz(3)
+  acceptedAt     DateTime?    @map("accepted_at") @db.Timestamptz(3)
+  revokedAt      DateTime?    @map("revoked_at") @db.Timestamptz(3)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([email])
+  @@map("invitations")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.Char(64)
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@map("password_reset_tokens")
+}
+
+/// Known devices, used to notify users of sign-ins from new devices.
+model UserDevice {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fingerprintHash String   @map("fingerprint_hash") @db.Char(64)
+  firstSeenAt     DateTime @default(now()) @map("first_seen_at") @db.Timestamptz(3)
+  lastSeenAt      DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+
+  @@unique([userId, fingerprintHash])
+  @@map("user_devices")
+}
+
+/// Append-only, hash-chained audit trail. UPDATE and DELETE are rejected by a
+/// trigger (see the init migration).
+model AuditLog {
+  id             BigInt   @id @default(autoincrement())
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  actorType      String   @map("actor_type") @db.VarChar(16)
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  action         String   @db.VarChar(80)
+  targetType     String?  @map("target_type") @db.VarChar(40)
+  targetId       String?  @map("target_id") @db.VarChar(80)
+  organizationId String?  @map("organization_id") @db.Uuid
+  ip             String?  @db.VarChar(45)
+  userAgent      String?  @map("user_agent") @db.VarChar(400)
+  correlationId  String?  @map("correlation_id") @db.VarChar(64)
+  data           Json?
+  prevHash       String   @map("prev_hash") @db.Char(64)
+  hash           String   @unique @db.Char(64)
+
+  @@index([occurredAt])
+  @@index([actorUserId])
+  @@index([action])
+  @@map("audit_logs")
+}

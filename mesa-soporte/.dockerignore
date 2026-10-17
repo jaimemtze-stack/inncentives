@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+.git
+infra
+docs
+deploy/tests
+playwright-report
+test-results
+secrets
