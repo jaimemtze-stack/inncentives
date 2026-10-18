@@ -66,11 +66,24 @@ test('an agent logs a call, the customer answers in the portal and the agent see
 
   // Live chat: the agent goes available, the customer starts a chat, the agent accepts.
   await agent.getByRole('link', { name: 'Chat', exact: true }).click();
+  // The checkbox is optimistic: wait until the server has the agent as available.
+  const availability = agent.waitForResponse(
+    (r) => r.url().endsWith('/api/v1/chat/availability') && r.request().method() === 'POST',
+  );
   await agent.getByLabel('Disponible para chat').check();
+  expect((await availability).status()).toBe(201);
   await customer.getByRole('link', { name: 'Chat', exact: true }).click();
   await customer.getByLabel('¿En qué te ayudamos?').fill('¿Cómo exporto la liquidación?');
+  const started = customer.waitForResponse(
+    (r) => r.url().endsWith('/api/v1/chat/sessions') && r.request().method() === 'POST',
+  );
   await customer.getByRole('button', { name: 'Iniciar chat' }).click();
-  await expect(customer.getByText('Esperando a que un agente se una')).toBeVisible();
+  const startRes = await started;
+  // On failure, show the API's answer instead of a bare timeout.
+  expect(startRes.status(), await startRes.text()).toBe(201);
+  await expect(customer.getByText('Esperando a que un agente se una')).toBeVisible({
+    timeout: 10_000,
+  });
   await agent.getByRole('button', { name: 'Atender' }).click({ timeout: 15_000 });
   await agent.getByLabel('Mensaje', { exact: true }).fill('Desde Reportes > Exportar.');
   await agent.getByRole('button', { name: 'Enviar', exact: true }).click();

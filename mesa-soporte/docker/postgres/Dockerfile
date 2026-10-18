@@ -20,6 +20,10 @@ RUN --mount=type=secret,id=ca,required=false \
     apt-get $APT_OPTS install -y --no-install-recommends \
       postgresql-16 pgbackrest age openssl ca-certificates tzdata; \
     rm -rf /var/lib/apt/lists/* /tmp/build-ca.crt; \
+    # ssl-cert (a postgresql-common dependency) generates a "snakeoil" key pair
+    # at install time. It is unused (the entrypoint creates server.crt/server.key
+    # in PGDATA) and would ship the same private key in every image.
+    rm -f /etc/ssl/private/ssl-cert-snakeoil.key /etc/ssl/certs/ssl-cert-snakeoil.pem; \
     sed -i 's#https://#http://#g' /etc/apt/sources.list.d/ubuntu.sources; \
     install -d -o postgres -g postgres -m 0700 /var/lib/postgresql/data /var/log/pgbackrest /var/spool/pgbackrest /etc/pgbackrest; \
     install -d -o postgres -g postgres -m 2775 /var/run/postgresql

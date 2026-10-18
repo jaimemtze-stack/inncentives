@@ -25,6 +25,7 @@ services:
       [
         'server',
         '-dir=/data',
+        '-ip.bind=0.0.0.0',
         '-master.volumeSizeLimitMB=64',
         '-volume.max=100',
         '-s3',
@@ -41,7 +42,7 @@ services:
       test:
         [
           'CMD-SHELL',
-          'wget -q --no-check-certificate -O /dev/null https://localhost:8333/status || wget -q -O /dev/null http://localhost:9333/cluster/status',
+          'wget -q --no-check-certificate -O /dev/null https://127.0.0.1:8333/status || wget -q -O /dev/null http://127.0.0.1:9333/cluster/status',
         ]
       interval: 2s
       start_period: 60s
