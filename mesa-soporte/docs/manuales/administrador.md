@@ -35,9 +35,13 @@ Se editan como JSON. La API rechaza campos u operadores desconocidos y muestra a
 
 *Campos personalizados*: tipo (`text`, `textarea`, `select`, `multiselect`, `boolean`, `integer`, `date`), opciones, obligatorio, visible y editable por el cliente. Ya existen: ambiente, módulo de Inncentives, categoría, impacto, versión, plan de compensación e ID de ejecución.
 
-## 4. Webhooks
+## 4. Webhooks y Teams
 
 Solo HTTPS hacia direcciones públicas (se bloquean redes privadas, *loopback* y metadatos de nube). Con `secret`, cada llamada lleva `X-Mesa-Signature: t=<unix>,v1=<HMAC-SHA256 de "t.cuerpo">`. El cuerpo contiene metadatos del ticket, nunca el texto de los artículos ni datos de contacto.
+
+**Canales de Teams** (fase 2): `groupId`, `name`, `url` (la del flujo de *Workflows* del canal) y `events` (`ticket_created`, `ticket_assigned`, `customer_reply`, `sla_warning`, `sla_breach`). La URL se guarda cifrada y no se vuelve a mostrar (para cambiarla, escribe una nueva). La tarjeta solo lleva número, título, organización, prioridad y enlace.
+
+En ambos, el botón **Entregas** muestra los últimos 100 intentos con su resultado HTTP y duración.
 
 ## 5. Privacidad y retención
 
@@ -48,3 +52,28 @@ Solo HTTPS hacia direcciones públicas (se bloquean redes privadas, *loopback* y
 ## 6. Telefonía (CTI)
 
 Hasta elegir proveedor, los agentes registran llamadas a mano. El webhook genérico está listo en `POST https://soporte.inncentives.com/hooks/cti` con `X-Mesa-Signature` (secreto `cti_webhook_secret`, tolerancia 5 minutos, cada firma se acepta una sola vez) y eventos `newCall`, `answer`, `hangup`.
+
+## 7. Base de conocimiento (fase 2)
+
+- Quien redacta necesita el permiso `kb.edit` (crea un rol personalizado con él y asígnalo en *Agentes y accesos*).
+- *Base de conocimiento → Nueva respuesta*: categoría (ya existen las de cada módulo de Inncentives), visibilidad (`customer` o `internal`), estado (`draft`, `published`, `archived`) y, opcionalmente, fecha de publicación. Cada idioma (es-MX / en) se guarda por separado y conserva su historial de versiones.
+- Los clientes solo ven respuestas publicadas, visibles para clientes y con la fecha de publicación cumplida.
+
+## 8. Reportes (fase 2)
+
+*Reportes* (permiso `reports.read`): periodo de hasta 400 días con filtros por organización y grupo. Incluye creados/cerrados por día, primera respuesta y solución (promedio, mediana, p90), cumplimiento de SLA, reaperturas, carga por agente y grupo, **horas por organización contra su plan** y módulos/categorías frecuentes. *CSV* y *XLSX* descargan la lista de tickets; las celdas que empiezan con `=`, `+`, `-` o `@` se exportan como texto para que Excel no las ejecute. Cada descarga queda en la bitácora.
+
+## 9. Importar organizaciones y usuarios (fase 2)
+
+*Administración → Importar desde CSV* (separador `,` o `;`, UTF-8, máximo 5 000 filas):
+
+- **Organizaciones:** `nombre`, `dominios` (separados por `|`), `plan` (nombre de un plan existente), `mfa` (`sí`/`no`).
+- **Usuarios:** `correo`, `nombre`, `organizacion` (nombre exacto), `rol` (por defecto `CUSTOMER`; los roles de personal requieren permiso para invitar personal). Cada fila crea una **invitación**, no una cuenta.
+
+Primero pulsa **Validar**: verás cuántas filas son válidas y una tabla de errores por fila y campo. Si hay un solo error, **no se guarda nada**; corrige el archivo y vuelve a validar. Después pulsa **Importar**.
+
+## 10. Integraciones (fase 2)
+
+- **SSO:** proveedores en `sso_providers` de *Ajustes generales* (ver `despliegue.md` §9 ter). Nadie entra por SSO sin haber vinculado antes su cuenta desde *Mi cuenta*.
+- **Azure DevOps:** `azure_devops` en *Ajustes generales* (`organization`, `project`, `defaultType`). Desde un ticket, los agentes crean o vinculan *work items*; los cambios de estado llegan como nota interna.
+- **API:** la descripción OpenAPI 3.1 está en `GET /api/v1/openapi.json` (host de agentes, con sesión o token de API). Cada operación indica los permisos que exige (`x-permissions`) y si pide reautenticación (`x-reauth`).

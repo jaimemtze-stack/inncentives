@@ -57,10 +57,23 @@ La llave privada **nunca** se copia al servidor ni a OCI. Sin ella, los volcados
 3. **Correo:**
    - Crea el buzón compartido `soporte@` en Microsoft 365.
    - **Entrada (fase 1, Microsoft Graph):** registra una aplicación en Entra ID con el permiso de aplicación `Mail.ReadWrite` y `Mail.Send`, y **limítala al buzón** con *RBAC for Applications* de Exchange Online (`New-ManagementScope` + `New-ManagementRoleAssignment -App <id> -Role "Application Mail.ReadWrite" -CustomResourceScope`). Crea un secreto de cliente (máximo 12 meses) para `graph_client_secret`. En *Configuración → Canales de correo* registra `tenantId`, `clientId`, `mailbox` y `trustedAuthServ` (el servidor que escribe `Authentication-Results`, normalmente `mx.microsoft.com`; confírmalo en los encabezados de un correo recibido).
-   - **Correo del sistema** (invitaciones, notificaciones): sigue saliendo por SMTP con STARTTLS desde el worker (`smtp_username`/`smtp_password`) hasta migrarlo también a Graph.
+   - **Correo del sistema** (invitaciones, notificaciones; fase 2): **recomendado por Graph**. Agrega a la misma aplicación el rol `Application Mail.Send` con el mismo *management scope* del buzón y añade a `/opt/mesa/stack.env`:
+
+     ```
+     MAIL_TRANSPORT=graph
+     GRAPH_TENANT_ID=<id del tenant>
+     GRAPH_CLIENT_ID=<id de la aplicación>
+     GRAPH_SENDER=soporte@inncentives.com
+     ```
+
+     El worker usa `graph_client_secret`. Sin estas variables sigue saliendo por SMTP con STARTTLS (`smtp_username`/`smtp_password`), que Microsoft está retirando para Exchange Online.
    - Alternativa sin Graph: adaptador `imap` (IMAPS 993 + SMTP 587 con TLS); usa el mismo secreto como contraseña.
    - Publica SPF, DKIM y DMARC (`p=quarantine`) del dominio.
-4. **GitHub:** crea un *fine-grained token* de solo lectura del repositorio (Contents: read) y Packages: read, con caducidad de 90 días.
+4. **Integraciones de la fase 2** (todas opcionales; sin ellas la función queda desactivada):
+   - **SSO de agentes (Entra ID):** registra una aplicación web de un solo tenant con URI de redirección `https://agentes.soporte.inncentives.com/api/v1/auth/sso/entra/callback`, permisos delegados `openid`, `email` y `profile`, y un secreto de cliente (máximo 12 meses) para `sso_entra_client_secret`. Si quieres aceptar el MFA de Entra en lugar del propio, exige MFA con Acceso condicional para esa aplicación.
+   - **Azure DevOps:** crea un PAT de una cuenta de servicio con alcance **Work Items (Read & write)** y caducidad máxima de un año, para `azure_devops_pat`. El script del paso 6 genera `azure_devops_hook_secret`; en *Project settings → Service hooks* crea una suscripción *Web Hooks* al evento *Work item updated* hacia `https://soporte.inncentives.com/hooks/azure-devops` con usuario cualquiera y ese secreto como contraseña (*Basic*).
+   - **Teams:** en cada canal crea un flujo de *Workflows* "Publicar en un canal cuando se reciba una solicitud de webhook" y copia su URL; se registra después en la aplicación (paso 9 ter), no como secreto del servidor.
+5. **GitHub:** crea un *fine-grained token* de solo lectura del repositorio (Contents: read) y Packages: read, con caducidad de 90 días.
 
 ## 6. Secretos en OCI Vault
 
@@ -69,6 +82,8 @@ infra/scripts/bootstrap-secrets.sh <compartment_id> <vault_id> <master_key_id> >
 ```
 
 El script genera las contraseñas aleatorias (incluido `cti_webhook_secret` para la futura telefonía), te pide las credenciales del paso 5 sin mostrarlas en pantalla (incluido `graph_client_secret`) y produce `secrets.map` (nombres + OCIDs, **sin valores**).
+
+> **Fase 2:** el script también genera `azure_devops_hook_secret` y pide `azure_devops_pat` y `sso_entra_client_secret`; si aún no los tienes, presiona Enter y se guarda el valor `unused` (la integración queda desactivada). Para cargarlos después, crea una nueva versión del secreto en OCI Vault (`runbooks/rotacion-secretos.md`). En una instalación existente, crea los tres secretos nuevos con el mismo prefijo y agrégalos a `/opt/mesa/secrets.map` antes de desplegar la fase 2: el compose los exige.
 
 > **Fase 1:** el stack agrega el servicio `jobs` (misma imagen que la API: correo entrante/saliente, SLAs, planificadores, antivirus, retención y privacidad) y usa ClamAV (`clamav`, 3 GB de RAM; la primera descarga de firmas tarda unos minutos). Las migraciones de la fase 1 (`20261018…`) se aplican solas con el migrador del desplegador.
 
@@ -120,6 +135,23 @@ sudo /opt/mesa/scripts/backup.sh full       # crea el stanza y el primer respald
 3. Crea el canal de correo y envía un correo de prueba desde una cuenta de cliente registrada: debe crear un ticket en *Soporte N1*; desde una cuenta desconocida, en *Por verificar*.
 4. Sube un archivo EICAR de prueba a un ticket: debe quedar *En cuarentena* y generar la nota interna.
 5. Deja **desactivadas** las políticas de retención hasta que Neitek defina los plazos.
+
+## 9 ter. Después de desplegar la fase 2
+
+1. **Base de conocimiento:** da el permiso `kb.edit` (rol personalizado) a quienes redactan; las categorías por módulo de Inncentives ya vienen creadas.
+2. **SSO:** en *Configuración → Ajustes generales* agrega a `sso_providers`:
+
+   ```json
+   [{ "id": "entra", "label": "Microsoft", "area": "agent",
+      "issuer": "https://login.microsoftonline.com/<tenant>/v2.0", "clientId": "<id de la aplicación>",
+      "secretName": "sso_entra_client_secret", "scopes": "openid email profile", "trustIdpMfa": false }]
+   ```
+
+   Cada agente vincula su cuenta en *Mi cuenta → Inicio de sesión único → Vincular con Microsoft* (pide su contraseña); desde entonces aparece el botón en la pantalla de entrada. Pon `trustIdpMfa: true` solo si Acceso condicional exige MFA para la aplicación.
+3. **Azure DevOps:** en `azure_devops` de los ajustes generales define `organization`, `project` y `defaultType` (`Bug`, `Task`…). Crea un *work item* de prueba desde un ticket y cambia su estado en DevOps: en menos de un minuto (con el *service hook*) aparece la nota interna.
+4. **Teams:** en *Configuración → Canales de Teams* registra cada URL con su grupo y eventos; revisa *Entregas* tras el primer ticket.
+5. **Importación:** *Administración → Importar desde CSV*; valida primero y corrige el reporte de errores antes de importar.
+6. **Correo del sistema por Graph:** tras cambiar `stack.env`, `sudo systemctl restart mesa-stack` y envía una invitación de prueba.
 
 ## 10. Verificación final (lista de verificación)
 

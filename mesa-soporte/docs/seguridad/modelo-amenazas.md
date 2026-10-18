@@ -67,6 +67,22 @@ Operador ─▶ Cloudflare Access SSH / OCI Bastion ─▶ VM        VM ─▶ O
 | 33 | E | Token de API robado | Solo hash, expiración obligatoria, *scopes*, solo host de agentes, sin reautenticación, revocable, auditado | `config-admin.int.test.ts` |
 | 34 | E | Abuso de "ver como cliente" | Solo admins, motivo + reautenticación, 15 min, solo lectura, auditado | `config-admin.int.test.ts` |
 
+### Amenazas agregadas en la fase 2
+
+| # | STRIDE | Amenaza | Mitigación (dónde) | Verificación |
+|---|---|---|---|---|
+| 35 | S | Toma de cuenta por SSO (IdP mal configurado, correo coincidente, cuenta nueva en el tenant) | Sin aprovisionamiento ni vinculación por correo; solo identidades `issuer`+`sub` vinculadas por el propio usuario con reautenticación; MFA propio salvo `trustIdpMfa` + `amr: mfa` | `sso.int.test.ts` |
+| 36 | S/T | Respuesta OIDC manipulada o repetida (CSRF de login, `code` robado, token de otra aplicación) | PKCE S256, `state` y `nonce` de un solo uso (GETDEL en Redis, 10 min), firma por JWKS, `iss`/`aud`/algoritmos verificados, proveedor ligado al área del host | `sso.int.test.ts` |
+| 37 | S | Passkey clonada o registrada en el host equivocado | RP ID = host del área, origen esperado, reto por sesión de 5 min, contador de firmas | `e2e/webauthn.spec.ts` |
+| 38 | I | Respuestas internas de la base de conocimiento vistas por clientes | Filtro de audiencia en el servidor en lista, detalle, búsqueda y sugerencias; 404 fuera de alcance | `kb.int.test.ts` |
+| 39 | T | Inyección de fórmulas en exportaciones CSV/XLSX | Prefijo `'` para `= + - @ \t \r`; XLSX con celdas de texto (`inlineStr`) | `export.test.ts` |
+| 40 | I | Exportación masiva de datos por un agente | Mismo alcance que las vistas; periodo ≤ 400 días; cada exportación auditada con filtros y número de filas | `reports.int.test.ts` |
+| 41 | S/T | *Service hook* de Azure DevOps falsificado | *Basic auth* con secreto propio (tiempo constante); el cuerpo no se usa salvo el id: el estado se vuelve a leer con el PAT | `integrations.int.test.ts` |
+| 42 | I | Contenido de clientes enviado a Teams o URL del webhook filtrada | Tarjetas con metadatos solamente; URL cifrada con AAD por canal, de solo escritura, hosts de Microsoft en lista blanca | `integrations.int.test.ts`, `teams.test.ts` |
+| 43 | E | PAT de Azure DevOps con demasiado alcance | Alcance *Work Items* únicamente, cuenta de servicio, secreto en Vault y caducidad ≤ 1 año | `despliegue.md` |
+| 44 | T/E | Importación CSV que crea cuentas o eleva privilegios | Solo invitaciones (no cuentas); rol validado contra el permiso de quien importa; validación completa antes de escribir (todo o nada); tamaño y filas acotados; auditado | `import.int.test.ts`, `csv.test.ts` |
+| 45 | I | Búsqueda global que enumera personas u organizaciones | Usuarios y organizaciones solo para personal y con `userScope`/`organizationScope`; tickets con `scope('read')` | `search.int.test.ts` |
+
 ## Riesgos residuales aceptados (fase 0)
 
 - **TLS interno:** el TLS hacia PostgreSQL dentro de la red Docker usa un certificado autofirmado sin verificación (`sslaccept=accept_invalid_certs`). Protege contra captura pasiva; la red es interna.
@@ -79,3 +95,9 @@ Operador ─▶ Cloudflare Access SSH / OCI Bastion ─▶ VM        VM ─▶ O
 - **Detector de datos sensibles por patrones:** puede tener falsos negativos (datos sin formato estándar) y falsos positivos; es un apoyo, no un control de prevención de fugas.
 - **Imágenes remotas:** la CSP permite `img-src https:` para que funcione "Mostrar imágenes"; la carga siempre requiere una acción del agente.
 - **Webhook de telefonía:** público en el host del portal (los proveedores no pasan por Cloudflare Access); se protege solo con HMAC, marca de tiempo y anti-repetición.
+
+## Riesgos residuales aceptados (fase 2)
+
+- **`trustIdpMfa`:** si se activa, la fortaleza del segundo factor depende del Acceso condicional de Entra; por defecto está desactivado.
+- **Sincronización de DevOps:** sin *service hook*, el estado se actualiza cada 15 minutos.
+- **DAST:** ZAP *baseline* (pasivo + *spider*) en el CI contra el stack de producción local; no sustituye una prueba de penetración autenticada antes de abrir el portal a clientes.

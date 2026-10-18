@@ -2,11 +2,15 @@
 
 ## Entrar
 
-`https://agentes.soporte.inncentives.com` → Cloudflare Access (cuenta de Neitek) → correo y contraseña → código de la app de autenticación.
+`https://agentes.soporte.inncentives.com` → Cloudflare Access (cuenta de Neitek) → correo y contraseña → código de la app de autenticación **o** llave de seguridad / passkey.
+
+- **Entrar con Microsoft** (fase 2): primero vincula tu cuenta en *Mi cuenta → Inicio de sesión único → Vincular con Microsoft* (te pedirá tu contraseña). Después usa el botón en la pantalla de entrada.
+- **Passkeys / llaves de seguridad:** agrégalas en *Mi cuenta → Llaves de seguridad y passkeys*. Al entrar, elige *Usar una llave de seguridad o passkey* en lugar del código. Conserva siempre un segundo factor (la app o otra llave).
 
 ## Bandeja
 
-- A la izquierda están las **vistas** con su contador (*Mis tickets*, *Sin asignar*, *Escalados*, *Por verificar*…). Arriba, la **búsqueda**: texto libre, `#202610170001`, `state:open`, `tag:carga`.
+- A la izquierda están las **vistas** con su contador (*Mis tickets*, *Sin asignar*, *Escalados*, *Por verificar*…). Arriba, la **búsqueda**: texto libre, `#202610170001`, `state:open`, `tag:calculo`, `owner:me`, `org:"ACME"`, `group:"Soporte N2"` (se pueden combinar). Además de tickets, muestra respuestas de la base de conocimiento, personas y organizaciones.
+- La vista **Mis menciones** reúne los tickets donde alguien te mencionó con `@`.
 - Etiquetas rojas = **SLA vencido**; ámbar = **en riesgo** (80 % del tiempo). ⚠ = el ticket puede contener datos personales.
 
 ## Atender un ticket
@@ -29,3 +33,9 @@ Llegan de remitentes desconocidos o que no pasaron SPF/DKIM/DMARC. No respondas 
 ## Notificaciones y ausencias
 
 La campana muestra asignaciones, respuestas de clientes, menciones y alertas de SLA. Configura qué llega por correo y tu ausencia (con sustituto) en *Mi cuenta → Notificaciones y ausencia*; mientras estés fuera, tu sustituto ve tus tickets en *Mis tickets*.
+
+## Base de conocimiento, Azure DevOps y reportes (fase 2)
+
+- En el editor de respuesta, **Insertar de la base de conocimiento** busca una respuesta y agrega su texto o enlace. Las respuestas internas no deben enviarse al cliente.
+- En el panel del ticket, **Azure DevOps** crea un *work item* (con el número y título del ticket) o vincula uno existente por su ID. Cuando cambie de estado verás una nota interna.
+- *Reportes* muestra tus métricas y las de tus grupos; solo incluye tickets que puedes ver.

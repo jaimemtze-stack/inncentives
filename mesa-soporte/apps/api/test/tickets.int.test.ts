@@ -121,8 +121,18 @@ describe('ticket creation and access', () => {
     });
     expect(res.statusCode).toBe(201);
     expect(res.json().state).toBe('new');
-    const list = (await agent.get('/api/v1/tickets?overview=sin-asignar')).json();
-    expect(list.items.some((x: { id: string }) => x.id === res.json().id)).toBe(true);
+    // The overview lists oldest first and the database is shared: page until found.
+    const ids: string[] = [];
+    let cursor = '';
+    for (let i = 0; i < 20; i++) {
+      const page = (
+        await agent.get(`/api/v1/tickets?overview=sin-asignar&limit=50${cursor}`)
+      ).json();
+      ids.push(...page.items.map((x: { id: string }) => x.id));
+      if (!page.nextCursor || ids.includes(res.json().id)) break;
+      cursor = `&cursor=${page.nextCursor}`;
+    }
+    expect(ids).toContain(res.json().id);
     expect(
       (
         await customer.post('/api/v1/tickets', {
