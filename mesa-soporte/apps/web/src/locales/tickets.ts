@@ -288,6 +288,12 @@ export const ticketsEs = {
     tokenOnce: 'Copia el token ahora; no se volverá a mostrar:',
     scopes: 'Permisos',
     expires: 'Vigencia (días)',
+    deliveries: 'Entregas',
+    noDeliveries: 'Sin entregas registradas.',
+    deliveredAt: 'Fecha',
+    event: 'Evento',
+    status: 'Resultado',
+    duration: 'Duración',
   },
 };
 
@@ -575,5 +581,11 @@ export const ticketsEn: typeof ticketsEs = {
     tokenOnce: 'Copy the token now; it will not be shown again:',
     scopes: 'Permissions',
     expires: 'Valid for (days)',
+    deliveries: 'Deliveries',
+    noDeliveries: 'No deliveries yet.',
+    deliveredAt: 'Date',
+    event: 'Event',
+    status: 'Result',
+    duration: 'Duration',
   },
 };

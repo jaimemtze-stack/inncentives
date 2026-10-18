@@ -145,6 +145,7 @@ function ResourceEditor({ resource }: { resource: string }) {
   });
   const [editing, setEditing] = useState<{ id: string | null; json: string } | null>(null);
   const [msg, setMsg] = useState<{ kind: 'error' | 'success' | 'info'; text: string } | null>(null);
+  const [log, setLog] = useState<string | null>(null);
 
   function edit(row: Record<string, unknown> | null) {
     const data = row
@@ -236,6 +237,16 @@ function ResourceEditor({ resource }: { resource: string }) {
               <td>{String(r.name ?? r.keyword ?? r.target ?? r.id)}</td>
               <td className="text-xs text-slate-500">{r.active === false ? '✕' : ''}</td>
               <td className="whitespace-nowrap text-right">
+                {(resource === 'webhooks' || resource === 'teams-channels') && (
+                  <button
+                    type="button"
+                    className="link mr-3"
+                    aria-expanded={log === String(r.id)}
+                    onClick={() => setLog(log === String(r.id) ? null : String(r.id))}
+                  >
+                    {t('config.deliveries')}
+                  </button>
+                )}
                 <button type="button" className="link mr-3" onClick={() => edit(r)}>
                   {t('config.edit')}
                 </button>
@@ -249,6 +260,56 @@ function ResourceEditor({ resource }: { resource: string }) {
                   </button>
                 )}
               </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {log && <Deliveries targetId={log} />}
+    </div>
+  );
+}
+
+interface Delivery {
+  id: string;
+  kind: string;
+  event: string;
+  status: number | null;
+  error: string | null;
+  durationMs: number;
+  createdAt: string;
+}
+
+/** Last 100 deliveries of an outgoing webhook or Teams channel. */
+function Deliveries({ targetId }: { targetId: string }) {
+  const { t } = useTranslation();
+  const rows = useQuery({
+    queryKey: ['deliveries', targetId],
+    queryFn: () =>
+      api<Delivery[]>('GET', `/admin/webhook-deliveries?targetId=${encodeURIComponent(targetId)}`),
+  });
+  if (!rows.data) return null;
+  if (!rows.data.length) return <p className="text-sm">{t('config.noDeliveries')}</p>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="table text-xs">
+        <thead>
+          <tr>
+            <th>{t('config.deliveredAt')}</th>
+            <th>{t('config.event')}</th>
+            <th>{t('config.status')}</th>
+            <th>{t('config.duration')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.data.map((d) => (
+            <tr key={d.id}>
+              <td>{new Date(d.createdAt).toLocaleString()}</td>
+              <td>{d.event}</td>
+              <td>
+                {d.status !== null && d.status < 300 ? '✓ ' : '✕ '}
+                {d.status ?? d.error}
+              </td>
+              <td>{d.durationMs} ms</td>
             </tr>
           ))}
         </tbody>
