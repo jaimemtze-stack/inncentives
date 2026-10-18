@@ -90,12 +90,14 @@ export function useFormMeta() {
 /** Plain text (textarea) to the HTML the API expects; the server sanitises it again. */
 export function textToHtml(text: string): string {
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return text
-    .replace(/\r\n?/g, '\n')
-    .split(/\n{2,}/)
-    // nosemgrep: javascript.lang.security.html-in-template-string.html-in-template-string -- value escaped
-    .map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`)
-    .join('');
+  return (
+    text
+      .replace(/\r\n?/g, '\n')
+      .split(/\n{2,}/)
+      // nosemgrep: javascript.lang.security.html-in-template-string.html-in-template-string -- value escaped
+      .map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`)
+      .join('')
+  );
 }
 
 export function formatDate(iso: string | null | undefined, lng: string): string {
