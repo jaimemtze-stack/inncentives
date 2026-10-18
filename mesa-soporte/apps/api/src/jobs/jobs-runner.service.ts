@@ -9,6 +9,7 @@ import { JobQueues } from '@mesa/shared';
 import { Queue, Worker, type Job } from 'bullmq';
 import { EmailChannelsService, NotReadyError } from '../channels/email/email-channels.service';
 import { MessagingService } from '../channels/messaging/messaging.service';
+import { ChatService } from '../chat/chat.service';
 import { APP_CONFIG, AppConfig } from '../config/config';
 import { PrivacyService } from '../privacy/privacy.service';
 import { bullConnection } from '../queue/bull-connection';
@@ -28,6 +29,7 @@ const SCHEDULE: Record<string, number> = {
   cleanup: 3_600_000,
   retention: 6 * 3_600_000,
   'devops-sync': 15 * 60_000,
+  'chat-idle': 60_000,
 };
 
 const isFinal = (job: Job) => job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
@@ -45,6 +47,7 @@ export class JobsRunnerService implements OnApplicationBootstrap, OnApplicationS
   constructor(
     private readonly channels: EmailChannelsService,
     private readonly messaging: MessagingService,
+    private readonly chat: ChatService,
     private readonly scanner: ScanService,
     private readonly webhooks: WebhookCallerService,
     private readonly maintenance: MaintenanceService,
@@ -75,6 +78,9 @@ export class JobsRunnerService implements OnApplicationBootstrap, OnApplicationS
         await this.devops
           .sync()
           .catch((err: Error) => this.logger.debug(`devops sync: ${err.message}`));
+        return;
+      case 'chat-idle':
+        await this.chat.closeIdle();
         return;
       default:
         throw new Error(`Unknown task ${name}`);

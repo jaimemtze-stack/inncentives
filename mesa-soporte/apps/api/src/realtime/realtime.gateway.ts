@@ -173,6 +173,13 @@ export class RealtimeGateway
       this.server.to(`user:${e.userId}`).emit('notification', {});
       return;
     }
+    if (e.type === 'chat.updated') {
+      // Queue changes for the chat group's agents; the customer follows their own session.
+      this.server
+        .to([`group:${e.groupId}`, 'admins', `user:${e.customerId}`])
+        .emit('chat', { sessionId: e.sessionId, ticketId: e.ticketId, state: e.state });
+      return;
+    }
     if (e.type === 'call.updated') {
       const target = e.userId ? `user:${e.userId}` : 'agents';
       this.server.to(target).emit('call', {

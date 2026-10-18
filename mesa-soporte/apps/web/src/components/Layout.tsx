@@ -6,6 +6,7 @@ import { api, setCsrfToken } from '../api';
 import { setLanguage } from '../i18n';
 import { closeSocket, useRealtimeInvalidation } from '../lib/realtime';
 import { CallToast, NotificationBell } from './Notifications';
+import { useChatHeartbeat } from '../pages/Chat';
 import { useArea, useMe } from '../session';
 
 export function Layout() {
@@ -17,6 +18,7 @@ export function Layout() {
   const authed = me.data?.state === 'authenticated';
   const agent = authed && area.data?.area === 'agent';
   useRealtimeInvalidation(authed);
+  useChatHeartbeat(agent);
 
   // Keyboard shortcuts (ignored while typing): "/" search, "n" new ticket, "r" reply.
   useEffect(() => {
@@ -76,6 +78,11 @@ export function Layout() {
             {authed && (
               <Link to="/kb" className="link">
                 {t('nav.kb')}
+              </Link>
+            )}
+            {authed && (
+              <Link to="/chat" className="link">
+                {t('nav.chat')}
               </Link>
             )}
             {agent && (

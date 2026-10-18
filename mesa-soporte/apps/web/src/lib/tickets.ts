@@ -118,3 +118,8 @@ export function slaState(t: {
   if (t.slaWarningAt && new Date(t.slaWarningAt).getTime() <= now) return 'warning';
   return null;
 }
+
+/** Plain text of sanitised article HTML (DOMParser loads no images and runs no scripts). */
+export function htmlText(html: string): string {
+  return new DOMParser().parseFromString(html, 'text/html').body.textContent?.trim() ?? '';
+}

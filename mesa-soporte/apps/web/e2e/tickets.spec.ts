@@ -63,6 +63,19 @@ test('an agent logs a call, the customer answers in the portal and the agent see
   await agent.getByLabel('Estado').selectOption('closed');
   await agent.getByRole('button', { name: 'Aplicar' }).click();
   await expect(agent.getByText('1 de 1 actualizados')).toBeVisible();
+
+  // Live chat: the agent goes available, the customer starts a chat, the agent accepts.
+  await agent.getByRole('link', { name: 'Chat', exact: true }).click();
+  await agent.getByLabel('Disponible para chat').check();
+  await customer.getByRole('link', { name: 'Chat', exact: true }).click();
+  await customer.getByLabel('¿En qué te ayudamos?').fill('¿Cómo exporto la liquidación?');
+  await customer.getByRole('button', { name: 'Iniciar chat' }).click();
+  await expect(customer.getByText('Esperando a que un agente se una')).toBeVisible();
+  await agent.getByRole('button', { name: 'Atender' }).click({ timeout: 15_000 });
+  await agent.getByLabel('Mensaje', { exact: true }).fill('Desde Reportes > Exportar.');
+  await agent.getByRole('button', { name: 'Enviar', exact: true }).click();
+  await expect(customer.getByText('Desde Reportes > Exportar.')).toBeVisible({ timeout: 10_000 });
+  await customer.getByRole('button', { name: 'Terminar chat' }).click();
   await agentCtx.close();
   await customerCtx.close();
 });

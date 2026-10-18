@@ -9,6 +9,7 @@ import { KbModule } from './kb/kb.module';
 import { ReportsModule } from './reports/reports.module';
 import { SearchModule } from './search/search.module';
 import { OpenApiModule } from './openapi/openapi.module';
+import { ChatModule } from './chat/chat.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { AuditModule } from './audit/audit.module';
@@ -51,6 +52,7 @@ const featureModules = [
   ReportsModule,
   IntegrationsModule,
   SearchModule,
+  ChatModule,
   OpenApiModule,
 ];
 

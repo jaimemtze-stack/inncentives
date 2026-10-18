@@ -19,6 +19,14 @@ export type DomainEvent =
     }
   | { type: 'notification.created'; userId: string }
   | {
+      type: 'chat.updated';
+      sessionId: string;
+      ticketId: string;
+      groupId: string;
+      customerId: string;
+      state: string;
+    }
+  | {
       type: 'call.updated';
       callId: string;
       state: string;

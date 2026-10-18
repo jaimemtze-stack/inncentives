@@ -2,6 +2,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { AttachmentsModule } from '../attachments/attachments.module';
 import { AuditModule } from '../audit/audit.module';
 import { ChannelsModule } from '../channels/channels.module';
+import { ChatModule } from '../chat/chat.module';
 import type { AppConfig } from '../config/config';
 import { ConfigModule } from '../config/config.module';
 import { EventsModule } from '../events/ticket-events';
@@ -50,6 +51,7 @@ export class JobsModule {
         ChannelsModule,
         PrivacyModule,
         IntegrationsModule,
+        ChatModule,
       ],
       providers: [...jobProviders, ...(opts.runner === false ? [] : [JobsRunnerService])],
       exports: jobProviders,

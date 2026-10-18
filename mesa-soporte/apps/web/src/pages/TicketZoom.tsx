@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { InncentivesPanel } from './Report';
+import { htmlText } from '../lib/tickets';
 import { ArticleView, type ArticleAction } from '../components/ArticleView';
 import { Composer, CustomFieldInputs, type ComposerPreset } from '../components/Composer';
 import { Alert, useErrorText } from '../components/ui';
@@ -393,11 +394,6 @@ function AgentSidebar({ ticket, reload }: { ticket: TicketDetail; reload: () => 
       </div>
     </aside>
   );
-}
-
-function htmlText(html: string): string {
-  // DOMParser does not load images or run scripts.
-  return new DOMParser().parseFromString(html, 'text/html').body.textContent?.trim() ?? '';
 }
 
 interface HistoryRow {

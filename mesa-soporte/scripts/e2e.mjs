@@ -22,6 +22,8 @@ const env = {
   SECRET_REDIS_URL: process.env.E2E_REDIS_URL ?? 'redis://127.0.0.1:56379/14',
   SECRET_FIELD_ENCRYPTION_KEYS: `k1:${randomBytes(32).toString('base64')}`,
   SEED_PASSWORD: 'frase de prueba e2e 2026',
+  // Shared secret of the "Reportar un problema" widget (e2e/widget.spec.ts signs with it).
+  SECRET_INNCENTIVES_WIDGET_SECRET: randomBytes(32).toString('hex'),
 };
 let status = 1;
 try {

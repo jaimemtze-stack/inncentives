@@ -9,6 +9,7 @@ import { ConfigAdminPage } from './pages/ConfigAdmin';
 import { PhonePage } from './pages/Phone';
 import { ReportsPage } from './pages/Reports';
 import { ReportPage } from './pages/Report';
+import { ChatPage } from './pages/Chat';
 import { KbAnswerPage, KbNewPage, KbPage } from './pages/Kb';
 import { TimeSummaryPage } from './pages/TimeSummary';
 import { TicketNewPage } from './pages/TicketNew';
@@ -50,6 +51,7 @@ const routes = [
     path: '/reportar',
     component: protectedPage(ReportPage),
   }),
+  createRoute({ getParentRoute: () => root, path: '/chat', component: protectedPage(ChatPage) }),
   createRoute({
     getParentRoute: () => root,
     path: '/reportes',
