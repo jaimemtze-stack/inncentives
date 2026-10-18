@@ -256,6 +256,12 @@ function leafToWhere(c: LeafCondition, opts: WhereOptions): Prisma.TicketWhereIn
       return { NOT: { organization: { supportPlanId: value as string } } };
     return { organization: { supportPlanId: value as string } };
   }
+  if (c.field === 'ticket.mentioned_user_id') {
+    const ids =
+      c.value === CURRENT_USER ? [value as string, ...(opts.standInFor ?? [])] : [value as string];
+    const some = { mentions: { some: { userId: { in: ids } } } };
+    return c.operator === 'is_not' ? { NOT: some } : some;
+  }
   if (c.field.startsWith(CUSTOM_FIELD_PREFIX)) {
     const path = [c.field.slice(CUSTOM_FIELD_PREFIX.length)];
     switch (c.operator) {

@@ -80,6 +80,8 @@ model User {
   devices                UserDevice[]
   invitationsSent        Invitation[]                @relation("InvitedBy")
   apiTokens              ApiToken[]
+  identities             UserIdentity[]
+  webauthnCredentials    WebAuthnCredential[]
 
   @@index([organizationId])
   @@index([phone])
@@ -384,6 +386,7 @@ model Ticket {
   linksTo               TicketLink[]             @relation("LinkTarget")
   notifications         Notification[]
   slaEvents             TicketSlaEvent[]
+  devopsLinks           DevOpsLink[]
 
   @@index([state])
   @@index([groupId, state])
@@ -865,4 +868,165 @@ model ApiToken {
 
   @@index([userId])
   @@map("api_tokens")
+}
+
+// ------------------------------------------------------------------ phase 2
+
+/// Knowledge base category (nested). Nothing in the knowledge base is public.
+model KbCategory {
+  id        String       @id @default(uuid()) @db.Uuid
+  parentId  String?      @map("parent_id") @db.Uuid
+  parent    KbCategory?  @relation("KbTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  KbCategory[] @relation("KbTree")
+  /// {"es-MX": "Nombre", "en": "Name"}
+  names     Json
+  slug      String       @unique @db.VarChar(80)
+  position  Int          @default(0)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  answers   KbAnswer[]
+
+  @@map("kb_categories")
+}
+
+model KbAnswer {
+  id           String          @id @default(uuid()) @db.Uuid
+  categoryId   String          @map("category_id") @db.Uuid
+  category     KbCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  /// customer = authenticated customers and agents; internal = agents only.
+  visibility   String          @default("customer") @db.VarChar(10)
+  /// draft | published | archived
+  state        String          @default("draft") @db.VarChar(10)
+  /// Scheduled publication: visible from this instant once published.
+  publishAt    DateTime?       @map("publish_at") @db.Timestamptz(3)
+  createdById  String?         @map("created_by_id") @db.Uuid
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  translations KbTranslation[]
+
+  @@index([categoryId])
+  @@index([state, visibility])
+  @@map("kb_answers")
+}
+
+model KbTranslation {
+  id           String                   @id @default(uuid()) @db.Uuid
+  answerId     String                   @map("answer_id") @db.Uuid
+  answer       KbAnswer                 @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  locale       String                   @db.VarChar(10)
+  title        String                   @db.VarChar(250)
+  /// Sanitised HTML.
+  bodyHtml     String                   @map("body_html") @db.Text
+  bodyText     String                   @map("body_text") @db.Text
+  keywords     String[]                 @default([])
+  version      Int                      @default(1)
+  updatedById  String?                  @map("updated_by_id") @db.Uuid
+  updatedAt    DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+  searchVector Unsupported("tsvector")? @map("search_vector")
+  versions     KbTranslationVersion[]
+
+  @@unique([answerId, locale])
+  @@map("kb_translations")
+}
+
+/// Append-only history of translation edits.
+model KbTranslationVersion {
+  id            String        @id @default(uuid()) @db.Uuid
+  translationId String        @map("translation_id") @db.Uuid
+  translation   KbTranslation @relation(fields: [translationId], references: [id], onDelete: Cascade)
+  version       Int
+  title         String        @db.VarChar(250)
+  bodyHtml      String        @map("body_html") @db.Text
+  editedById    String?       @map("edited_by_id") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([translationId, version])
+  @@map("kb_translation_versions")
+}
+
+/// External identity (OIDC) linked to an existing account: issuer + subject, never e-mail alone.
+model UserIdentity {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   String    @db.VarChar(40)
+  issuer     String    @db.VarChar(300)
+  subject    String    @db.VarChar(300)
+  email      String?   @db.VarChar(254)
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([issuer, subject])
+  @@unique([userId, provider])
+  @@map("user_identities")
+}
+
+/// WebAuthn credential (passkey / security key) used as a second factor.
+model WebAuthnCredential {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String    @unique @map("credential_id") @db.VarChar(512)
+  publicKey    Bytes     @map("public_key")
+  counter      BigInt    @default(0)
+  transports   String[]  @default([])
+  name         String    @db.VarChar(80)
+  lastUsedAt   DateTime? @map("last_used_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("webauthn_credentials")
+}
+
+/// Azure DevOps work item linked to a ticket.
+model DevOpsLink {
+  id           String    @id @default(uuid()) @db.Uuid
+  ticketId     String    @map("ticket_id") @db.Uuid
+  ticket       Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  workItemId   Int       @map("work_item_id")
+  workItemType String    @map("work_item_type") @db.VarChar(40)
+  title        String    @db.VarChar(255)
+  state        String    @db.VarChar(60)
+  url          String    @db.VarChar(500)
+  lastSyncedAt DateTime? @map("last_synced_at") @db.Timestamptz(3)
+  createdById  String?   @map("created_by_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([ticketId, workItemId])
+  @@index([workItemId])
+  @@map("devops_links")
+}
+
+/// Microsoft Teams channel (incoming webhook / Workflows URL) per group.
+model TeamsChannel {
+  id        String   @id @default(uuid()) @db.Uuid
+  groupId   String   @map("group_id") @db.Uuid
+  name      String   @db.VarChar(120)
+  /// The webhook URL embeds a credential: stored encrypted.
+  urlEnc    String   @map("url_enc") @db.Text
+  /// Events sent: ticket_created, customer_reply, sla_warning, sla_breach, ticket_assigned
+  events    String[]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([groupId])
+  @@map("teams_channels")
+}
+
+/// Delivery log of outgoing webhooks (trigger webhooks and Teams).
+model WebhookDelivery {
+  id         String   @id @default(uuid()) @db.Uuid
+  kind       String   @db.VarChar(10)
+  targetId   String   @map("target_id") @db.Uuid
+  ticketId   String?  @map("ticket_id") @db.Uuid
+  event      String   @db.VarChar(40)
+  status     Int?
+  error      String?  @db.VarChar(500)
+  attempt    Int      @default(1)
+  durationMs Int?     @map("duration_ms")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([targetId, createdAt])
+  @@map("webhook_deliveries")
 }

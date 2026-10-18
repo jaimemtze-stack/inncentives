@@ -53,6 +53,11 @@ export const ConditionFields = {
     queryable: true,
     label: { es: 'Organización', en: 'Organization' },
   },
+  'ticket.mentioned_user_id': {
+    type: 'id',
+    queryable: true,
+    label: { es: 'Agente mencionado', en: 'Mentioned agent' },
+  },
   'ticket.tags': { type: 'tags', queryable: true, label: { es: 'Etiquetas', en: 'Tags' } },
   'ticket.channel': {
     type: 'enum',
