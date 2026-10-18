@@ -42,7 +42,7 @@ export const TimeSpentSchema = z
 
 export const ArticleCreateSchema = z
   .object({
-    type: z.enum(['email', 'phone', 'note', 'web']),
+    type: z.enum(['email', 'phone', 'note', 'web', 'whatsapp', 'sms']),
     internal: z.boolean().default(false),
     body: Body,
     subject: z.string().trim().max(500).optional(),

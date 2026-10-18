@@ -8,6 +8,7 @@ import {
 import { JobQueues } from '@mesa/shared';
 import { Queue, Worker, type Job } from 'bullmq';
 import { EmailChannelsService, NotReadyError } from '../channels/email/email-channels.service';
+import { MessagingService } from '../channels/messaging/messaging.service';
 import { APP_CONFIG, AppConfig } from '../config/config';
 import { PrivacyService } from '../privacy/privacy.service';
 import { bullConnection } from '../queue/bull-connection';
@@ -43,6 +44,7 @@ export class JobsRunnerService implements OnApplicationBootstrap, OnApplicationS
 
   constructor(
     private readonly channels: EmailChannelsService,
+    private readonly messaging: MessagingService,
     private readonly scanner: ScanService,
     private readonly webhooks: WebhookCallerService,
     private readonly maintenance: MaintenanceService,
@@ -91,7 +93,11 @@ export class JobsRunnerService implements OnApplicationBootstrap, OnApplicationS
     };
     worker<{ articleId: string }>(
       JobQueues.outbound,
-      (job) => this.channels.sendArticle(job.data.articleId, isFinal(job)),
+      // Each sender ignores articles of other channels.
+      async (job) => {
+        await this.channels.sendArticle(job.data.articleId, isFinal(job));
+        await this.messaging.sendArticle(job.data.articleId, isFinal(job));
+      },
       2,
     );
     worker<{ attachmentId: string }>(

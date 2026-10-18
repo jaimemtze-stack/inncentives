@@ -156,9 +156,11 @@ export function CustomFieldInputs(props: {
   );
 }
 
+type ArticleKind = 'email' | 'note' | 'phone' | 'whatsapp' | 'sms';
+
 export interface ComposerPreset {
   key: number;
-  type: 'email' | 'note' | 'phone';
+  type: ArticleKind;
   to?: string;
   cc?: string;
   body?: string;
@@ -246,11 +248,14 @@ export function Composer(props: {
   agents?: Ref[];
   /** Changes when someone else updates the ticket while this box has text. */
   ticketUpdatedAt?: string;
+  /** Messaging channels the customer wrote on (reply options). */
+  messaging?: Array<'whatsapp' | 'sms'>;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const meta = useFormMeta();
-  const [type, setType] = useState<'email' | 'note' | 'phone'>('note');
+  const [type, setType] = useState<ArticleKind>('note');
+  const messagingReply = type === 'whatsapp' || type === 'sms';
   const [internal, setInternal] = useState(true);
   const [body, setBody] = useState(() => readLocalDraft(props.ticketId));
   const [to, setTo] = useState('');
@@ -378,6 +383,11 @@ export function Composer(props: {
               <option value="note">{t('article.types.note')}</option>
               <option value="email">{t('article.types.email')}</option>
               <option value="phone">{t('article.types.phone')}</option>
+              {props.messaging?.map((k) => (
+                <option key={k} value={k}>
+                  {t(`article.types.${k}`)}
+                </option>
+              ))}
             </select>
           </div>
           {type === 'note' && (
@@ -534,7 +544,13 @@ export function Composer(props: {
           </select>
         </div>
       )}
-      <AttachmentPicker key={key} onChange={setAttachmentIds} />
+      {messagingReply ? (
+        <p className="text-xs text-slate-600 dark:text-slate-300">
+          {t(type === 'whatsapp' ? 'article.whatsappHint' : 'article.smsHint')}
+        </p>
+      ) : (
+        <AttachmentPicker key={key} onChange={setAttachmentIds} />
+      )}
       {info && <Alert kind="info">{info}</Alert>}
       {error && <Alert>{error}</Alert>}
       <div className="flex flex-wrap gap-2">

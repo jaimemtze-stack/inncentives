@@ -128,6 +128,8 @@ export async function grantGroup(
 
 interface Res {
   statusCode: number;
+  /** Raw body (non-JSON answers such as TwiML). */
+  text: string;
   json: <T = any>() => T; // eslint-disable-line @typescript-eslint/no-explicit-any
   headers: Record<string, string | string[] | number | undefined>;
 }
@@ -175,7 +177,12 @@ export class Client {
     const parsed = res.body ? safeJson(res.body) : undefined;
     if (parsed && typeof parsed === 'object' && 'csrfToken' in parsed)
       this.csrf = (parsed as { csrfToken: string }).csrfToken;
-    return { statusCode: res.statusCode, json: () => parsed as never, headers: res.headers };
+    return {
+      statusCode: res.statusCode,
+      text: res.body,
+      json: () => parsed as never,
+      headers: res.headers,
+    };
   }
 
   get(url: string) {

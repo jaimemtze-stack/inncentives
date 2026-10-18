@@ -23,7 +23,8 @@ export class PhoneService {
     @Inject(SECRETS) private readonly secrets: FileSecretsProvider,
   ) {}
 
-  private async customersByNumber(number: string) {
+  /** Active customers whose phone or mobile ends with the same national digits. */
+  async customersByNumber(number: string) {
     const digits = phoneDigits(number);
     if (digits.length < 7) return [];
     return this.prisma.user.findMany({

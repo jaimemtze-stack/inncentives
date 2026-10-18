@@ -721,6 +721,9 @@ export function TicketZoomPage() {
             preset={preset}
             agents={tk.group ? meta.data?.ownersByGroup?.[tk.group.id] : undefined}
             ticketUpdatedAt={tk.updatedAt}
+            messaging={(['whatsapp', 'sms'] as const).filter((k) =>
+              articles.data?.some((a) => a.type === k && a.sender === 'customer'),
+            )}
           />
         )}
       </div>

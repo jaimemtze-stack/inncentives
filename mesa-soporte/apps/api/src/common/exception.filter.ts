@@ -42,7 +42,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const body: ApiErrorBody = {
       error: { code, message, correlationId: req.correlationId, ...(details ? { details } : {}) },
     };
-    void reply.status(status).header('Cache-Control', 'no-store').send(body);
+    // Routes may declare another content type (TwiML, plain text); errors are always JSON.
+    void reply
+      .status(status)
+      .header('Cache-Control', 'no-store')
+      .header('Content-Type', 'application/json; charset=utf-8')
+      .send(body);
   }
 }
 

@@ -514,6 +514,28 @@ export const RESOURCES: Record<string, ResourceDef> = {
     serialize: ({ urlEnc, ...rest }) => ({ ...rest, hasUrl: !!urlEnc }),
     orderBy: { name: 'asc' },
   },
+  'messaging-channels': {
+    model: 'messagingChannel',
+    create: z
+      .object({
+        kind: z.enum(['whatsapp', 'sms']),
+        name: Name,
+        /** WhatsApp phone_number_id, or the Twilio number (E.164) for SMS. */
+        providerId: z.string().regex(/^(\d{5,30}|\+\d{8,15})$/),
+        displayNumber: z.string().regex(/^\+\d{8,15}$/),
+        groupId: Uuid,
+        active: z.boolean().default(true),
+      })
+      .strict(),
+    validate: (d) => {
+      if (d.kind === 'sms' && d.providerId !== d.displayNumber)
+        throw new RuleValidationError([
+          'For SMS, providerId is the Twilio number (same as displayNumber)',
+        ]);
+      return [];
+    },
+    orderBy: { name: 'asc' },
+  },
   'retention-policies': {
     model: 'retentionPolicy',
     create: z.object({ days: z.number().int().min(1).max(36_500), active: z.boolean() }).strict(),

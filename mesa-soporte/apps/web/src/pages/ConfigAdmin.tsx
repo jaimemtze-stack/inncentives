@@ -99,6 +99,13 @@ const TEMPLATES: Record<string, unknown> = {
     url: 'https://<tenant>.webhook.office.com/…',
     events: ['ticket_created', 'customer_reply', 'sla_breach'],
   },
+  'messaging-channels': {
+    kind: 'whatsapp',
+    name: 'WhatsApp soporte',
+    providerId: '<phone_number_id>',
+    displayNumber: '+52…',
+    groupId: '00000000-0000-4000-8000-000000000301',
+  },
 };
 
 const READ_ONLY = new Set([
