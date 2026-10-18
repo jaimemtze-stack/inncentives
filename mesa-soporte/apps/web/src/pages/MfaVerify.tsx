@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
 import { Alert, CenteredCard, Field, useErrorText } from '../components/ui';
 import { useMe } from '../session';
+import { verifyWithPasskey } from '../components/Passkeys';
 
 export function MfaVerifyPage() {
   const { t } = useTranslation();
@@ -71,6 +72,25 @@ export function MfaVerifyPage() {
         <button type="submit" className="btn-primary w-full">
           {t('mfa.submit')}
         </button>
+        {me.data.mfaMethods.includes('webauthn') && (
+          <button
+            type="button"
+            className="btn-secondary w-full"
+            onClick={async () => {
+              setError(null);
+              try {
+                await verifyWithPasskey();
+                await qc.invalidateQueries({ queryKey: ['me'] });
+                await navigate({ to: '/' });
+              } catch (err) {
+                if (err instanceof Error && err.name === 'NotAllowedError') return;
+                setError(errorText(err));
+              }
+            }}
+          >
+            {t('passkeys.use')}
+          </button>
+        )}
         <button
           type="button"
           className="link w-full text-center text-sm"

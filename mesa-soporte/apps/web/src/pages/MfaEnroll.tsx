@@ -1,3 +1,4 @@
+import { registerPasskey } from '../components/Passkeys';
 import { Navigate, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import QRCode from 'qrcode';
@@ -105,6 +106,21 @@ export function MfaEnrollPage() {
         />
         <button type="submit" className="btn-primary w-full" disabled={!setup}>
           {t('enroll.confirm')}
+        </button>
+        <button
+          type="button"
+          className="btn-secondary w-full"
+          onClick={async () => {
+            try {
+              const recovery = await registerPasskey(t('passkeys.defaultName'));
+              if (recovery) setCodes(recovery);
+            } catch (err) {
+              if (err instanceof Error && err.name === 'NotAllowedError') return;
+              setError(errorText(err));
+            }
+          }}
+        >
+          {t('passkeys.enrollInstead')}
         </button>
       </form>
     </CenteredCard>

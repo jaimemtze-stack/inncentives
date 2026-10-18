@@ -1,3 +1,4 @@
+import { SsoButtons } from '../components/Passkeys';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AuthState } from '@mesa/shared';
@@ -68,6 +69,10 @@ export function LoginPage() {
             {t('login.forgot')}
           </Link>
         </p>
+        {new URLSearchParams(window.location.search).get('sso') === 'error' && (
+          <Alert>{t('sso.error')}</Alert>
+        )}
+        <SsoButtons />
       </form>
     </CenteredCard>
   );

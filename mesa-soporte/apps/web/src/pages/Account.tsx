@@ -1,3 +1,4 @@
+import { SecurityKeysSection } from '../components/Passkeys';
 import { PreferencesSection } from '../components/Preferences';
 import { Link } from '@tanstack/react-router';
 import type { SessionInfo } from '@mesa/shared';
@@ -212,6 +213,7 @@ export function AccountPage() {
           </table>
         </div>
       </section>
+      <SecurityKeysSection withReauth={withReauth} />
       {me.data?.area === 'agent' && <PreferencesSection />}
     </div>
   );

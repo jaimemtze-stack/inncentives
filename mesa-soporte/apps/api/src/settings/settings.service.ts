@@ -11,6 +11,18 @@ export const SettingDefaults = {
   portal_group_id: '00000000-0000-4000-8000-000000000301',
   privacy_notice: { es: '', en: '' } as { es: string; en: string },
   default_locale: 'es-MX',
+  /** OIDC providers. The client secret is a secret file named by secretName. */
+  sso_providers: [] as Array<{
+    id: string;
+    label: string;
+    area: 'agent' | 'portal';
+    issuer: string;
+    clientId: string;
+    secretName: string;
+    scopes: string;
+    /** Skip our TOTP/WebAuthn when the IdP reports MFA in "amr" (e.g. Entra ID with Conditional Access). */
+    trustIdpMfa: boolean;
+  }>,
   azure_devops: {
     organization: '',
     project: '',

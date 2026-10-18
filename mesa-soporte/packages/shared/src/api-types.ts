@@ -14,6 +14,8 @@ export interface MeResponse {
     locale: string;
     mfaEnabled: boolean;
   };
+  /** Second factors the user has set up. */
+  mfaMethods: Array<'totp' | 'webauthn'>;
   permissions: string[];
 }
 

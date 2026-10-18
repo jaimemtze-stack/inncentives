@@ -44,7 +44,7 @@ export class AuthController {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
-  private issue(reply: FastifyReply, s: CreatedSession): { state: AuthState; csrfToken: string } {
+  issue(reply: FastifyReply, s: CreatedSession): { state: AuthState; csrfToken: string } {
     setSessionCookie(reply, s.token, this.config);
     return { state: s.record.state, csrfToken: s.record.csrfToken };
   }
@@ -83,8 +83,8 @@ export class AuthController {
   @Get('me')
   @RequirePermissions()
   @AllowStates(...ALL_STATES)
-  me(@Req() req: FastifyRequest): MeResponse & { csrfToken: string } {
-    return { ...this.auth.me(req.auth!), csrfToken: req.auth!.session.csrfToken };
+  async me(@Req() req: FastifyRequest): Promise<MeResponse & { csrfToken: string }> {
+    return { ...(await this.auth.me(req.auth!)), csrfToken: req.auth!.session.csrfToken };
   }
 
   @Post('mfa/verify')

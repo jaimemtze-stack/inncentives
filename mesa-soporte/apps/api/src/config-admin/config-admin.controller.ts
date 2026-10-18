@@ -39,6 +39,25 @@ const SettingsSchema = z
     portal_group_id: z.string().uuid(),
     privacy_notice: z.object({ es: z.string().max(4000), en: z.string().max(4000) }).strict(),
     default_locale: z.enum(['es-MX', 'en']),
+    sso_providers: z
+      .array(
+        z
+          .object({
+            id: z.string().regex(/^[a-z0-9-]{1,40}$/),
+            label: z.string().trim().min(1).max(80),
+            area: z.enum(['agent', 'portal']),
+            issuer: z.string().url().max(300),
+            clientId: z.string().min(1).max(200),
+            secretName: z.string().regex(/^[a-z0-9_]{1,60}$/),
+            scopes: z
+              .string()
+              .regex(/^[\w:./ -]{1,300}$/)
+              .default('openid profile email'),
+            trustIdpMfa: z.boolean().default(false),
+          })
+          .strict(),
+      )
+      .max(5),
     azure_devops: z
       .object({
         organization: z.string().regex(/^([A-Za-z0-9][A-Za-z0-9-]{0,49})?$/),

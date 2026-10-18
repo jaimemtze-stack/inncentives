@@ -61,6 +61,25 @@ export class AuthService {
     return org?.mfaRequiredForCustomers ?? false;
   }
 
+  /** Methods of second factor the user has set up. */
+  async mfaMethods(userId: string): Promise<Array<'totp' | 'webauthn'>> {
+    const u = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { totpEnabledAt: true, _count: { select: { webauthnCredentials: true } } },
+    });
+    return [
+      ...(u.totpEnabledAt ? (['totp'] as const) : []),
+      ...(u._count.webauthnCredentials ? (['webauthn'] as const) : []),
+    ];
+  }
+
+  /** Session state after a first factor (password or SSO without trusted MFA). */
+  async stateAfterPrimary(user: User): Promise<AuthState> {
+    if ((await this.mfaMethods(user.id)).length) return 'mfa_required';
+    if (await this.mfaRequired(user)) return 'mfa_enrollment_required';
+    return 'authenticated';
+  }
+
   // ---------------------------------------------------------------- login
 
   async login(req: FastifyRequest, email: string, password: string): Promise<CreatedSession> {
@@ -97,9 +116,7 @@ export class AuthService {
     }
 
     await this.limits.reset('loginAccount', accountKey);
-    let state: AuthState = 'authenticated';
-    if (user.totpEnabledAt) state = 'mfa_required';
-    else if (await this.mfaRequired(user)) state = 'mfa_enrollment_required';
+    const state = await this.stateAfterPrimary(user);
 
     const created = await this.sessions.create({
       userId: user.id,
@@ -122,7 +139,7 @@ export class AuthService {
   }
 
   /** Bookkeeping once a session reaches the authenticated state. */
-  private async onFullyAuthenticated(req: FastifyRequest, user: User): Promise<void> {
+  async onFullyAuthenticated(req: FastifyRequest, user: User): Promise<void> {
     await this.prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
     const ua = userAgentOf(req) ?? 'unknown';
     const fingerprintHash = sha256Hex(`${user.id}|${ua}`);
@@ -339,8 +356,9 @@ export class AuthService {
     await this.sessions.update(auth.sessionId, auth.session);
   }
 
-  me(auth: AuthContext): MeResponse {
+  async me(auth: AuthContext): Promise<MeResponse> {
     return {
+      mfaMethods: await this.mfaMethods(auth.user.id),
       state: auth.session.state,
       area: auth.session.area,
       user: {
