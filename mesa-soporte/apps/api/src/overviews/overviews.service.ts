@@ -41,6 +41,46 @@ const listSelect = {
   organization: { select: { id: true, name: true } },
 } satisfies Prisma.TicketSelect;
 
+/**
+ * Search syntax: free text plus state:, tag:, owner:me|"Name", org:"ACME",
+ * group:"Soporte N1" and #number. Quoted values may contain spaces.
+ */
+export function parseQuery(
+  raw: string,
+  currentUserId: string,
+): { filters: Prisma.TicketWhereInput[]; words: string[] } {
+  const filters: Prisma.TicketWhereInput[] = [];
+  const words: string[] = [];
+  const tokens = raw.trim().match(/[a-zñ]+:"[^"]{1,80}"|"[^"]{1,80}"|\S+/gi) ?? [];
+  for (const token of tokens.slice(0, 30)) {
+    const m =
+      /^(state|estado|tag|etiqueta|owner|propietario|org|organizacion|group|grupo):"?([^"]{1,80})"?$/i.exec(
+        token,
+      );
+    if (m) {
+      const key = m[1]!.toLowerCase();
+      const v = m[2]!;
+      if (key === 'state' || key === 'estado') filters.push({ state: v.toLowerCase() });
+      else if (key === 'tag' || key === 'etiqueta')
+        filters.push({ tags: { some: { name: v.toLowerCase() } } });
+      else if (key === 'owner' || key === 'propietario') {
+        filters.push(
+          v.toLowerCase() === 'me' || v.toLowerCase() === 'yo'
+            ? { ownerId: currentUserId }
+            : { owner: { name: { contains: v, mode: 'insensitive' } } },
+        );
+      } else if (key === 'org' || key === 'organizacion')
+        filters.push({ organization: { name: { contains: v, mode: 'insensitive' } } });
+      else filters.push({ group: { name: { contains: v, mode: 'insensitive' } } });
+    } else if (/^#?\d{12,16}$/.test(token)) {
+      filters.push({ number: token.replace('#', '') });
+    } else {
+      words.push(token.replace(/"/g, ''));
+    }
+  }
+  return { filters, words };
+}
+
 type ListRow = Prisma.TicketGetPayload<{ select: typeof listSelect }>;
 
 @Injectable()
@@ -127,20 +167,7 @@ export class OverviewsService {
    * customers never match on internal notes.
    */
   async search(actor: AuthenticatedUser, raw: string, limit: number) {
-    const filters: Prisma.TicketWhereInput[] = [];
-    const words: string[] = [];
-    for (const token of raw.trim().split(/\s+/).slice(0, 30)) {
-      const m = /^(state|estado|tag|etiqueta):(.{1,60})$/i.exec(token);
-      if (m) {
-        const key = m[1]!.toLowerCase();
-        if (key === 'state' || key === 'estado') filters.push({ state: m[2]!.toLowerCase() });
-        else filters.push({ tags: { some: { name: m[2]!.toLowerCase() } } });
-      } else if (/^#?\d{12,16}$/.test(token)) {
-        filters.push({ number: token.replace('#', '') });
-      } else {
-        words.push(token);
-      }
-    }
+    const { filters, words } = parseQuery(raw, actor.id);
     const text = words.join(' ').slice(0, 200);
     if (!text && !filters.length) return { items: [] };
     if (text) {

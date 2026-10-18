@@ -7,6 +7,7 @@ import { ConfigAdminModule } from './config-admin/config-admin.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { KbModule } from './kb/kb.module';
 import { ReportsModule } from './reports/reports.module';
+import { SearchModule } from './search/search.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { AuditModule } from './audit/audit.module';
@@ -48,6 +49,7 @@ const featureModules = [
   KbModule,
   ReportsModule,
   IntegrationsModule,
+  SearchModule,
 ];
 
 @Module({})

@@ -12,11 +12,15 @@ import { AuditService } from '../audit/audit.service';
 import { AppError } from '../common/errors';
 import { ZodPipe } from '../common/zod-validation.pipe';
 import { AdminService } from './admin.service';
+import { ImportService } from './import.service';
 import { Area, RequirePermissions } from '../policy/decorators';
 
 const UserListQuery = PaginationSchema.extend({
   organizationId: z.string().uuid().optional(),
 }).strict();
+const ImportSchema = z
+  .object({ csv: z.string().min(1).max(900_000), dryRun: z.boolean().default(true) })
+  .strict();
 const AuditQuery = PaginationSchema.extend({
   action: z.string().max(80).optional(),
   actorUserId: z.string().uuid().optional(),
@@ -29,7 +33,29 @@ export class AdminController {
   constructor(
     private readonly admin: AdminService,
     private readonly audit: AuditService,
+    private readonly imports: ImportService,
   ) {}
+
+  /** CSV import: run with dryRun first; nothing is written while any row has errors. */
+  @Post('import/organizations')
+  @RequirePermissions(Permission.OrganizationsWrite)
+  @HttpCode(200)
+  importOrganizations(
+    @Req() req: FastifyRequest,
+    @Body(new ZodPipe(ImportSchema)) body: z.infer<typeof ImportSchema>,
+  ) {
+    return this.imports.organizations(req, body.csv, body.dryRun);
+  }
+
+  @Post('import/users')
+  @RequirePermissions(Permission.UsersInviteCustomer)
+  @HttpCode(200)
+  importUsers(
+    @Req() req: FastifyRequest,
+    @Body(new ZodPipe(ImportSchema)) body: z.infer<typeof ImportSchema>,
+  ) {
+    return this.imports.users(req, body.csv, body.dryRun);
+  }
 
   @Get('organizations')
   @RequirePermissions(Permission.OrganizationsRead)
