@@ -50,13 +50,18 @@ put redis_password 999 "$redis_pw"
 put redis_url 65532 "redis://:$redis_pw@redis:6379/0"
 put field_encryption_keys 65532 "k1:$(openssl rand -base64 32)"
 for s in smtp_username smtp_password cloudflared_token; do put "$s" 0 unused; done
+put graph_client_secret 65532 unused
+put cti_webhook_secret 65532 "$(openssl rand -hex 24)"
 for s in pgbackrest_s3_key pgbackrest_s3_key_secret pgbackrest_cipher_pass; do put "$s" 5432 unused; done
 
 echo "== start data tier, migrate, start the application"
 dc up -d --wait postgres redis
 dc run --rm migrator >/dev/null 2>&1 || { dc run --rm migrator; fail "migrations"; }
 dc up -d --wait api worker web
-ok "stack is up and the API is healthy"
+dc up -d jobs
+sleep 10
+[[ "$(docker inspect "$(dc ps -q jobs)" --format '{{.State.Running}} {{.RestartCount}}')" == "true 0" ]] || fail "jobs service is not running"
+ok "stack is up, the API is healthy and the jobs service runs"
 
 curl_edge() { docker run --rm --network "${P}_edge" curlimages/curl:8.16.0 -s "$@"; }
 
@@ -71,7 +76,11 @@ login="$(curl_edge -H 'Host: soporte.example.mx' -H 'Origin: https://soporte.exa
 grep -q '"invalid_credentials"' <<<"$login" || fail "login did not reach the database: $login"
 ip="$(dc exec -T -u postgres postgres psql -d mesa -Atc "select ip from audit_logs order by id desc limit 1")"
 [[ "$ip" == "203.0.113.77" ]] || fail "client IP from the tunnel not recorded (got $ip)"
-ok "nginx serves the app with CSP/HSTS, proxies the API and the client IP is taken from Cloudflare"
+ws="$(curl_edge -s -o /dev/null -w '%{http_code}' -H 'Host: soporte.example.mx' -H 'Origin: https://soporte.example.mx' \
+  -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  'http://web:8080/socket.io/?EIO=4&transport=websocket' -m 5 || true)"
+[[ "$ws" == "101" ]] || fail "websocket upgrade through nginx (got $ws)"
+ok "nginx serves the app with CSP/HSTS, proxies the API and websockets, and the client IP is taken from Cloudflare"
 
 echo "== network isolation"
 if curl_edge -m 3 http://api:3000/health >/dev/null 2>&1; then fail "edge network reaches the API directly"; fi

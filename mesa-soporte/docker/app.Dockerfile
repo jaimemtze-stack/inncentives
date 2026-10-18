@@ -23,7 +23,8 @@ COPY tsconfig.base.json ./
 COPY packages packages
 COPY apps apps
 RUN --mount=type=secret,id=ca,required=false \
-    NODE_EXTRA_CA_CERTS=/run/secrets/ca pnpm --filter @mesa/shared build \
+    export NODE_EXTRA_CA_CERTS=/run/secrets/ca \
+ && pnpm --filter @mesa/shared build \
  && pnpm --filter @mesa/api build \
  && pnpm --filter @mesa/worker build \
  && pnpm --filter @mesa/web build
@@ -85,6 +86,11 @@ CMD ["--enable-source-maps", "dist/main.js"]
 # Static assets served by nginx-unprivileged (uid 101), which also proxies the
 # API (see docker/nginx/default.conf).
 FROM nginxinc/nginx-unprivileged:1.30.6-alpine3.24@sha256:782bb89768cc87b7f95c18b95baa1af250e5d451f26794f59363540161147c01 AS web
+# Security fixes released after the pinned base image (e.g. libexpat CVE-2026-77214).
+USER root
+RUN --mount=type=secret,id=ca,required=false \
+    if [ -s /run/secrets/ca ]; then cp /run/secrets/ca /tmp/ca.crt; export SSL_CERT_FILE=/tmp/ca.crt; fi; \
+    apk upgrade --no-cache && rm -f /tmp/ca.crt
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/nginx/security-headers.inc /etc/nginx/conf.d/security-headers.inc
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html

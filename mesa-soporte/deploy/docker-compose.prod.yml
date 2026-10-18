@@ -61,6 +61,12 @@ secrets:
     file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/smtp_password
   cloudflared_token:
     file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/cloudflared_token
+  # Mailbox credential of the e-mail channel (Graph client secret or IMAP
+  # password). Channels reference it by name ("graph_client_secret").
+  graph_client_secret:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/graph_client_secret
+  cti_webhook_secret:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/cti_webhook_secret
   postgres_superuser_password:
     file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/postgres_superuser_password
   postgres_migrator_password:
@@ -111,7 +117,7 @@ services:
     <<: *hardening
     image: ${IMAGE_API:?}
     environment: *app-env
-    secrets: [database_url, redis_url, field_encryption_keys]
+    secrets: [database_url, redis_url, field_encryption_keys, cti_webhook_secret]
     tmpfs: ['/tmp:size=64m']
     networks: [app, data, egress]
     depends_on:
@@ -138,6 +144,27 @@ services:
       redis: { condition: service_healthy }
     mem_limit: 512m
     pids_limit: 200
+
+  # Queues and periodic work (mail fetch/send, SLA, schedulers, scans,
+  # retention, privacy tasks). Same image as the API, no HTTP listener.
+  jobs:
+    <<: *hardening
+    image: ${IMAGE_API:?}
+    command: ['--enable-source-maps', 'dist/jobs-main.js']
+    environment:
+      <<: *app-env
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: '3310'
+    secrets: [database_url, redis_url, field_encryption_keys, graph_client_secret]
+    tmpfs: ['/tmp:size=128m']
+    networks: [data, egress]
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    mem_limit: 1g
+    pids_limit: 300
 
   # One-shot: `docker compose run --rm migrator` (deployer.sh does it).
   migrator:

@@ -67,6 +67,7 @@ export function ArticleView(props: { article: Article; staff: boolean; onChanged
       <div
         ref={body}
         className="prose-sm max-w-none break-words"
+        // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml -- sanitised by the API allow-list
         dangerouslySetInnerHTML={{ __html: a.bodyHtml }}
       />
       <div className="mt-2 flex flex-wrap gap-2">

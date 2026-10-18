@@ -102,6 +102,7 @@ export function detectText(text: string): SensitiveFinding[] {
 export function redactText(text: string, marker = '[REDACTADO]'): string {
   let out = text;
   for (const p of PATTERNS) {
+    // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp -- built from constant patterns
     const re = new RegExp(p.re.source, 'gi');
     out = out.replace(re, (m) => (p.valid(m.toUpperCase()) ? marker : m));
   }

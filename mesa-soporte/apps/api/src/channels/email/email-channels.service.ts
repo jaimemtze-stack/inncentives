@@ -122,6 +122,7 @@ export class EmailChannelsService {
       if (ticket.group.signature?.active && article.sender === 'agent') {
         const values = await this.tickets.templateValues(ticket, article.createdById);
         const sig = renderTemplate(ticket.group.signature.body, values, false);
+        // nosemgrep: javascript.lang.security.html-in-template-string.html-in-template-string -- value escaped
         html += `<br><div class="signature">${escapeHtml(sig).replace(/\n/g, '<br>')}</div>`;
       }
       const files = [];

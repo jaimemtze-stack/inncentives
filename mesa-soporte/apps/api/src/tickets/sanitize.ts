@@ -89,6 +89,7 @@ export function textToHtml(text: string): string {
   return text
     .replace(/\r\n?/g, '\n')
     .split(/\n{2,}/)
+    // nosemgrep: javascript.lang.security.html-in-template-string.html-in-template-string -- value escaped
     .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
     .join('');
 }

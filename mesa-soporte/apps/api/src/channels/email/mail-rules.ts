@@ -77,6 +77,7 @@ export function classifyInbound(
 /** Ticket number from a subject such as "Re: [Ticket#202610170001] …". */
 export function ticketNumberFromSubject(subject: string, hook: string): string | null {
   const escaped = hook.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp -- hook is escaped and admin-validated
   const m = new RegExp(`\\[${escaped}\\s?(\\d{12,16})\\]`, 'i').exec(subject);
   return m ? m[1]! : null;
 }

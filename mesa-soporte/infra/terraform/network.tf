@@ -101,6 +101,7 @@ locals {
     cloudflared_tcp = { protocol = "6", port = 7844, description = "Cloudflare Tunnel (TCP)" }
     cloudflared_udp = { protocol = "17", port = 7844, description = "Cloudflare Tunnel (QUIC)" }
     smtp_submission = { protocol = "6", port = 587, description = "SMTP submission with STARTTLS (Microsoft 365)" }
+    imaps           = { protocol = "6", port = 993, description = "IMAP over TLS (alternative mailbox adapter)" }
     dns_udp         = { protocol = "17", port = 53, description = "DNS" }
     ntp             = { protocol = "17", port = 123, description = "NTP" }
   }

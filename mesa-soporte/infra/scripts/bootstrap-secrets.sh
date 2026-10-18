@@ -47,6 +47,7 @@ create redis_password "$REDIS_UID" "$redis_pw"
 create redis_url "$APP_UID" "redis://:${redis_pw}@redis:6379/0"
 create field_encryption_keys "$APP_UID" "k1:$(openssl rand -base64 32)"
 create pgbackrest_cipher_pass "$PG_UID" "$(rand 64 60)"
+create cti_webhook_secret "$APP_UID" "$(rand 64 48)"
 unset pg_super pg_migrator pg_app redis_pw
 
 echo "Values that come from other systems (input is hidden):" >&2
@@ -55,6 +56,7 @@ create pgbackrest_s3_key_secret "$PG_UID" "$(ask 'pgBackRest Customer Secret Key
 create cloudflared_token "$APP_UID" "$(ask 'Cloudflare Tunnel token')"
 create smtp_username "$APP_UID" "$(ask 'SMTP user (soporte@...)')"
 create smtp_password "$APP_UID" "$(ask 'SMTP password / app credential')"
+create graph_client_secret "$APP_UID" "$(ask 'Microsoft Graph client secret of the support mailbox app')"
 create github_read_token "$ROOT_UID" "$(ask 'GitHub fine-grained token (contents:read, packages:read)')"
 
 echo "# name ocid owner-uid   (copy to /opt/mesa/secrets.map on the VM)"
