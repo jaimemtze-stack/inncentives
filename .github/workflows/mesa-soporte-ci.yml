@@ -115,7 +115,19 @@ jobs:
             docker build -f docker/app.Dockerfile --target "$t" -t "mesa-$t:dev" .
           done
       - run: sudo -E deploy/tests/backup-restore.test.sh
-      - run: sudo -E deploy/tests/prod-stack.smoke.sh
+      - name: Production-stack smoke test and DAST (OWASP ZAP baseline)
+        run: sudo -E deploy/tests/prod-stack.smoke.sh
+        env:
+          DAST: '1'
+          DAST_REPORT_DIR: ${{ runner.temp }}/zap
+      - name: Upload ZAP reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: zap-baseline
+          path: ${{ runner.temp }}/zap
+          if-no-files-found: ignore
+          retention-days: 14
 
   arm64:
     name: linux/arm64 build and smoke test (QEMU)

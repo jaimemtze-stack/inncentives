@@ -37,6 +37,8 @@ describe('config', () => {
     const dir = mkdtempSync(join(tmpdir(), 'secrets-'));
     writeFileSync(join(dir, 'db'), 'value\n', { mode: 0o400 });
     expect(new FileSecretsProvider(dir, false).get('db')).toBe('value');
+    writeFileSync(join(dir, 'later'), 'unused\n', { mode: 0o400 });
+    expect(new FileSecretsProvider(dir, false).get('later')).toBeUndefined();
     writeFileSync(join(dir, 'open'), 'value', { mode: 0o644 });
     chmodSync(join(dir, 'open'), 0o644);
     expect(() => new FileSecretsProvider(dir, false).get('open')).toThrow(/world-readable/);

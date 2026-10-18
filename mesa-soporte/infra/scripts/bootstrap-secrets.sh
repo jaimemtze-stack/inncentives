@@ -48,6 +48,7 @@ create redis_url "$APP_UID" "redis://:${redis_pw}@redis:6379/0"
 create field_encryption_keys "$APP_UID" "k1:$(openssl rand -base64 32)"
 create pgbackrest_cipher_pass "$PG_UID" "$(rand 64 60)"
 create cti_webhook_secret "$APP_UID" "$(rand 64 48)"
+create azure_devops_hook_secret "$APP_UID" "$(rand 64 48)"
 unset pg_super pg_migrator pg_app redis_pw
 
 echo "Values that come from other systems (input is hidden):" >&2
@@ -57,6 +58,9 @@ create cloudflared_token "$APP_UID" "$(ask 'Cloudflare Tunnel token')"
 create smtp_username "$APP_UID" "$(ask 'SMTP user (soporte@...)')"
 create smtp_password "$APP_UID" "$(ask 'SMTP password / app credential')"
 create graph_client_secret "$APP_UID" "$(ask 'Microsoft Graph client secret of the support mailbox app')"
+orunused() { local v; v="$(ask "$1 (Enter = not used yet)")"; printf '%s' "${v:-unused}"; }
+create azure_devops_pat "$APP_UID" "$(orunused 'Azure DevOps PAT (Work Items: read & write)')"
+create sso_entra_client_secret "$APP_UID" "$(orunused 'Entra ID client secret of the agents SSO app')"
 create github_read_token "$ROOT_UID" "$(ask 'GitHub fine-grained token (contents:read, packages:read)')"
 
 echo "# name ocid owner-uid   (copy to /opt/mesa/secrets.map on the VM)"

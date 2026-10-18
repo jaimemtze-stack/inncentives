@@ -21,7 +21,9 @@ export class FileSecretsProvider {
       if ((st.mode & 0o004) !== 0) {
         throw new Error(`Secret file ${path} is world-readable; expected mode 0400 or 0440`);
       }
-      return readFileSync(path, 'utf8').replace(/\r?\n$/, '');
+      const value = readFileSync(path, 'utf8').replace(/\r?\n$/, '');
+      // Placeholder written by the bootstrap for integrations not set up yet.
+      return value === 'unused' || value === '' ? undefined : value;
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
     }

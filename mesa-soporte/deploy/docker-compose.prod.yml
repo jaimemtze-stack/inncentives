@@ -67,6 +67,14 @@ secrets:
     file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/graph_client_secret
   cti_webhook_secret:
     file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/cti_webhook_secret
+  # Phase 2 integrations. A file with the literal value "unused" (or empty)
+  # leaves the integration disabled.
+  azure_devops_pat:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/azure_devops_pat
+  azure_devops_hook_secret:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/azure_devops_hook_secret
+  sso_entra_client_secret:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/sso_entra_client_secret
   postgres_superuser_password:
     file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/postgres_superuser_password
   postgres_migrator_password:
@@ -117,7 +125,14 @@ services:
     <<: *hardening
     image: ${IMAGE_API:?}
     environment: *app-env
-    secrets: [database_url, redis_url, field_encryption_keys, cti_webhook_secret]
+    secrets:
+      - database_url
+      - redis_url
+      - field_encryption_keys
+      - cti_webhook_secret
+      - azure_devops_pat
+      - azure_devops_hook_secret
+      - sso_entra_client_secret
     tmpfs: ['/tmp:size=64m']
     networks: [app, data, egress]
     depends_on:
@@ -155,7 +170,7 @@ services:
       <<: *app-env
       CLAMAV_HOST: clamav
       CLAMAV_PORT: '3310'
-    secrets: [database_url, redis_url, field_encryption_keys, graph_client_secret]
+    secrets: [database_url, redis_url, field_encryption_keys, graph_client_secret, azure_devops_pat]
     tmpfs: ['/tmp:size=128m']
     networks: [data, egress]
     healthcheck:
