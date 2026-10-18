@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 17-oct-2026.
+Última actualización: 18-oct-2026.
 
 ## Terminado — Fase 0 (cimientos)
 
@@ -18,14 +18,29 @@ Detalle y evidencia en `fases/fase-0.md`.
 - [x] CI/CD (GitHub Actions) y Dependabot.
 - [x] Documentación: ADRs, modelo de amenazas, matriz ASVS, guía de despliegue y runbooks.
 
+## Terminado — Fase 1 (MVP)
+
+Detalle y evidencia en `fases/fase-1.md`.
+
+- [x] Tickets completos (artículos, fusión, división, enlaces, menciones, colisión en tiempo real, borradores, macros, módulos de texto, plantillas, firmas, acciones masivas, atajos, historial) y contabilidad de tiempo.
+- [x] Correo: Microsoft Graph e IMAP/SMTP, hilos, filtros postmaster, antibucles, verificación del remitente y grupo "Por verificar".
+- [x] Teléfono: registro manual, búsqueda por número y webhook CTI genérico firmado.
+- [x] Portal de clientes por invitación con acceso por organización.
+- [x] Organizaciones, planes, grupos con niveles de acceso, roles personalizados.
+- [x] SLAs con calendario de México, escalamientos, triggers, planificadores, Core Workflows, asignación automática y ausencias.
+- [x] Vistas, búsqueda de texto completo, notificaciones en la aplicación y por correo.
+- [x] Administración de todo lo anterior y campos personalizados; tokens de API; ver como cliente.
+- [x] Seguridad de la sección 5 (adjuntos con antivirus, datos sensibles, retención, ARCO, SSRF, tiempo real autorizado).
+- [x] Documentación: despliegue, manuales de administrador y agente, ADR-0011 a 0014.
+
 ## En espera
 
-- **Aprobación humana para iniciar la fase 1** (regla 9 del prompt).
+- **Aprobación humana para iniciar la fase 2** (regla 9 del prompt).
 
-## Siguiente — Fase 1 (MVP)
+## Siguiente — Fase 2
 
-Tickets, correo (Graph + IMAP), teléfono (registro manual + webhook CTI), portal de clientes, SLAs con calendario de México, automatizaciones, vistas y búsqueda, contabilidad de tiempo, detector de datos sensibles, retención, adjuntos con antivirus.
+Base de conocimiento bilingüe, reportes y tablero, Azure DevOps y Teams, SSO OIDC, WebAuthn, DAST en CI, importación CSV.
 
 ## Riesgos abiertos
 
-Ver la sección "Riesgos y pendientes" de `fases/fase-0.md`.
+Ver la sección "Riesgos y pendientes" de `fases/fase-0.md` y `fases/fase-1.md`.
