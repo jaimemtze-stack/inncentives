@@ -33,14 +33,28 @@ Detalle y evidencia en `fases/fase-1.md`.
 - [x] Seguridad de la sección 5 (adjuntos con antivirus, datos sensibles, retención, ARCO, SSRF, tiempo real autorizado).
 - [x] Documentación: despliegue, manuales de administrador y agente, ADR-0011 a 0014.
 
+## Terminado — Fase 2 (conocimiento, integraciones y reportes)
+
+Detalle y evidencia en `fases/fase-2.md`.
+
+- [x] Base de conocimiento bilingüe para clientes autenticados (versiones, publicación programada, sugerencias en el portal, inserción en respuestas).
+- [x] Reportes y tablero con horas por organización contra su plan; exportación CSV/XLSX segura y auditada.
+- [x] Azure DevOps (crear/vincular *work items*, sincronización y *service hook*) y Teams (metadatos solamente).
+- [x] Registro de entregas de webhooks salientes y Teams.
+- [x] SSO OIDC con vinculación explícita (Entra ID; Identity Server de Inncentives opcional) y WebAuthn/passkeys.
+- [x] DAST (OWASP ZAP *baseline*) en CI sobre el stack de producción.
+- [x] Importación CSV de organizaciones e invitaciones con validación previa.
+- [x] Búsqueda global con filtros, vista "Mis menciones", OpenAPI 3.1, interfaz `InncentivesClient` con *mock* y correo del sistema por Microsoft Graph.
+- [x] Documentación: ADR-0015 a 0018, despliegue, manuales, modelo de amenazas y matriz ASVS.
+
 ## En espera
 
-- **Aprobación humana para iniciar la fase 2** (regla 9 del prompt).
+- **Aprobación humana para iniciar la fase 3** (regla 9 del prompt).
 
-## Siguiente — Fase 2
+## Siguiente — Fase 3
 
-Base de conocimiento bilingüe, reportes y tablero, Azure DevOps y Teams, SSO OIDC, WebAuthn, DAST en CI, importación CSV.
+Integración con la API de Inncentives (barra lateral y widget "Reportar un problema"), conector de telefonía con proveedor real, chat en vivo, WhatsApp Business y SMS, e IA solo si se aprueba (5.12).
 
 ## Riesgos abiertos
 
-Ver la sección "Riesgos y pendientes" de `fases/fase-0.md` y `fases/fase-1.md`.
+Ver la sección "Riesgos y pendientes" de `fases/fase-0.md`, `fases/fase-1.md` y `fases/fase-2.md`.

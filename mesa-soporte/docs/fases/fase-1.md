@@ -1,6 +1,6 @@
 # Fase 1 — MVP: resumen para revisión
 
-**Estado:** terminada; **pendiente de aprobación para iniciar la fase 2**.
+**Estado:** terminada y aprobada (la fase 2 se inició con aprobación).
 
 ## 1. Qué se entregó
 
