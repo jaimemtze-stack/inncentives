@@ -75,6 +75,21 @@ secrets:
     file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/azure_devops_hook_secret
   sso_entra_client_secret:
     file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/sso_entra_client_secret
+  # Phase 3 channels and integrations ("unused" until configured).
+  inncentives_api_token:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/inncentives_api_token
+  inncentives_widget_secret:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/inncentives_widget_secret
+  twilio_auth_token:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/twilio_auth_token
+  whatsapp_access_token:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/whatsapp_access_token
+  whatsapp_app_secret:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/whatsapp_app_secret
+  whatsapp_verify_token:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/whatsapp_verify_token
+  anthropic_api_key:
+    file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/anthropic_api_key
   postgres_superuser_password:
     file: ${MESA_SECRETS_DIR:-/run/mesa/secrets}/postgres_superuser_password
   postgres_migrator_password:
@@ -133,6 +148,13 @@ services:
       - azure_devops_pat
       - azure_devops_hook_secret
       - sso_entra_client_secret
+      - inncentives_api_token
+      - inncentives_widget_secret
+      - twilio_auth_token
+      - whatsapp_access_token
+      - whatsapp_app_secret
+      - whatsapp_verify_token
+      - anthropic_api_key
     tmpfs: ['/tmp:size=64m']
     networks: [app, data, egress]
     depends_on:
@@ -174,7 +196,14 @@ services:
       <<: *app-env
       CLAMAV_HOST: clamav
       CLAMAV_PORT: '3310'
-    secrets: [database_url, redis_url, field_encryption_keys, graph_client_secret, azure_devops_pat]
+    secrets:
+      - database_url
+      - redis_url
+      - field_encryption_keys
+      - graph_client_secret
+      - azure_devops_pat
+      - twilio_auth_token
+      - whatsapp_access_token
     tmpfs: ['/tmp:size=128m']
     networks: [data, egress]
     healthcheck:

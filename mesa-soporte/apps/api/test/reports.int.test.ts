@@ -18,6 +18,7 @@ let agent: Client;
 let outsider: Client;
 let customer: Client;
 let customerId: string;
+let orgId: string;
 
 beforeAll(async () => {
   t = await startApp();
@@ -27,6 +28,7 @@ beforeAll(async () => {
   const o = await makeUser(t.prisma, 'AGENT', internal.id);
   const c = await makeUser(t.prisma, 'CUSTOMER', org.id);
   customerId = c.id;
+  orgId = org.id;
   await grantGroup(t.prisma, a.id, GROUP_N1);
   await grantGroup(t.prisma, o.id, GROUP_N2);
   agent = new Client(t.app, AGENT);
@@ -66,7 +68,10 @@ describe('reports', () => {
     expect(r.firstResponseMinutes.count).toBeGreaterThanOrEqual(1);
     expect(r.topModules).toContainEqual({ key: 'reportes', count: 1 });
     expect(r.timeByOrganization[0].minutes).toBeGreaterThanOrEqual(45);
-    const other = (await outsider.get(`/api/v1/reports/summary?${period()}`)).json();
+    // The database is shared with other test files: look only at this customer's organization.
+    const other = (
+      await outsider.get(`/api/v1/reports/summary?${period()}&organizationId=${orgId}`)
+    ).json();
     expect(other.totals.created).toBe(0);
     expect((await customer.get(`/api/v1/reports/summary?${period()}`)).statusCode).toBe(421);
     expect(

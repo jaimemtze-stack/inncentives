@@ -1,6 +1,6 @@
 # Fase 2 — Conocimiento, integraciones y reportes: resumen para revisión
 
-**Estado:** terminada; **pendiente de aprobación para iniciar la fase 3**.
+**Estado:** terminada y aprobada (la fase 3 se inició con aprobación).
 
 ## 1. Qué se entregó
 

@@ -39,3 +39,15 @@ La campana muestra asignaciones, respuestas de clientes, menciones y alertas de 
 - En el editor de respuesta, **Insertar de la base de conocimiento** busca una respuesta y agrega su texto o enlace. Las respuestas internas no deben enviarse al cliente.
 - En el panel del ticket, **Azure DevOps** crea un *work item* (con el número y título del ticket) o vincula uno existente por su ID. Cuando cambie de estado verás una nota interna.
 - *Reportes* muestra tus métricas y las de tus grupos; solo incluye tickets que puedes ver.
+
+## WhatsApp, SMS y chat (fase 3)
+
+- Los tickets de WhatsApp y SMS se responden desde el mismo editor eligiendo **WhatsApp** o **SMS** como tipo (solo texto). WhatsApp solo permite responder hasta **24 horas** después del último mensaje del cliente; pasado ese plazo usa correo o teléfono.
+- El estado de cada mensaje (En cola, Enviado, Entregado, Leído, Falló) aparece junto al artículo.
+- **Chat:** en *Chat* marca *Disponible para chat* (se mantiene mientras tengas la aplicación abierta). Pulsa *Atender* en un chat en espera; al terminar, el ticket se cierra solo.
+
+## Inncentives e IA (fase 3)
+
+- El panel **Inncentives** del ticket muestra los ambientes del cliente, su versión, los procesos con error y la Bitácora reciente.
+- Los tickets del widget "Reportar un problema" traen ambiente, módulo y versión llenos, y una nota interna con la URL y la hora.
+- Si tu organización autorizó la IA, el panel **Asistente de IA** resume, sugiere una respuesta (se inserta en el editor para que la revises) y clasifica (aplicas tú). En el editor, *Reescribir con IA* corrige, formaliza, acorta o traduce tu borrador. Revisa siempre el resultado: nada se envía solo.

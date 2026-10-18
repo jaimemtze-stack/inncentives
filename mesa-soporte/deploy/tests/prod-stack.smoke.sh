@@ -53,7 +53,10 @@ for s in smtp_username smtp_password cloudflared_token; do put "$s" 0 unused; do
 put graph_client_secret 65532 unused
 put cti_webhook_secret 65532 "$(openssl rand -hex 24)"
 put azure_devops_hook_secret 65532 "$(openssl rand -hex 24)"
-for s in azure_devops_pat sso_entra_client_secret; do put "$s" 65532 unused; done
+for s in azure_devops_pat sso_entra_client_secret inncentives_api_token twilio_auth_token \
+  whatsapp_access_token whatsapp_app_secret anthropic_api_key; do put "$s" 65532 unused; done
+put inncentives_widget_secret 65532 "$(openssl rand -hex 32)"
+put whatsapp_verify_token 65532 "$(openssl rand -hex 16)"
 for s in pgbackrest_s3_key pgbackrest_s3_key_secret pgbackrest_cipher_pass; do put "$s" 5432 unused; done
 
 echo "== start data tier, migrate, start the application"
@@ -71,6 +74,14 @@ echo "== request path through nginx"
 headers="$(curl_edge -D - -o /dev/null http://web:8080/)"
 grep -qi "content-security-policy: default-src 'self'" <<<"$headers" || fail "CSP header missing on the web app"
 grep -qi "strict-transport-security" <<<"$headers" || fail "HSTS missing"
+widget="$(curl_edge -D - -o /dev/null http://web:8080/widget.js)"
+grep -qi "cross-origin-resource-policy: cross-origin" <<<"$widget" || fail "widget.js not loadable cross-origin"
+grep -qi "frame-ancestors 'none'" <<<"$headers" || fail "the app must not be frameable"
+# Signed provider webhooks reach the API and reject unsigned calls.
+for h in twilio/voice twilio/sms whatsapp; do
+  code="$(curl_edge -o /dev/null -w '%{http_code}' -X POST -H 'Host: soporte.example.mx' -H 'Content-Type: application/json' -d '{}' "http://web:8080/hooks/$h")"
+  [[ "$code" == 401 ]] || fail "unsigned /hooks/$h answered $code"
+done
 area="$(curl_edge -H 'Host: soporte.example.mx' http://web:8080/api/v1/auth/area)"
 [[ "$area" == '{"area":"portal"}' ]] || fail "area endpoint: $area"
 login="$(curl_edge -H 'Host: soporte.example.mx' -H 'Origin: https://soporte.example.mx' -H 'Content-Type: application/json' \

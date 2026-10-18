@@ -1,0 +1,11 @@
+# ADR-0019: API de Inncentives y widget "Reportar un problema"
+
+- **Estado:** aceptada (fase 3)
+- **Contexto:** la API de Inncentives todavía no existe. El prompt pide una barra lateral con ambientes, versión, ejecuciones con error y eventos de Bitácora, y un widget dentro del Sistema administrativo que cree el ticket con el contexto (cliente, ambiente, módulo, URL, versión, hora y captura opcional).
+- **Decisión:**
+  - **Contrato propuesto** (`docs/integraciones/api-inncentives.md`): REST de solo lectura con token *bearer*, páginas `{ items: [...] }`. Interfaz `InncentivesClient` con dos implementaciones: `HttpInncentivesClient` (HTTPS obligatorio, sin redirecciones, 5 s, 1 MB, respuestas validadas con Zod) y `MockInncentivesClient` (datos fijos de demostración). El modo se elige en ajustes: `off` (por defecto), `mock` (solo desarrollo) o `http`.
+  - La organización se vincula con su **clave de tenant** (`inncentives_tenant_key`, única). La barra lateral es solo para agentes, se cachea 60 s y cualquier error responde `available: false`: el ticket nunca depende de la API.
+  - **Widget sin iframe:** un script (`/widget.js`) agrega el botón y abre el portal en **ventana nueva** (`noopener`). Así el portal conserva `frame-ancestors 'none'`, la cookie de sesión sigue siendo *first-party* (en un iframe de terceros no se enviaría) y no hay *clickjacking*.
+  - **Contexto firmado:** el backend de Inncentives firma un JWT HS256 (secreto `inncentives_widget_secret`, `iss` configurable, `aud: mesa-soporte`, ≤ 15 min, `jti`). Viaja en el fragmento `#ctx=` (no llega a servidores ni a `Referer`), se mueve a `sessionStorage` y sobrevive al inicio de sesión. El servidor solo confía en el contexto si la firma es válida **y** el `tenant` coincide con la organización del cliente que inició sesión; cada `jti` crea un solo ticket. El contexto llena los campos (ambiente, módulo, versión) y una nota interna (URL, hora, usuario de Inncentives).
+  - **Captura:** el cliente la pega (Ctrl+V) o la adjunta; pasa por el flujo normal de adjuntos (lista blanca, antivirus).
+- **Consecuencias:** cuando exista la API real solo cambia el modo a `http` y, si su forma difiere, `HttpInncentivesClient`. El widget necesita que Inncentives emita el token desde su backend (el secreto nunca va al navegador).

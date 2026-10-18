@@ -47,14 +47,26 @@ Detalle y evidencia en `fases/fase-2.md`.
 - [x] Búsqueda global con filtros, vista "Mis menciones", OpenAPI 3.1, interfaz `InncentivesClient` con *mock* y correo del sistema por Microsoft Graph.
 - [x] Documentación: ADR-0015 a 0018, despliegue, manuales, modelo de amenazas y matriz ASVS.
 
+## Terminado — Fase 3 (canales adicionales e Inncentives)
+
+Detalle y evidencia en `fases/fase-3.md`.
+
+- [x] API de Inncentives: contrato, cliente HTTP y *mock*; barra lateral del ticket.
+- [x] Widget "Reportar un problema" con contexto firmado y captura.
+- [x] Telefonía con Twilio Voice.
+- [x] WhatsApp Business (Meta) y SMS (Twilio) con acuses de entrega.
+- [x] Chat en vivo en el portal y desde el widget.
+- [x] IA (resumen, sugerencia, clasificación, redacción) implementada y **desactivada** hasta aprobación.
+- [x] Documentación: ADR-0019 a 0022, integraciones, despliegue, manuales, amenazas y ASVS.
+
 ## En espera
 
-- **Aprobación humana para iniciar la fase 3** (regla 9 del prompt).
+- **Revisión humana de la fase 3** (regla 9 del prompt). Con ella termina el plan por fases.
 
-## Siguiente — Fase 3
+## Siguiente
 
-Integración con la API de Inncentives (barra lateral y widget "Reportar un problema"), conector de telefonía con proveedor real, chat en vivo, WhatsApp Business y SMS, e IA solo si se aprueba (5.12).
+Sin fases pendientes en el prompt. Quedan los pendientes operativos de `fases/fase-*.md` §5 (configuración real de proveedores, API de Inncentives, aprobación de IA, prueba de penetración).
 
 ## Riesgos abiertos
 
-Ver la sección "Riesgos y pendientes" de `fases/fase-0.md`, `fases/fase-1.md` y `fases/fase-2.md`.
+Ver la sección "Riesgos y pendientes" de `fases/fase-0.md` a `fases/fase-3.md`.

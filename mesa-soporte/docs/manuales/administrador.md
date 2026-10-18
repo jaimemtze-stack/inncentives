@@ -77,3 +77,23 @@ Primero pulsa **Validar**: verás cuántas filas son válidas y una tabla de err
 - **SSO:** proveedores en `sso_providers` de *Ajustes generales* (ver `despliegue.md` §9 ter). Nadie entra por SSO sin haber vinculado antes su cuenta desde *Mi cuenta*.
 - **Azure DevOps:** `azure_devops` en *Ajustes generales* (`organization`, `project`, `defaultType`). Desde un ticket, los agentes crean o vinculan *work items*; los cambios de estado llegan como nota interna.
 - **API:** la descripción OpenAPI 3.1 está en `GET /api/v1/openapi.json` (host de agentes, con sesión o token de API). Cada operación indica los permisos que exige (`x-permissions`) y si pide reautenticación (`x-reauth`).
+
+## 11. Inncentives (fase 3)
+
+- En *Administración → Organizaciones* captura la **clave de Inncentives** de cada cliente (minúsculas, números y guiones). Con ella los agentes ven en el ticket los ambientes, versión, procesos con error y Bitácora reciente del cliente, y el widget "Reportar un problema" reconoce al cliente.
+- *Ajustes generales → `inncentives`*: `mode` (`off` hasta que exista la API, `http` después), `baseUrl`, nombres de los secretos y `widgetIssuer`.
+
+## 12. WhatsApp, SMS y teléfono (fase 3)
+
+- *Configuración → WhatsApp y SMS*: un registro por número con `kind` (`whatsapp`/`sms`), `providerId` (Phone number ID de Meta, o el número de Twilio), `displayNumber` (E.164) y el grupo que lo atiende.
+- *Ajustes generales → `messaging`*: `twilioAccountSid`, versión de la API de WhatsApp y `reopenDays` (un mensaje nuevo continúa el ticket del contacto actualizado en esos días; después abre otro).
+- Los números se reconocen por el **teléfono o celular** del cliente; registra ambos en su ficha. Los desconocidos llegan a *Por verificar*.
+- Las llamadas de Twilio aparecen en *Teléfono* y como aviso al agente.
+
+## 13. Chat en vivo (fase 3)
+
+*Ajustes generales → `chat`*: `enabled`, `groupId` (quién atiende) e `idleMinutes` (cierre por inactividad). El cliente solo ve el chat cuando al menos un agente del grupo está *Disponible*. Cada chat queda como ticket de canal `chat`.
+
+## 14. IA (fase 3, solo con aprobación)
+
+Desactivada por defecto. Para activarla: aprobación de Neitek, llave `anthropic_api_key` de una organización con retención cero, `ai.enabled: true` en *Ajustes generales* y la casilla **IA** en cada organización que la autorice (requiere `admin.config`). Antes de enviar se ocultan datos personales; los adjuntos nunca se envían; cada uso queda en la bitácora como `ai.request` y hay un límite de 60 por hora por agente.

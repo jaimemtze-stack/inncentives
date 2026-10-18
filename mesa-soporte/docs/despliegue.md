@@ -73,7 +73,12 @@ La llave privada **nunca** se copia al servidor ni a OCI. Sin ella, los volcados
    - **SSO de agentes (Entra ID):** registra una aplicación web de un solo tenant con URI de redirección `https://agentes.soporte.inncentives.com/api/v1/auth/sso/entra/callback`, permisos delegados `openid`, `email` y `profile`, y un secreto de cliente (máximo 12 meses) para `sso_entra_client_secret`. Si quieres aceptar el MFA de Entra en lugar del propio, exige MFA con Acceso condicional para esa aplicación.
    - **Azure DevOps:** crea un PAT de una cuenta de servicio con alcance **Work Items (Read & write)** y caducidad máxima de un año, para `azure_devops_pat`. El script del paso 6 genera `azure_devops_hook_secret`; en *Project settings → Service hooks* crea una suscripción *Web Hooks* al evento *Work item updated* hacia `https://soporte.inncentives.com/hooks/azure-devops` con usuario cualquiera y ese secreto como contraseña (*Basic*).
    - **Teams:** en cada canal crea un flujo de *Workflows* "Publicar en un canal cuando se reciba una solicitud de webhook" y copia su URL; se registra después en la aplicación (paso 9 ter), no como secreto del servidor.
-5. **GitHub:** crea un *fine-grained token* de solo lectura del repositorio (Contents: read) y Packages: read, con caducidad de 90 días.
+5. **Canales e integraciones de la fase 3** (opcionales):
+   - **Twilio** (voz y SMS): de la consola copia el *Account SID* (va en ajustes) y el *Auth Token* (`twilio_auth_token`). En cada número: *Messaging → A message comes in* → `POST https://soporte.inncentives.com/hooks/twilio/sms`; en tu flujo de voz (TwiML, Studio o SIP) configura *Call status changes* → `https://soporte.inncentives.com/hooks/twilio/voice` (opcional `?agent=<correo>` para dirigir el aviso).
+   - **WhatsApp Business (Meta Cloud API):** en Meta Business crea una app con el producto WhatsApp, un usuario de sistema con permiso `whatsapp_business_messaging` y su token permanente (`whatsapp_access_token`); copia el *App secret* (`whatsapp_app_secret`). En *Webhooks* suscribe el campo `messages` con URL `https://soporte.inncentives.com/hooks/whatsapp` y como *Verify token* el valor que genera el script del paso 6 (`whatsapp_verify_token`). Anota el *Phone number ID*.
+   - **API de Inncentives:** token de solo lectura (`inncentives_api_token`) cuando la API exista (contrato en `integraciones/api-inncentives.md`). El widget usa `inncentives_widget_secret`, que genera el script; entrégalo por un canal seguro al equipo de Inncentives (`integraciones/widget.md`).
+   - **IA (solo si Neitek la aprueba, ADR-0022):** llave de API de una organización de Anthropic con retención cero (`anthropic_api_key`).
+6. **GitHub:** crea un *fine-grained token* de solo lectura del repositorio (Contents: read) y Packages: read, con caducidad de 90 días.
 
 ## 6. Secretos en OCI Vault
 
@@ -82,6 +87,8 @@ infra/scripts/bootstrap-secrets.sh <compartment_id> <vault_id> <master_key_id> >
 ```
 
 El script genera las contraseñas aleatorias (incluido `cti_webhook_secret` para la futura telefonía), te pide las credenciales del paso 5 sin mostrarlas en pantalla (incluido `graph_client_secret`) y produce `secrets.map` (nombres + OCIDs, **sin valores**).
+
+> **Fase 3:** el script genera `inncentives_widget_secret` y `whatsapp_verify_token` y pide `inncentives_api_token`, `twilio_auth_token`, `whatsapp_access_token`, `whatsapp_app_secret` y `anthropic_api_key` (Enter = `unused`). En una instalación existente crea esos siete secretos antes de desplegar la fase 3.
 
 > **Fase 2:** el script también genera `azure_devops_hook_secret` y pide `azure_devops_pat` y `sso_entra_client_secret`; si aún no los tienes, presiona Enter y se guarda el valor `unused` (la integración queda desactivada). Para cargarlos después, crea una nueva versión del secreto en OCI Vault (`runbooks/rotacion-secretos.md`). En una instalación existente, crea los tres secretos nuevos con el mismo prefijo y agrégalos a `/opt/mesa/secrets.map` antes de desplegar la fase 2: el compose los exige.
 
@@ -111,6 +118,7 @@ sudo /opt/mesa/scripts/backup.sh full       # crea el stanza y el primer respald
   - política *Bypass* para la ruta `/hooks/*` (webhooks de la fase 1, que validan su propia firma);
   - duración de sesión de 8 h.
 - **Portal de clientes:** **sin** Access, pero con WAF y *Bot Fight Mode*.
+- **Webhooks de proveedores (fase 3):** Twilio y Meta llaman a `soporte.inncentives.com/hooks/*`. Crea una regla de WAF *Skip* (Bot Fight Mode / Super Bot Fight Mode y desafíos) para la ruta `/hooks/` — la API exige la firma de cada proveedor y responde 401 sin ella.
 
 ## 9. Acceso SSH sin llaves (Cloudflare Access)
 
@@ -152,6 +160,14 @@ sudo /opt/mesa/scripts/backup.sh full       # crea el stanza y el primer respald
 4. **Teams:** en *Configuración → Canales de Teams* registra cada URL con su grupo y eventos; revisa *Entregas* tras el primer ticket.
 5. **Importación:** *Administración → Importar desde CSV*; valida primero y corrige el reporte de errores antes de importar.
 6. **Correo del sistema por Graph:** tras cambiar `stack.env`, `sudo systemctl restart mesa-stack` y envía una invitación de prueba.
+
+## 9 quater. Después de desplegar la fase 3
+
+1. **Inncentives:** en *Administración → Organizaciones* captura la clave de tenant de cada cliente. En *Ajustes generales → `inncentives`* deja `mode: "off"` hasta que exista la API; luego `mode: "http"` y `baseUrl`. Entrega `widget.md` y el secreto del widget al equipo de Inncentives.
+2. **Teléfono:** haz una llamada de prueba al número de Twilio y verifica que aparezca en *Teléfono* (bitácora de llamadas).
+3. **WhatsApp y SMS:** en *Configuración → WhatsApp y SMS* registra cada número (`kind`, `providerId` = *Phone number ID* de Meta o el número de Twilio en E.164, `displayNumber`, `groupId`). En ajustes `messaging` captura `twilioAccountSid`. Envía un mensaje desde un celular registrado en un cliente: debe crear un ticket en el grupo del número; desde uno desconocido, en *Por verificar*. Responde desde el ticket y confirma el estado *Entregado*.
+4. **Chat:** en `chat` de los ajustes pon `enabled: true` y el grupo. Los agentes de ese grupo marcan *Disponible para chat* en la página *Chat*.
+5. **IA:** solo con aprobación. `ai.enabled: true` en ajustes y la casilla *IA* en cada organización que lo autorice. Revisa en la bitácora las acciones `ai.request`.
 
 ## 10. Verificación final (lista de verificación)
 

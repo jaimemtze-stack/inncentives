@@ -83,6 +83,21 @@ Operador ─▶ Cloudflare Access SSH / OCI Bastion ─▶ VM        VM ─▶ O
 | 44 | T/E | Importación CSV que crea cuentas o eleva privilegios | Solo invitaciones (no cuentas); rol validado contra el permiso de quien importa; validación completa antes de escribir (todo o nada); tamaño y filas acotados; auditado | `import.int.test.ts`, `csv.test.ts` |
 | 45 | I | Búsqueda global que enumera personas u organizaciones | Usuarios y organizaciones solo para personal y con `userScope`/`organizationScope`; tickets con `scope('read')` | `search.int.test.ts` |
 
+### Amenazas agregadas en la fase 3
+
+| # | STRIDE | Amenaza | Mitigación (dónde) | Verificación |
+|---|---|---|---|---|
+| 46 | S | Webhooks de Twilio o Meta falsificados (llamadas o mensajes inventados) | Firma del proveedor sobre la URL pública/cuerpo exacto (`X-Twilio-Signature`, `X-Hub-Signature-256`), secretos en Vault, comparación en tiempo constante; 401 sin firma | `twilio.test.ts`, `providers.test.ts`, `messaging.int.test.ts`, *smoke* |
+| 47 | S/I | Suplantación de un cliente por WhatsApp/SMS para obtener datos | Solo números registrados en la ficha del cliente se asocian; los demás van a *Por verificar* sin cliente | `messaging.int.test.ts` |
+| 48 | T | Mensajes repetidos (reintentos del proveedor) que duplican artículos | Id del proveedor único (`external_id`); acuses solo avanzan de estado | `messaging.int.test.ts` |
+| 49 | S/E | Contexto del widget falsificado o de otro cliente | JWT HS256 con secreto compartido, `aud`/`iss`/edad ≤ 15 min, `tenant` = organización del usuario, `jti` de un solo uso | `inncentives.int.test.ts`, E2E |
+| 50 | I | Token del widget filtrado en registros o `Referer` | Viaja en el fragmento `#`, se retira de la barra de direcciones y vive solo en `sessionStorage` | E2E `report-widget.spec.ts` |
+| 51 | T | *Clickjacking* o robo de sesión mediante el widget | Sin iframe: ventana nueva con `noopener`; el portal mantiene `frame-ancestors 'none'` | *smoke* (CSP) |
+| 52 | I | Respuesta de la API de Inncentives maliciosa o enorme | HTTPS, sin redirecciones, 5 s, 1 MB, esquema Zod; React escapa el contenido | `inncentives.http.test.ts` |
+| 53 | I/E | Lectura o escritura en chats ajenos | Solo el cliente de la sesión y el agente que la aceptó; aceptación atómica; 404 fuera de alcance | `chat.int.test.ts` |
+| 54 | I | Datos personales o de nómina enviados al proveedor de IA | Desactivada por defecto (global y por organización), redacción previa, sin adjuntos, retención cero, auditoría, límite por agente | `redact.test.ts`, `ai.int.test.ts` |
+| 55 | T | Inyección de instrucciones en el texto del ticket hacia la IA | Contenido entre etiquetas tratado como datos, salida estructurada validada, todo resultado lo revisa un agente; nunca se envía solo | `ai.int.test.ts`, `provider.test.ts` |
+
 ## Riesgos residuales aceptados (fase 0)
 
 - **TLS interno:** el TLS hacia PostgreSQL dentro de la red Docker usa un certificado autofirmado sin verificación (`sslaccept=accept_invalid_certs`). Protege contra captura pasiva; la red es interna.
@@ -101,3 +116,10 @@ Operador ─▶ Cloudflare Access SSH / OCI Bastion ─▶ VM        VM ─▶ O
 - **`trustIdpMfa`:** si se activa, la fortaleza del segundo factor depende del Acceso condicional de Entra; por defecto está desactivado.
 - **Sincronización de DevOps:** sin *service hook*, el estado se actualiza cada 15 minutos.
 - **DAST:** ZAP *baseline* (pasivo + *spider*) en el CI contra el stack de producción local; no sustituye una prueba de penetración autenticada antes de abrir el portal a clientes.
+
+## Riesgos residuales aceptados (fase 3)
+
+- **Webhooks públicos de proveedores** en el host del portal: dependen de la firma de cada proveedor y de excluir `/hooks/` del *Bot Fight Mode* de Cloudflare.
+- **Twilio Voice no tiene marca de tiempo en la firma:** una repetición es posible, pero los eventos son idempotentes (se actualiza la misma llamada).
+- **Redacción para IA por patrones:** puede dejar pasar datos sin formato reconocible (por ejemplo, nombres); por eso la IA se habilita por organización y se audita.
+- **Mensajes salientes de WhatsApp/SMS** muestran el texto en el teléfono del cliente; el agente debe aplicar el mismo criterio que en el correo (sin datos de nómina).

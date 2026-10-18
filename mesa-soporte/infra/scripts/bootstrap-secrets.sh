@@ -49,6 +49,8 @@ create field_encryption_keys "$APP_UID" "k1:$(openssl rand -base64 32)"
 create pgbackrest_cipher_pass "$PG_UID" "$(rand 64 60)"
 create cti_webhook_secret "$APP_UID" "$(rand 64 48)"
 create azure_devops_hook_secret "$APP_UID" "$(rand 64 48)"
+create inncentives_widget_secret "$APP_UID" "$(rand 64 48)"
+create whatsapp_verify_token "$APP_UID" "$(rand 48 32)"
 unset pg_super pg_migrator pg_app redis_pw
 
 echo "Values that come from other systems (input is hidden):" >&2
@@ -61,6 +63,11 @@ create graph_client_secret "$APP_UID" "$(ask 'Microsoft Graph client secret of t
 orunused() { local v; v="$(ask "$1 (Enter = not used yet)")"; printf '%s' "${v:-unused}"; }
 create azure_devops_pat "$APP_UID" "$(orunused 'Azure DevOps PAT (Work Items: read & write)')"
 create sso_entra_client_secret "$APP_UID" "$(orunused 'Entra ID client secret of the agents SSO app')"
+create inncentives_api_token "$APP_UID" "$(orunused 'Inncentives API token (read-only)')"
+create twilio_auth_token "$APP_UID" "$(orunused 'Twilio Auth Token (voice and SMS)')"
+create whatsapp_access_token "$APP_UID" "$(orunused 'WhatsApp Cloud API system user token')"
+create whatsapp_app_secret "$APP_UID" "$(orunused 'Meta app secret (webhook signatures)')"
+create anthropic_api_key "$APP_UID" "$(orunused 'Anthropic API key (zero data retention org; only if AI is approved)')"
 create github_read_token "$ROOT_UID" "$(ask 'GitHub fine-grained token (contents:read, packages:read)')"
 
 echo "# name ocid owner-uid   (copy to /opt/mesa/secrets.map on the VM)"

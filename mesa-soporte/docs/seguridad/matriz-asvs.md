@@ -1,4 +1,4 @@
-# Matriz OWASP ASVS 4.0 (nivel 2) — estado al cierre de la fase 2
+# Matriz OWASP ASVS 4.0 (nivel 2) — estado al cierre de la fase 3
 
 Leyenda: ✅ implementado y probado · 🟡 parcial / depende de configuración externa · ⏳ fase posterior.
 
@@ -39,6 +39,10 @@ Leyenda: ✅ implementado y probado · 🟡 parcial / depende de configuración 
 | 13.1.x | API: allow-list de hosts, CORS cerrado | ✅ | Host desconocido → 421; sin CORS | `platform.int.test.ts` |
 | 13.2.x | API REST: tokens de API | ✅ | Hash, expiración obligatoria, *scopes*, revocación, solo host de agentes | `config-admin.int.test.ts` |
 | 12.6.1 / 5.2.6 | SSRF | ✅ | Webhooks solo HTTPS a IPs públicas validadas; Teams solo a hosts de Microsoft; clientes de DevOps/OIDC sin redirecciones | `safe-fetch.test.ts`, `teams.test.ts` |
+| 13.2.x | Webhooks de Twilio y WhatsApp | ✅ | Firma del proveedor verificada, 401 sin firma, deduplicación por id | `twilio.int.test.ts`, `messaging.int.test.ts`, *smoke* |
+| 3.5.x / 13.1.x | Contexto firmado del widget | ✅ | JWT HS256 (`aud`, `iss`, ≤ 15 min, `jti`), tenant ligado a la sesión | `inncentives.int.test.ts`, E2E |
+| 4.2.x | Autorización del chat | ✅ | Solo cliente y agente asignado; aceptación atómica | `chat.int.test.ts` |
+| 8.3.x | Datos enviados a IA | ✅ | Opt-in por organización, redacción previa, sin adjuntos, auditoría y límite | `ai.int.test.ts`, `redact.test.ts` |
 | 13.1.5 | Documentación de la API | ✅ | OpenAPI 3.1 generado de las rutas con permisos por operación, solo para personal | `openapi.int.test.ts` |
 | 13.2.x | Webhooks entrantes autenticados | ✅ | CTI (HMAC + anti-repetición) y Azure DevOps (*Basic* con secreto, estado releído) | `attachments.int.test.ts`, `integrations.int.test.ts` |
 | 13.5.x | WebSocket | ✅ | Autenticación con la sesión, Origin y Host, salas autorizadas, revalidación | `realtime.int.test.ts` |
