@@ -151,6 +151,12 @@ function Conversation({ session, onEnded }: { session: Session; onEnded?: () => 
   );
 }
 
+interface ChatStatus {
+  enabled: boolean;
+  available: boolean;
+  session: Session | null;
+}
+
 function CustomerChat() {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -159,8 +165,7 @@ function CustomerChat() {
   const [error, setError] = useState<string | null>(null);
   const status = useQuery({
     queryKey: ['chat', 'status'],
-    queryFn: () =>
-      api<{ enabled: boolean; available: boolean; session: Session | null }>('GET', '/chat/status'),
+    queryFn: () => api<ChatStatus>('GET', '/chat/status'),
     refetchInterval: 30_000,
   });
 
@@ -168,8 +173,13 @@ function CustomerChat() {
     e.preventDefault();
     setError(null);
     try {
-      await api('POST', '/chat/sessions', { message: first, origin: chatOrigin() });
+      const session = await api<Session>('POST', '/chat/sessions', {
+        message: first,
+        origin: chatOrigin(),
+      });
       setFirst('');
+      // Show the conversation right away; the refetch below confirms it.
+      qc.setQueryData<ChatStatus>(['chat', 'status'], (old) => old && { ...old, session });
       await qc.invalidateQueries({ queryKey: ['chat'] });
     } catch (err) {
       setError(errorText(err));

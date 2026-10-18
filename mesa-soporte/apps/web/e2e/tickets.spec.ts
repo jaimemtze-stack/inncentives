@@ -72,6 +72,16 @@ test('an agent logs a call, the customer answers in the portal and the agent see
   );
   await agent.getByLabel('Disponible para chat').check();
   expect((await availability).status()).toBe(201);
+  // Kept for the failure message: what the portal saw while the chat started.
+  const seen: string[] = [];
+  customer.on('pageerror', (err) => seen.push(`pageerror: ${err.message}`));
+  customer.on('response', (r) => {
+    if (r.url().includes('/api/v1/chat/'))
+      void r
+        .text()
+        .then((body) => seen.push(`${r.request().method()} ${r.url()} ${r.status()} ${body}`))
+        .catch(() => undefined);
+  });
   await customer.getByRole('link', { name: 'Chat', exact: true }).click();
   await customer.getByLabel('¿En qué te ayudamos?').fill('¿Cómo exporto la liquidación?');
   const started = customer.waitForResponse(
@@ -81,9 +91,13 @@ test('an agent logs a call, the customer answers in the portal and the agent see
   const startRes = await started;
   // On failure, show the API's answer instead of a bare timeout.
   expect(startRes.status(), await startRes.text()).toBe(201);
-  await expect(customer.getByText('Esperando a que un agente se una')).toBeVisible({
-    timeout: 10_000,
-  });
+  try {
+    await expect(customer.getByText('Esperando a que un agente se una')).toBeVisible({
+      timeout: 10_000,
+    });
+  } catch (err) {
+    throw new Error(`${(err as Error).message}\n\nPortal chat traffic:\n${seen.join('\n')}`);
+  }
   await agent.getByRole('button', { name: 'Atender' }).click({ timeout: 15_000 });
   await agent.getByLabel('Mensaje', { exact: true }).fill('Desde Reportes > Exportar.');
   await agent.getByRole('button', { name: 'Enviar', exact: true }).click();
