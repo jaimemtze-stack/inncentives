@@ -20,6 +20,8 @@ export const Permission = {
   AdminConfig: 'admin.config',
   /** Data subject requests: export, anonymise, delete; retention policies. */
   DataPrivacy: 'admin.data_privacy',
+  /** Read-only "view as customer" (time-boxed, audited). */
+  ViewAsCustomer: 'admin.view_as_customer',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];

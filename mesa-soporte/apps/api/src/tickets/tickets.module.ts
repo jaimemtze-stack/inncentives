@@ -27,6 +27,14 @@ import { TicketsController } from './tickets.controller';
     NotificationsService,
     JobQueuesService,
   ],
-  exports: [TicketAccessService, TicketService, SlaService, NotificationsService, JobQueuesService],
+  exports: [
+    TicketAccessService,
+    TicketService,
+    TicketExtrasService,
+    OverviewsService,
+    SlaService,
+    NotificationsService,
+    JobQueuesService,
+  ],
 })
 export class TicketsModule {}

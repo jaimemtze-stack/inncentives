@@ -34,6 +34,8 @@ function reject(
  */
 export function originAllowed(req: FastifyRequest, config: AppConfig): boolean {
   if (!UNSAFE_METHODS.has(req.method) || req.url.startsWith('/hooks/')) return true;
+  // API clients authenticate with a bearer token and send no cookies: no CSRF exposure.
+  if (/^Bearer mesa_/.test(req.headers.authorization ?? '') && !req.headers.cookie) return true;
   const site = req.headers['sec-fetch-site'];
   if (typeof site === 'string' && site !== 'same-origin') return false;
   const expected = `${config.PUBLIC_SCHEME}://${req.headers.host ?? ''}`;

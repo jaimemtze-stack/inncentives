@@ -211,7 +211,7 @@ describe('jobs', () => {
       return { status: 200, body: '' };
     };
     const hook = await t.prisma.webhook.create({
-      data: { name: 'Teams', url: 'https://hooks.example.com/x' },
+      data: { name: 'Webhook de prueba jobs', url: 'https://hooks.example.com/x' },
     });
     await t.prisma.webhook.update({
       where: { id: hook.id },

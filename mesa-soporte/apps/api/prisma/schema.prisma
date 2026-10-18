@@ -79,6 +79,7 @@ model User {
   resetTokens            PasswordResetToken[]
   devices                UserDevice[]
   invitationsSent        Invitation[]                @relation("InvitedBy")
+  apiTokens              ApiToken[]
 
   @@index([organizationId])
   @@index([phone])
@@ -847,4 +848,21 @@ model Webhook {
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("webhooks")
+}
+
+/// Personal API token (staff). Only the hash is stored; scopes narrow the owner's permissions.
+model ApiToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String    @db.VarChar(120)
+  tokenHash  String    @unique @map("token_hash") @db.Char(64)
+  scopes     String[]
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("api_tokens")
 }

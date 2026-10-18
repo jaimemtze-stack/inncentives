@@ -18,6 +18,8 @@ export interface AuthContext {
   session: SessionRecord;
   /** Public session id (hash of the cookie value). */
   sessionId: string;
+  /** Set when the request authenticated with a personal API token. */
+  apiTokenId?: string;
 }
 
 declare module 'fastify' {

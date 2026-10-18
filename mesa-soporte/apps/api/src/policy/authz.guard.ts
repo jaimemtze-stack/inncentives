@@ -12,7 +12,7 @@ import { APP_CONFIG, AppConfig } from '../config/config';
 import { AppError } from '../common/errors';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from '../security/session.service';
-import { safeEqual } from '../security/tokens';
+import { safeEqual, sha256Hex } from '../security/tokens';
 import {
   ANY_PERMISSIONS_KEY,
   AREA_KEY,
@@ -68,7 +68,15 @@ export class AuthzGuard implements CanActivate {
       return true;
     }
 
-    if (!resolved) throw new AppError('unauthenticated');
+    if (!resolved) {
+      const bearer = /^Bearer (mesa_[A-Za-z0-9_-]{43})$/.exec(req.headers.authorization ?? '')?.[1];
+      if (!bearer || token) throw new AppError('unauthenticated');
+      await this.attachApiToken(req, bearer);
+      this.checkPermissions(req, permissions, anyOf);
+      // Tokens never satisfy re-authentication: those actions need a person.
+      if (this.meta<boolean>(REAUTH_KEY, ctx)) throw new AppError('reauthentication_required');
+      return true;
+    }
     await this.attach(req, resolved, true);
     const auth = req.auth!;
 
@@ -94,12 +102,7 @@ export class AuthzGuard implements CanActivate {
       }
     }
 
-    for (const p of permissions ?? []) {
-      if (!auth.user.permissions.includes(p)) throw new AppError('forbidden');
-    }
-    if (anyOf && !anyOf.some((p) => auth.user.permissions.includes(p))) {
-      throw new AppError('forbidden');
-    }
+    this.checkPermissions(req, permissions, anyOf);
 
     if (this.meta<boolean>(REAUTH_KEY, ctx)) {
       const windowMs = this.config.REAUTH_WINDOW_MINUTES * 60_000;
@@ -108,6 +111,71 @@ export class AuthzGuard implements CanActivate {
       }
     }
     return true;
+  }
+
+  private checkPermissions(
+    req: FastifyRequest,
+    all: Permission[] | undefined,
+    anyOf: Permission[] | undefined,
+  ) {
+    const granted = req.auth!.user.permissions;
+    for (const p of all ?? []) if (!granted.includes(p)) throw new AppError('forbidden');
+    if (anyOf && !anyOf.some((p) => granted.includes(p))) throw new AppError('forbidden');
+  }
+
+  /** Personal API tokens: agents host only, permissions = user's ∩ token scopes. */
+  private async attachApiToken(req: FastifyRequest, raw: string): Promise<void> {
+    if (req.area !== 'agent') throw new AppError('unauthenticated');
+    const token = await this.prisma.apiToken.findUnique({
+      where: { tokenHash: sha256Hex(raw) },
+      include: {
+        user: {
+          include: { customRoles: { where: { role: { active: true } }, select: { role: true } } },
+        },
+      },
+    });
+    const now = Date.now();
+    if (!token || token.revokedAt || token.expiresAt.getTime() <= now)
+      throw new AppError('unauthenticated');
+    const user = token.user;
+    if (user.status !== 'ACTIVE' || user.role === 'CUSTOMER') throw new AppError('unauthenticated');
+    if (!token.lastUsedAt || now - token.lastUsedAt.getTime() > 60_000) {
+      await this.prisma.apiToken.update({
+        where: { id: token.id },
+        data: { lastUsedAt: new Date(now) },
+      });
+    }
+    const permissions = effectivePermissions(
+      user.role,
+      user.customRoles.flatMap((c) => c.role.permissions),
+    ).filter((p) => token.scopes.includes(p));
+    req.auth = {
+      sessionId: `token:${token.id}`,
+      apiTokenId: token.id,
+      session: {
+        userId: user.id,
+        area: 'agent',
+        state: 'authenticated',
+        csrfToken: '',
+        createdAt: now,
+        absoluteExpiresAt: token.expiresAt.getTime(),
+        lastSeenAt: now,
+        reauthAt: null,
+        mfaFailures: 0,
+        ip: req.clientIp ?? null,
+        userAgent: null,
+      },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        organizationId: user.organizationId,
+        locale: user.locale,
+        mfaEnabled: user.totpEnabledAt !== null,
+        permissions,
+      },
+    };
   }
 
   private async attach(
