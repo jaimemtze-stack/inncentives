@@ -159,3 +159,46 @@ export const BulkUpdateSchema = z
   })
   .strict();
 export type BulkUpdateInput = z.infer<typeof BulkUpdateSchema>;
+
+// ------------------------------------------------------------ knowledge base
+
+export const KbLocales = ['es-MX', 'en'] as const;
+const KbLocale = z.enum(KbLocales);
+
+export const KbCategorySchema = z
+  .object({
+    parentId: z.string().uuid().nullable().optional(),
+    names: z
+      .record(KbLocale, z.string().trim().min(1).max(120))
+      .refine((n) => Object.keys(n).length > 0),
+    slug: z.string().regex(/^[a-z0-9-]{1,80}$/),
+    position: z.number().int().min(0).max(10_000).default(0),
+  })
+  .strict();
+
+export const KbTranslationSchema = z
+  .object({
+    title: z.string().trim().min(1).max(250),
+    body: z.string().min(1).max(200_000),
+    keywords: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
+  })
+  .strict();
+
+export const KbAnswerCreateSchema = z
+  .object({
+    categoryId: z.string().uuid(),
+    visibility: z.enum(['customer', 'internal']).default('customer'),
+    locale: KbLocale,
+    translation: KbTranslationSchema,
+  })
+  .strict();
+
+export const KbAnswerUpdateSchema = z
+  .object({
+    categoryId: z.string().uuid().optional(),
+    visibility: z.enum(['customer', 'internal']).optional(),
+    state: z.enum(['draft', 'published', 'archived']).optional(),
+    publishAt: z.coerce.date().nullable().optional(),
+  })
+  .strict()
+  .refine((v) => Object.keys(v).length > 0);

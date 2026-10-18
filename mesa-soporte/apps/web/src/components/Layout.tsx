@@ -73,6 +73,11 @@ export function Layout() {
                 {t('nav.tickets')}
               </Link>
             )}
+            {authed && (
+              <Link to="/kb" className="link">
+                {t('nav.kb')}
+              </Link>
+            )}
             {agent && (
               <Link to="/telefono" className="link">
                 {t('nav.phone')}

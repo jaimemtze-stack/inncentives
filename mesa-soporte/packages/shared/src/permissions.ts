@@ -22,6 +22,10 @@ export const Permission = {
   DataPrivacy: 'admin.data_privacy',
   /** Read-only "view as customer" (time-boxed, audited). */
   ViewAsCustomer: 'admin.view_as_customer',
+  /** Write the knowledge base (drafts, publication, categories). */
+  KbEdit: 'kb.edit',
+  /** Reports and dashboard. */
+  Reports: 'reports.read',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];
@@ -39,6 +43,7 @@ export const RolePermissions: Record<Role, readonly Permission[]> = {
     Permission.UsersRead,
     Permission.UsersInviteCustomer,
     Permission.TicketsAgent,
+    Permission.Reports,
   ],
   CUSTOMER: [Permission.SelfManage, Permission.TicketsCustomer],
 };

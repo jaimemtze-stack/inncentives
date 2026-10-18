@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
@@ -7,6 +7,7 @@ import { AttachmentPicker, confirmSensitive, CustomFieldInputs } from '../compon
 import { Alert, useErrorText } from '../components/ui';
 import { textToHtml, useFormMeta, type Ref } from '../lib/tickets';
 import { useMe } from '../session';
+import { useKbSearch } from './Kb';
 
 interface Customer extends Ref {
   email: string;
@@ -34,6 +35,7 @@ export function TicketNewPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [required, setRequired] = useState<string[]>([]);
+  const suggestions = useKbSearch(title, 5);
 
   const customers = useQuery({
     queryKey: ['lookup', customerQ],
@@ -243,6 +245,23 @@ export function TicketNewPage() {
               <option value="note">{t('article.types.note')}</option>
             </select>
           </div>
+        </div>
+      )}
+      {!!suggestions.data?.length && (
+        <div
+          className="rounded border border-blue-200 bg-blue-50 p-3 text-sm dark:border-blue-900 dark:bg-blue-950"
+          role="status"
+        >
+          <p className="font-medium">{t('kb.suggestions')}</p>
+          <ul className="list-disc pl-5">
+            {suggestions.data.map((s) => (
+              <li key={s.id}>
+                <Link to="/kb/$id" params={{ id: s.id }} className="link" target="_blank">
+                  {s.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       <div>

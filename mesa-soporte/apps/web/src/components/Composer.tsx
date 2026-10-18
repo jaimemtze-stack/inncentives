@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { api, uploadFile } from '../api';
 import { textToHtml, useFormMeta, type Attribute, type Ref } from '../lib/tickets';
+import { useKbSearch } from '../pages/Kb';
 import { Alert, useErrorText } from './ui';
 
 /** Expands "::keyword " into the matching text module. */
@@ -178,6 +179,60 @@ function writeLocalDraft(id: string, body: string): void {
   } catch {
     // Storage unavailable (private mode): drafts simply are not kept.
   }
+}
+
+/** Agents search the knowledge base and insert a link or the answer text. */
+function KbInsert({ onInsert }: { onInsert: (text: string) => void }) {
+  const { t } = useTranslation();
+  const [q, setQ] = useState('');
+  const found = useKbSearch(q, 5);
+  return (
+    <details className="text-sm">
+      <summary className="cursor-pointer text-blue-700 dark:text-blue-400">
+        {t('kb.insert')}
+      </summary>
+      <input
+        aria-label={t('kb.search')}
+        className="input"
+        placeholder={t('kb.search')}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
+      <ul className="mt-1 space-y-1">
+        {found.data?.map((r) => (
+          <li key={r.id} className="flex flex-wrap items-center gap-2">
+            <span>{r.title}</span>
+            <button
+              type="button"
+              className="link text-xs"
+              onClick={() =>
+                onInsert(`${r.title}: ${window.location.origin.replace('agentes.', '')}/kb/${r.id}`)
+              }
+            >
+              {t('kb.insertLink')}
+            </button>
+            <button
+              type="button"
+              className="link text-xs"
+              onClick={async () => {
+                const a = await api<{
+                  translations: Array<{ locale: string; title: string; bodyHtml: string }>;
+                }>('GET', `/kb/answers/${r.id}`);
+                const tr = a.translations.find((x) => x.locale === r.locale) ?? a.translations[0];
+                if (tr)
+                  onInsert(
+                    new DOMParser().parseFromString(tr.bodyHtml, 'text/html').body.textContent ??
+                      '',
+                  );
+              }}
+            >
+              {t('kb.insertContent')}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
 }
 
 /** Reply box for an existing ticket (agents: e-mail/note/phone; customers: portal message). */
@@ -454,6 +509,9 @@ export function Composer(props: {
         />
         {props.staff && (
           <p className="mt-1 text-xs text-slate-500">{t('article.textModuleHint')}</p>
+        )}
+        {props.staff && (
+          <KbInsert onInsert={(text) => setBody((b) => (b ? `${b}\n\n${text}` : text))} />
         )}
       </div>
       {props.staff && (props.agents?.length ?? 0) > 0 && (
