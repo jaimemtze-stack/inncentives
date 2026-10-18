@@ -48,6 +48,7 @@ const SearchQuery = z
   .object({ q: z.string().max(300), limit: z.coerce.number().int().min(1).max(50).default(20) })
   .strict();
 const GetQuery = z.object({ open: z.enum(['true', 'false']).optional() }).strict();
+const MonthQuery = z.object({ month: z.string().regex(/^20\d{2}-(0[1-9]|1[0-2])$/) }).strict();
 const LookupQuery = z.object({ q: z.string().max(100) }).strict();
 const Any = () => RequireAnyPermission(Permission.TicketsAgent, Permission.TicketsCustomer);
 
@@ -142,6 +143,26 @@ export class TicketsController {
   }
 
   // ------------------------------------------------------------- agent only
+
+  @Get('tickets/:id/customer-tickets')
+  @Area('agent')
+  @RequirePermissions(Permission.TicketsAgent)
+  customerTickets(
+    @Req() req: FastifyRequest,
+    @Param(new ZodPipe(UuidParamSchema)) p: { id: string },
+  ) {
+    return this.extras.recentOfCustomer(req.auth!.user, p.id);
+  }
+
+  @Get('time-summary')
+  @Area('agent')
+  @RequirePermissions(Permission.TicketsAgent)
+  timeSummary(
+    @Req() req: FastifyRequest,
+    @Query(new ZodPipe(MonthQuery)) q: z.infer<typeof MonthQuery>,
+  ) {
+    return this.extras.timeSummary(req.auth!.user, q.month);
+  }
 
   @Get('tickets/:id/history')
   @Area('agent')

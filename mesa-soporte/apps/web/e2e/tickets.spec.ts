@@ -30,7 +30,7 @@ test('an agent logs a call, the customer answers in the portal and the agent see
     agent.getByRole('heading', { name: 'No se generan los recibos de bonos' }),
   ).toBeVisible();
   await agent.getByLabel('Mensaje').fill('Nota interna: revisar el proceso calendarizado.');
-  await agent.getByRole('button', { name: 'Enviar' }).click();
+  await agent.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(agent.getByText('Nota interna: revisar el proceso calendarizado.')).toBeVisible();
 
   const customerCtx = await browser.newContext();
@@ -44,11 +44,20 @@ test('an agent logs a call, the customer answers in the portal and the agent see
   // Internal notes never reach the portal.
   await expect(customer.getByText('Nota interna: revisar')).toHaveCount(0);
   await customer.getByLabel('Mensaje').fill('Ya adjunto el detalle, gracias.');
-  await customer.getByRole('button', { name: 'Enviar' }).click();
+  await customer.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(customer.getByText('Ya adjunto el detalle, gracias.')).toBeVisible();
 
   // Realtime: the agent page refreshes without reloading.
   await expect(agent.getByText('Ya adjunto el detalle, gracias.')).toBeVisible({ timeout: 10_000 });
+
+  // Bulk action from the overview: close the ticket.
+  await agent.getByRole('link', { name: 'Tickets', exact: true }).click();
+  await agent.getByRole('button', { name: /Todos los abiertos/ }).click();
+  const row = agent.getByRole('row', { name: /No se generan los recibos de bonos/ });
+  await row.getByRole('checkbox').check();
+  await agent.getByLabel('Estado').selectOption('closed');
+  await agent.getByRole('button', { name: 'Aplicar' }).click();
+  await expect(agent.getByText('1 de 1 actualizados')).toBeVisible();
   await agentCtx.close();
   await customerCtx.close();
 });

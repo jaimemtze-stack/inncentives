@@ -1,4 +1,4 @@
-# Modelo de amenazas (STRIDE) — fase 0
+# Modelo de amenazas (STRIDE) — fases 0 y 1
 
 Alcance: la plataforma base (autenticación, sesiones, autorización, auditoría y correo), la infraestructura en OCI y la cadena de entrega. Se revisará al cerrar cada fase.
 
@@ -50,9 +50,32 @@ Operador ─▶ Cloudflare Access SSH / OCI Bastion ─▶ VM        VM ─▶ O
 | 21 | E | Abuso de la identidad de la VM | Políticas IAM acotadas por bucket, permiso y vault; el bucket inmutable solo admite crear | Terraform (`iam.tf`) |
 | 22 | E | Agente lee el buzón completo de Neitek | *RBAC for Applications* de Exchange limitado a `soporte@` (fase 1) | `despliegue.md` |
 
+### Amenazas agregadas en la fase 1
+
+| # | STRIDE | Amenaza | Mitigación (dónde) | Verificación |
+|---|---|---|---|---|
+| 23 | S | Correo que suplanta a un cliente para leer o inyectar en sus tickets | Solo se confía en `Authentication-Results` del servidor configurado; sin `pass` → "Por verificar" sin cliente ni respuesta automática; seguimiento solo si el remitente pertenece al ticket | `mail-rules.test.ts`, `email.int.test.ts` |
+| 24 | S | Webhook CTI falsificado o repetido | HMAC sobre el cuerpo exacto + marca de tiempo (5 min) + firma de un solo uso en Redis | `phone.test.ts`, `attachments.int.test.ts` |
+| 25 | T | Bucles de correo o de triggers | `X-Loop`, detección de automáticos y rebotes, límite por cliente/hora, trigger una vez por cadena y profundidad 3, advertencia al guardar | `email.int.test.ts`, `tickets.int.test.ts`, `config-admin.int.test.ts` |
+| 26 | T | Reglas que ejecutan código o consultas arbitrarias | Reglas como datos validados contra un catálogo cerrado (ADR-0011) | `conditions.test.ts`, `config-admin.int.test.ts` |
+| 27 | I | Notas internas o datos internos vistos por clientes (API, búsqueda, tiempo real, adjuntos) | DTOs por rol; búsqueda excluye notas internas para clientes; eventos sin datos y sin notas internas; adjuntos de notas internas → 404 | `tickets.int.test.ts`, `realtime.int.test.ts`, `attachments.int.test.ts` |
+| 28 | I | IDOR de tickets entre grupos u organizaciones | `TicketAccessService.scope` en toda consulta; fuera de alcance = 404 | `tickets.int.test.ts` |
+| 29 | I | Exposición de datos de nómina (RFC, CURP, NSS, CLABE, sueldos) | Detector en artículos y adjuntos, aviso previo al cliente, bandera, redacción y borrado auditados, retención | `sensitive.test.ts`, `attachments.int.test.ts`, `jobs.int.test.ts` |
+| 30 | T/E | Malware o XSS en adjuntos | Lista blanca + *magic bytes*, sin SVG/HTML, ClamAV antes de descargar, descarga desde el dominio del almacenamiento, imágenes recodificadas | `sniff.test.ts`, `jobs.int.test.ts` |
+| 31 | I | Rastreo con imágenes remotas en correos | Bloqueadas por defecto (`data-remote-src`), carga solo a petición | `sanitize.test.ts` |
+| 32 | E | SSRF desde webhooks | Solo HTTPS; resolución DNS validada contra rangos privados, *loopback*, metadatos y reservados; conexión fijada a la IP validada; sin redirecciones | `safe-fetch.test.ts` |
+| 33 | E | Token de API robado | Solo hash, expiración obligatoria, *scopes*, solo host de agentes, sin reautenticación, revocable, auditado | `config-admin.int.test.ts` |
+| 34 | E | Abuso de "ver como cliente" | Solo admins, motivo + reautenticación, 15 min, solo lectura, auditado | `config-admin.int.test.ts` |
+
 ## Riesgos residuales aceptados (fase 0)
 
 - **TLS interno:** el TLS hacia PostgreSQL dentro de la red Docker usa un certificado autofirmado sin verificación (`sslaccept=accept_invalid_certs`). Protege contra captura pasiva; la red es interna.
 - **Llave de larga duración:** la *Customer Secret Key* de pgBackRest es la única llave de larga duración. Está acotada a un bucket y se rota cada 90 días.
 - **Un solo servidor sin alta disponibilidad:** el RTO de ≤ 4 h depende de Terraform + cloud-init + restauración.
 - **Reportes de vulnerabilidad:** el canal de `SECURITY.md` usa un buzón provisional hasta que Neitek defina uno.
+
+## Riesgos residuales aceptados (fase 1)
+
+- **Detector de datos sensibles por patrones:** puede tener falsos negativos (datos sin formato estándar) y falsos positivos; es un apoyo, no un control de prevención de fugas.
+- **Imágenes remotas:** la CSP permite `img-src https:` para que funcione "Mostrar imágenes"; la carga siempre requiere una acción del agente.
+- **Webhook de telefonía:** público en el host del portal (los proveedores no pasan por Cloudflare Access); se protege solo con HMAC, marca de tiempo y anti-repetición.

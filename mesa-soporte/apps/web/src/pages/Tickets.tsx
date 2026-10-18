@@ -1,4 +1,5 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useFormMeta } from '../lib/tickets';
 import { Link } from '@tanstack/react-router';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -44,7 +45,17 @@ export function SlaBadge({ ticket }: { ticket: Pick<TicketRow, 'escalationAt' | 
   );
 }
 
-function TicketTable({ items, staff }: { items: TicketRow[]; staff: boolean }) {
+function TicketTable({
+  items,
+  staff,
+  selected,
+  onSelect,
+}: {
+  items: TicketRow[];
+  staff: boolean;
+  selected: Set<string>;
+  onSelect: (ids: Set<string>) => void;
+}) {
   const { t, i18n } = useTranslation();
   if (!items.length) return <p className="py-6 text-sm text-slate-500">{t('tickets.empty')}</p>;
   return (
@@ -52,6 +63,18 @@ function TicketTable({ items, staff }: { items: TicketRow[]; staff: boolean }) {
       <table className="table" data-testid="ticket-table">
         <thead>
           <tr>
+            {staff && (
+              <th>
+                <input
+                  type="checkbox"
+                  aria-label={t('tickets.selectAll')}
+                  checked={items.length > 0 && items.every((x) => selected.has(x.id))}
+                  onChange={(e) =>
+                    onSelect(e.target.checked ? new Set(items.map((x) => x.id)) : new Set())
+                  }
+                />
+              </th>
+            )}
             <th>{t('tickets.number')}</th>
             <th>{t('tickets.title')}</th>
             <th>{t('tickets.state')}</th>
@@ -64,6 +87,21 @@ function TicketTable({ items, staff }: { items: TicketRow[]; staff: boolean }) {
         <tbody>
           {items.map((tk) => (
             <tr key={tk.id}>
+              {staff && (
+                <td>
+                  <input
+                    type="checkbox"
+                    aria-label={tk.number}
+                    checked={selected.has(tk.id)}
+                    onChange={(e) => {
+                      const next = new Set(selected);
+                      if (e.target.checked) next.add(tk.id);
+                      else next.delete(tk.id);
+                      onSelect(next);
+                    }}
+                  />
+                </td>
+              )}
               <td className="whitespace-nowrap font-mono text-xs">{tk.number}</td>
               <td>
                 <Link to="/tickets/$id" params={{ id: tk.id }} className="link">
@@ -92,6 +130,75 @@ function TicketTable({ items, staff }: { items: TicketRow[]; staff: boolean }) {
   );
 }
 
+/** Bulk changes; the API authorises every ticket on its own and reports per ticket. */
+function BulkBar({ ids, onDone }: { ids: string[]; onDone: (message: string) => void }) {
+  const { t } = useTranslation();
+  const meta = useFormMeta();
+  const [state, setState] = useState('');
+  const [tag, setTag] = useState('');
+  const [macroId, setMacroId] = useState('');
+  async function apply() {
+    const r = await api<{ results: Array<{ ok: boolean }> }>('POST', '/tickets/bulk', {
+      ids,
+      ...(state ? { changes: { state } } : {}),
+      ...(tag.trim() ? { addTags: [tag.trim()] } : {}),
+      ...(macroId ? { macroId } : {}),
+    });
+    const ok = r.results.filter((x) => x.ok).length;
+    onDone(t('tickets.bulkResult', { ok, total: r.results.length }));
+  }
+  return (
+    <div
+      className="flex flex-wrap items-end gap-2 rounded border border-blue-200 bg-blue-50 p-3 text-sm dark:border-blue-900 dark:bg-blue-950"
+      role="region"
+      aria-label={t('tickets.bulk')}
+    >
+      <span className="font-semibold">{t('tickets.selected', { n: ids.length })}</span>
+      <select
+        aria-label={t('tickets.state')}
+        className="input mt-0 w-44"
+        value={state}
+        onChange={(e) => setState(e.target.value)}
+      >
+        <option value="">{t('tickets.state')}…</option>
+        {['open', 'resolved', 'closed'].map((s) => (
+          <option key={s} value={s}>
+            {t(`states.${s}`)}
+          </option>
+        ))}
+      </select>
+      <input
+        aria-label={t('tickets.addTag')}
+        placeholder={t('tickets.addTag')}
+        className="input mt-0 w-40"
+        value={tag}
+        onChange={(e) => setTag(e.target.value)}
+      />
+      <select
+        aria-label={t('tickets.macros')}
+        className="input mt-0 w-44"
+        value={macroId}
+        onChange={(e) => setMacroId(e.target.value)}
+      >
+        <option value="">{t('tickets.macros')}…</option>
+        {meta.data?.macros?.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        className="btn-primary"
+        disabled={!state && !tag.trim() && !macroId}
+        onClick={() => void apply()}
+      >
+        {t('tickets.apply')}
+      </button>
+    </div>
+  );
+}
+
 /** Ticket overviews (agents and customers) with full-text search. */
 export function TicketsPage() {
   const { t } = useTranslation();
@@ -105,6 +212,9 @@ export function TicketsPage() {
   const [q, setQ] = useState('');
   const [search, setSearch] = useState<string | null>(null);
   const active = slug ?? overviews.data?.[0]?.slug ?? null;
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkMsg, setBulkMsg] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   const list = useInfiniteQuery({
     queryKey: ['tickets', active],
@@ -177,7 +287,23 @@ export function TicketsPage() {
             {t('tickets.search')}
           </button>
         </form>
-        <TicketTable items={items} staff={staff} />
+        {staff && selected.size > 0 && (
+          <BulkBar
+            ids={[...selected]}
+            onDone={(message) => {
+              setBulkMsg(message);
+              setSelected(new Set());
+              void qc.invalidateQueries({ queryKey: ['tickets'] });
+              void qc.invalidateQueries({ queryKey: ['overviews'] });
+            }}
+          />
+        )}
+        {bulkMsg && (
+          <p role="status" className="text-sm text-green-800 dark:text-green-300">
+            {bulkMsg}
+          </p>
+        )}
+        <TicketTable items={items} staff={staff} selected={selected} onSelect={setSelected} />
         {search === null && list.hasNextPage && (
           <button type="button" className="btn-secondary" onClick={() => void list.fetchNextPage()}>
             {t('tickets.more')}

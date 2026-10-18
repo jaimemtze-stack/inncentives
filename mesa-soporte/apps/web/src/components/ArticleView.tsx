@@ -10,7 +10,14 @@ async function download(id: string) {
   window.location.assign(url);
 }
 
-export function ArticleView(props: { article: Article; staff: boolean; onChanged: () => void }) {
+export type ArticleAction = 'reply' | 'replyAll' | 'forward' | 'quote' | 'split';
+
+export function ArticleView(props: {
+  article: Article;
+  staff: boolean;
+  onChanged: () => void;
+  onAction?: (action: ArticleAction, article: Article) => void;
+}) {
   const { t, i18n } = useTranslation();
   const errorText = useErrorText();
   const a = props.article;
@@ -75,6 +82,49 @@ export function ArticleView(props: { article: Article; staff: boolean; onChanged
           <button type="button" className="btn-secondary px-2 py-1 text-xs" onClick={showImages}>
             {t('article.showImages')}
           </button>
+        )}
+        {props.staff && props.onAction && a.type !== 'system' && (
+          <>
+            {a.type === 'email' && (
+              <>
+                <button
+                  type="button"
+                  className="btn-secondary px-2 py-1 text-xs"
+                  onClick={() => props.onAction!('reply', a)}
+                >
+                  {t('article.reply')}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary px-2 py-1 text-xs"
+                  onClick={() => props.onAction!('replyAll', a)}
+                >
+                  {t('article.replyAll')}
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              className="btn-secondary px-2 py-1 text-xs"
+              onClick={() => props.onAction!('forward', a)}
+            >
+              {t('article.forward')}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary px-2 py-1 text-xs"
+              onClick={() => props.onAction!('quote', a)}
+            >
+              {t('article.quote')}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary px-2 py-1 text-xs"
+              onClick={() => props.onAction!('split', a)}
+            >
+              {t('article.split')}
+            </button>
+          </>
         )}
         {props.staff && a.sensitiveData && (
           <button

@@ -345,4 +345,59 @@ export class TicketExtrasService {
       }
     });
   }
+
+  /** Other recent tickets of the same customer (agent sidebar). */
+  async recentOfCustomer(actor: AuthenticatedUser, id: string) {
+    const t = await this.access.load(actor, id, 'read');
+    if (!t.customerId) return [];
+    const scope = await this.access.scope(actor, 'read');
+    return this.prisma.ticket.findMany({
+      where: { AND: [scope, { customerId: t.customerId }, { NOT: { id } }] },
+      select: { id: true, number: true, title: true, state: true, updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+      take: 10,
+    });
+  }
+
+  /** Time accounted per organization in a month (UTC month boundaries, readable tickets only). */
+  async timeSummary(actor: AuthenticatedUser, month: string) {
+    const [y, m] = month.split('-').map(Number) as [number, number];
+    const from = new Date(Date.UTC(y, m - 1, 1));
+    const to = new Date(Date.UTC(y, m, 1));
+    const scope = await this.access.scope(actor, 'read');
+    const entries = await this.prisma.timeEntry.findMany({
+      where: { createdAt: { gte: from, lt: to }, ticket: scope },
+      select: {
+        minutes: true,
+        billable: true,
+        ticket: {
+          select: { organization: { select: { id: true, name: true, supportPlan: true } } },
+        },
+      },
+      take: 50_000,
+    });
+    const byOrg = new Map<
+      string,
+      {
+        organization: string;
+        minutes: number;
+        billableMinutes: number;
+        includedMinutes: number | null;
+      }
+    >();
+    for (const e of entries) {
+      const org = e.ticket.organization;
+      const key = org?.id ?? 'none';
+      const row = byOrg.get(key) ?? {
+        organization: org?.name ?? '—',
+        minutes: 0,
+        billableMinutes: 0,
+        includedMinutes: org?.supportPlan?.includedMinutesPerMonth ?? null,
+      };
+      row.minutes += e.minutes;
+      if (e.billable) row.billableMinutes += e.minutes;
+      byOrg.set(key, row);
+    }
+    return [...byOrg.values()].sort((a, b) => b.minutes - a.minutes);
+  }
 }

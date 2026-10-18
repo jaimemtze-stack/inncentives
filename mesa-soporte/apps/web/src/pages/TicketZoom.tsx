@@ -1,10 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
-import { ArticleView } from '../components/ArticleView';
-import { Composer, CustomFieldInputs } from '../components/Composer';
+import { ArticleView, type ArticleAction } from '../components/ArticleView';
+import { Composer, CustomFieldInputs, type ComposerPreset } from '../components/Composer';
 import { Alert, useErrorText } from '../components/ui';
 import { usePresence } from '../lib/realtime';
 import { formatDate, useFormMeta, type Article, type Ref, type TicketRow } from '../lib/tickets';
@@ -394,6 +394,135 @@ function AgentSidebar({ ticket, reload }: { ticket: TicketDetail; reload: () => 
   );
 }
 
+function htmlText(html: string): string {
+  // DOMParser does not load images or run scripts.
+  return new DOMParser().parseFromString(html, 'text/html').body.textContent?.trim() ?? '';
+}
+
+interface HistoryRow {
+  id: string;
+  field: string;
+  oldValue: string | null;
+  newValue: string | null;
+  actorName: string | null;
+  createdAt: string;
+}
+
+/** History, links and the customer's other tickets (agents). */
+function TicketPanels({ ticketId }: { ticketId: string }) {
+  const { t, i18n } = useTranslation();
+  const errorText = useErrorText();
+  const [linkTarget, setLinkTarget] = useState('');
+  const [linkType, setLinkType] = useState('related');
+  const [msg, setMsg] = useState<string | null>(null);
+  const links = useQuery({
+    queryKey: ['ticket', ticketId, 'links'],
+    queryFn: () =>
+      api<
+        Array<{
+          type: string;
+          ticket: { id: string; number: string; title: string; state: string };
+        }>
+      >('GET', `/tickets/${ticketId}/links`),
+  });
+  const recent = useQuery({
+    queryKey: ['ticket', ticketId, 'recent'],
+    queryFn: () =>
+      api<Array<{ id: string; number: string; title: string; state: string }>>(
+        'GET',
+        `/tickets/${ticketId}/customer-tickets`,
+      ),
+  });
+  const history = useQuery({
+    queryKey: ['ticket', ticketId, 'history'],
+    queryFn: () => api<HistoryRow[]>('GET', `/tickets/${ticketId}/history`),
+  });
+  return (
+    <div className="card space-y-4 text-sm">
+      <div>
+        <h3 className="font-semibold">{t('tickets.links')}</h3>
+        <ul>
+          {links.data?.map((l) => (
+            <li key={l.ticket.id}>
+              {l.type}:{' '}
+              <Link to="/tickets/$id" params={{ id: l.ticket.id }} className="link">
+                #{l.ticket.number} {l.ticket.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <form
+          className="mt-1 flex gap-1"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setMsg(null);
+            try {
+              await api('POST', `/tickets/${ticketId}/links`, {
+                targetId: linkTarget.trim(),
+                type: linkType,
+              });
+              setLinkTarget('');
+              await links.refetch();
+            } catch (err) {
+              setMsg(errorText(err));
+            }
+          }}
+        >
+          <select
+            aria-label={t('tickets.links')}
+            className="input mt-0 w-28"
+            value={linkType}
+            onChange={(e) => setLinkType(e.target.value)}
+          >
+            <option value="related">related</option>
+            <option value="parent">parent</option>
+            <option value="child">child</option>
+          </select>
+          <input
+            aria-label={t('tickets.mergeTarget')}
+            className="input mt-0"
+            placeholder={t('tickets.mergeTarget')}
+            value={linkTarget}
+            onChange={(e) => setLinkTarget(e.target.value)}
+          />
+          <button type="submit" className="btn-secondary px-2">
+            +
+          </button>
+        </form>
+        {msg && <p className="text-red-700">{msg}</p>}
+      </div>
+      {(recent.data?.length ?? 0) > 0 && (
+        <div>
+          <h3 className="font-semibold">{t('tickets.recentOfCustomer')}</h3>
+          <ul>
+            {recent.data!.map((r) => (
+              <li key={r.id}>
+                <Link to="/tickets/$id" params={{ id: r.id }} className="link">
+                  #{r.number} {r.title}
+                </Link>{' '}
+                <span className="text-xs">({t(`states.${r.state}`)})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <details>
+        <summary className="cursor-pointer font-semibold">{t('tickets.history')}</summary>
+        <ul className="mt-2 space-y-1 text-xs">
+          {history.data?.map((h) => (
+            <li key={h.id}>
+              {formatDate(h.createdAt, i18n.language)} · {h.actorName ?? t('article.types.system')}{' '}
+              · <strong>{h.field}</strong>
+              {h.oldValue ? `: ${h.oldValue}` : ''}
+              {h.newValue ? ` → ${h.newValue}` : ''}
+            </li>
+          ))}
+        </ul>
+      </details>
+    </div>
+  );
+}
+
 export function TicketZoomPage() {
   const { id } = useParams({ from: '/tickets/$id' });
   const { t, i18n } = useTranslation();
@@ -411,6 +540,35 @@ export function TicketZoomPage() {
   });
   const presence = usePresence(id, staff);
   const reload = () => void qc.invalidateQueries({ queryKey: ['ticket', id] });
+  const navigate = useNavigate();
+  const [preset, setPreset] = useState<ComposerPreset | null>(null);
+
+  async function onAction(action: ArticleAction, a: Article) {
+    const text = htmlText(a.bodyHtml);
+    const k = Date.now();
+    if (action === 'split') {
+      const r = await api<{ id: string }>('POST', `/tickets/${id}/split`, { articleId: a.id });
+      await navigate({ to: '/tickets/$id', params: { id: r.id } });
+    } else if (action === 'reply') setPreset({ key: k, type: 'email', to: a.from ?? '' });
+    else if (action === 'replyAll')
+      setPreset({ key: k, type: 'email', to: a.from ?? '', cc: a.to ?? '' });
+    else if (action === 'forward')
+      setPreset({
+        key: k,
+        type: 'email',
+        to: '',
+        body: `---------- ${t('article.forward')} ----------\n${text}`,
+      });
+    else
+      setPreset({
+        key: k,
+        type: 'note',
+        body: text
+          .split('\n')
+          .map((l) => `> ${l}`)
+          .join('\n'),
+      });
+  }
 
   if (ticket.isLoading) return <p>{t('common.loading')}</p>;
   if (!ticket.data) return <Alert>{t('errors.not_found')}</Alert>;
@@ -467,7 +625,13 @@ export function TicketZoomPage() {
         </header>
         <div className="space-y-3">
           {articles.data?.map((a) => (
-            <ArticleView key={a.id} article={a} staff={staff} onChanged={reload} />
+            <ArticleView
+              key={a.id}
+              article={a}
+              staff={staff}
+              onChanged={reload}
+              onAction={staff ? (act, art) => void onAction(act, art) : undefined}
+            />
           ))}
         </div>
         {tk.state !== 'merged' && (
@@ -476,10 +640,18 @@ export function TicketZoomPage() {
             staff={staff}
             onSent={reload}
             onTyping={staff ? presence.setTyping : undefined}
+            preset={preset}
+            agents={tk.group ? meta.data?.ownersByGroup?.[tk.group.id] : undefined}
+            ticketUpdatedAt={tk.updatedAt}
           />
         )}
       </div>
-      {staff && <AgentSidebar ticket={tk} reload={reload} />}
+      {staff && (
+        <div className="space-y-4">
+          <AgentSidebar ticket={tk} reload={reload} />
+          <TicketPanels ticketId={tk.id} />
+        </div>
+      )}
     </div>
   );
 }

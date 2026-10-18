@@ -54,10 +54,11 @@ La llave privada **nunca** se copia al servidor ni a OCI. Sin ella, los volcados
    - `soporte.inncentives.com` → `http://web:8080`
    - `agentes.soporte.inncentives.com` → `http://web:8080`
    - `ssh-mesa.inncentives.com` → `ssh://localhost:22` (para el paso 9)
-3. **Correo (fase 0: SMTP):**
+3. **Correo:**
    - Crea el buzón compartido `soporte@` en Microsoft 365.
-   - Para el SMTP de la fase 0, habilita *SMTP AUTH* solo para ese buzón, con una contraseña de aplicación.
-   - La fase 1 cambia a Microsoft Graph con *RBAC for Applications* y desactiva SMTP AUTH.
+   - **Entrada (fase 1, Microsoft Graph):** registra una aplicación en Entra ID con el permiso de aplicación `Mail.ReadWrite` y `Mail.Send`, y **limítala al buzón** con *RBAC for Applications* de Exchange Online (`New-ManagementScope` + `New-ManagementRoleAssignment -App <id> -Role "Application Mail.ReadWrite" -CustomResourceScope`). Crea un secreto de cliente (máximo 12 meses) para `graph_client_secret`. En *Configuración → Canales de correo* registra `tenantId`, `clientId`, `mailbox` y `trustedAuthServ` (el servidor que escribe `Authentication-Results`, normalmente `mx.microsoft.com`; confírmalo en los encabezados de un correo recibido).
+   - **Correo del sistema** (invitaciones, notificaciones): sigue saliendo por SMTP con STARTTLS desde el worker (`smtp_username`/`smtp_password`) hasta migrarlo también a Graph.
+   - Alternativa sin Graph: adaptador `imap` (IMAPS 993 + SMTP 587 con TLS); usa el mismo secreto como contraseña.
    - Publica SPF, DKIM y DMARC (`p=quarantine`) del dominio.
 4. **GitHub:** crea un *fine-grained token* de solo lectura del repositorio (Contents: read) y Packages: read, con caducidad de 90 días.
 
@@ -67,7 +68,9 @@ La llave privada **nunca** se copia al servidor ni a OCI. Sin ella, los volcados
 infra/scripts/bootstrap-secrets.sh <compartment_id> <vault_id> <master_key_id> > secrets.map
 ```
 
-El script genera las contraseñas aleatorias, te pide las credenciales del paso 5 sin mostrarlas en pantalla y produce `secrets.map` (nombres + OCIDs, **sin valores**).
+El script genera las contraseñas aleatorias (incluido `cti_webhook_secret` para la futura telefonía), te pide las credenciales del paso 5 sin mostrarlas en pantalla (incluido `graph_client_secret`) y produce `secrets.map` (nombres + OCIDs, **sin valores**).
+
+> **Fase 1:** el stack agrega el servicio `jobs` (misma imagen que la API: correo entrante/saliente, SLAs, planificadores, antivirus, retención y privacidad) y usa ClamAV (`clamav`, 3 GB de RAM; la primera descarga de firmas tarda unos minutos). Las migraciones de la fase 1 (`20261018…`) se aplican solas con el migrador del desplegador.
 
 ## 7. Primer arranque del servidor
 
@@ -109,6 +112,14 @@ sudo /opt/mesa/scripts/backup.sh full       # crea el stanza y el primer respald
 
 3. Aplicación de Access para `ssh-mesa.inncentives.com`, permitida solo a `SG-Soporte-Infra`.
 4. Cada operador se conecta con `cloudflared access ssh --hostname ssh-mesa.inncentives.com`.
+
+## 9 bis. Después de desplegar la fase 1
+
+1. Entra como administrador y en *Configuración* revisa grupos, calendario (días inhábiles propios), SLAs y ajustes generales (aviso de privacidad).
+2. Da acceso a grupos a cada agente (*Agentes y accesos*).
+3. Crea el canal de correo y envía un correo de prueba desde una cuenta de cliente registrada: debe crear un ticket en *Soporte N1*; desde una cuenta desconocida, en *Por verificar*.
+4. Sube un archivo EICAR de prueba a un ticket: debe quedar *En cuarentena* y generar la nota interna.
+5. Deja **desactivadas** las políticas de retención hasta que Neitek defina los plazos.
 
 ## 10. Verificación final (lista de verificación)
 

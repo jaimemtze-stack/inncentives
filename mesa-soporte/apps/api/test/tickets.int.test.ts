@@ -252,6 +252,22 @@ describe('ticket lifecycle', () => {
   });
 });
 
+describe('sidebar data', () => {
+  it('lists the customer recent tickets and the monthly time per organization', async () => {
+    const a = (await agent.post('/api/v1/tickets', phoneTicket())).json();
+    const b = (await agent.post('/api/v1/tickets', phoneTicket())).json();
+    await agent.post(`/api/v1/tickets/${b.id}/time-entries`, { minutes: 30 });
+    const recent = (await agent.get(`/api/v1/tickets/${a.id}/customer-tickets`)).json();
+    expect(recent.map((x: { id: string }) => x.id)).toContain(b.id);
+    expect(recent.map((x: { id: string }) => x.id)).not.toContain(a.id);
+    const month = new Date().toISOString().slice(0, 7);
+    const summary = (await agent.get(`/api/v1/time-summary?month=${month}`)).json();
+    expect(summary[0].minutes).toBeGreaterThanOrEqual(30);
+    expect((await outsider.get(`/api/v1/time-summary?month=${month}`)).json()).toEqual([]);
+    expect((await customer.get(`/api/v1/time-summary?month=${month}`)).statusCode).toBe(421);
+  });
+});
+
 describe('automation', () => {
   it('auto-assigns unowned tickets to the first agent who opens them', async () => {
     await t.prisma.group.update({ where: { id: GROUP_N1 }, data: { autoAssign: true } });

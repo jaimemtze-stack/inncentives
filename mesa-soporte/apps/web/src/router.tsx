@@ -7,6 +7,7 @@ import { AuditPage } from './pages/Audit';
 import { ForgotPage } from './pages/Forgot';
 import { ConfigAdminPage } from './pages/ConfigAdmin';
 import { PhonePage } from './pages/Phone';
+import { TimeSummaryPage } from './pages/TimeSummary';
 import { TicketNewPage } from './pages/TicketNew';
 import { TicketsPage } from './pages/Tickets';
 import { TicketZoomPage } from './pages/TicketZoom';
@@ -39,6 +40,11 @@ const routes = [
     getParentRoute: () => root,
     path: '/telefono',
     component: protectedPage(PhonePage),
+  }),
+  createRoute({
+    getParentRoute: () => root,
+    path: '/tiempo',
+    component: protectedPage(TimeSummaryPage),
   }),
   createRoute({
     getParentRoute: () => root,

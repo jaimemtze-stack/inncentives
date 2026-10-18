@@ -1,8 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { api, uploadFile } from '../api';
-import { textToHtml, useFormMeta, type Attribute } from '../lib/tickets';
+import { textToHtml, useFormMeta, type Attribute, type Ref } from '../lib/tickets';
 import { Alert, useErrorText } from './ui';
 
 /** Expands "::keyword " into the matching text module. */
@@ -155,58 +155,146 @@ export function CustomFieldInputs(props: {
   );
 }
 
+export interface ComposerPreset {
+  key: number;
+  type: 'email' | 'note' | 'phone';
+  to?: string;
+  cc?: string;
+  body?: string;
+}
+
+function readLocalDraft(id: string): string {
+  try {
+    return window.localStorage.getItem(`draft:${id}`) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function writeLocalDraft(id: string, body: string): void {
+  try {
+    if (body) window.localStorage.setItem(`draft:${id}`, body);
+    else window.localStorage.removeItem(`draft:${id}`);
+  } catch {
+    // Storage unavailable (private mode): drafts simply are not kept.
+  }
+}
+
 /** Reply box for an existing ticket (agents: e-mail/note/phone; customers: portal message). */
 export function Composer(props: {
   ticketId: string;
   staff: boolean;
   onSent: () => void;
   onTyping?: (t: boolean) => void;
+  preset?: ComposerPreset | null;
+  /** Agents of the ticket group, for @mentions. */
+  agents?: Ref[];
+  /** Changes when someone else updates the ticket while this box has text. */
+  ticketUpdatedAt?: string;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const meta = useFormMeta();
   const [type, setType] = useState<'email' | 'note' | 'phone'>('note');
   const [internal, setInternal] = useState(true);
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState(() => readLocalDraft(props.ticketId));
   const [to, setTo] = useState('');
+  const [cc, setCc] = useState('');
   const [direction, setDirection] = useState<'in' | 'out'>('in');
   const [callNumber, setCallNumber] = useState('');
   const [minutes, setMinutes] = useState('');
+  const [activityTypeId, setActivityTypeId] = useState('');
+  const [mentions, setMentions] = useState<string[]>([]);
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [key, setKey] = useState(0);
+  const startedAt = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!props.preset) return;
+    setType(props.preset.type);
+    setInternal(props.preset.type === 'note');
+    setTo(props.preset.to ?? '');
+    setCc(props.preset.cc ?? '');
+    if (props.preset.body) setBody((b) => `${props.preset!.body}${b ? `\n\n${b}` : ''}`);
+    document.getElementById('abody')?.focus();
+  }, [props.preset]);
+
+  useEffect(() => writeLocalDraft(props.ticketId, body), [props.ticketId, body]);
+
+  // Collision warning: the ticket changed after this reply was started.
+  useEffect(() => {
+    if (!body) startedAt.current = props.ticketUpdatedAt;
+    else if (
+      startedAt.current &&
+      props.ticketUpdatedAt &&
+      props.ticketUpdatedAt !== startedAt.current
+    ) {
+      setInfo(t('article.changedWhileWriting'));
+    }
+  }, [props.ticketUpdatedAt, body, t]);
+
+  async function saveShared() {
+    try {
+      await api('PUT', `/tickets/${props.ticketId}/draft`, { body, meta: { type, to } });
+      setInfo(t('article.sharedSaved'));
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
+
+  async function loadShared() {
+    try {
+      const d = await api<{ body: string } | null>('GET', `/tickets/${props.ticketId}/draft`);
+      if (d) setBody(d.body);
+      else setInfo(t('article.noShared'));
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
 
   async function send(e: FormEvent) {
     e.preventDefault();
     setError(null);
     if (!props.staff && !(await confirmSensitive(body, t))) return;
     setBusy(true);
+    const list = (v: string) =>
+      v
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     try {
       const payload: Record<string, unknown> = props.staff
         ? {
             type,
             internal: type === 'note' ? internal : false,
             body: textToHtml(body),
-            ...(type === 'email' && to.trim()
-              ? {
-                  to: to
-                    .split(',')
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                }
-              : {}),
+            ...(type === 'email' && to.trim() ? { to: list(to) } : {}),
+            ...(type === 'email' && cc.trim() ? { cc: list(cc) } : {}),
             ...(type === 'phone'
               ? { callDirection: direction, callNumber: callNumber || undefined }
               : {}),
-            ...(minutes ? { timeSpent: { minutes: Number(minutes), billable: true } } : {}),
+            ...(minutes
+              ? {
+                  timeSpent: {
+                    minutes: Number(minutes),
+                    billable: true,
+                    ...(activityTypeId ? { activityTypeId } : {}),
+                  },
+                }
+              : {}),
+            ...(mentions.length ? { mentions } : {}),
           }
         : { type: 'web', body: textToHtml(body) };
       if (attachmentIds.length) payload.attachmentIds = attachmentIds;
       await api('POST', `/tickets/${props.ticketId}/articles`, payload);
       setBody('');
       setMinutes('');
+      setMentions([]);
       setAttachmentIds([]);
+      setInfo(null);
       setKey((k) => k + 1);
       props.onTyping?.(false);
       props.onSent();
@@ -248,18 +336,31 @@ export function Composer(props: {
             </label>
           )}
           {type === 'email' && (
-            <div className="min-w-64 flex-1">
-              <label htmlFor="ato" className="label">
-                {t('article.to')}
-              </label>
-              <input
-                id="ato"
-                className="input"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                placeholder="cliente@empresa.mx"
-              />
-            </div>
+            <>
+              <div className="min-w-64 flex-1">
+                <label htmlFor="ato" className="label">
+                  {t('article.to')}
+                </label>
+                <input
+                  id="ato"
+                  className="input"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  placeholder="cliente@empresa.mx"
+                />
+              </div>
+              <div className="min-w-48">
+                <label htmlFor="acc" className="label">
+                  {t('article.cc')}
+                </label>
+                <input
+                  id="acc"
+                  className="input"
+                  value={cc}
+                  onChange={(e) => setCc(e.target.value)}
+                />
+              </div>
+            </>
           )}
           {type === 'phone' && (
             <>
@@ -292,21 +393,43 @@ export function Composer(props: {
             </>
           )}
           {meta.data?.timeAccounting?.enabled && (
-            <div className="w-32">
-              <label htmlFor="amin" className="label">
-                {t('article.timeSpent')}
-              </label>
-              <input
-                id="amin"
-                className="input"
-                type="number"
-                min={1}
-                max={1440}
-                value={minutes}
-                required={meta.data.timeAccounting.required}
-                onChange={(e) => setMinutes(e.target.value)}
-              />
-            </div>
+            <>
+              <div className="w-32">
+                <label htmlFor="amin" className="label">
+                  {t('article.timeSpent')}
+                </label>
+                <input
+                  id="amin"
+                  className="input"
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={minutes}
+                  required={meta.data.timeAccounting.required}
+                  onChange={(e) => setMinutes(e.target.value)}
+                />
+              </div>
+              {(meta.data.activityTypes?.length ?? 0) > 0 && (
+                <div>
+                  <label htmlFor="aact" className="label">
+                    {t('article.activity')}
+                  </label>
+                  <select
+                    id="aact"
+                    className="input"
+                    value={activityTypeId}
+                    onChange={(e) => setActivityTypeId(e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {meta.data.activityTypes!.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -333,11 +456,49 @@ export function Composer(props: {
           <p className="mt-1 text-xs text-slate-500">{t('article.textModuleHint')}</p>
         )}
       </div>
+      {props.staff && (props.agents?.length ?? 0) > 0 && (
+        <div>
+          <label htmlFor="amention" className="label">
+            {t('article.mention')}
+          </label>
+          <select
+            id="amention"
+            multiple
+            className="input h-20"
+            value={mentions}
+            onChange={(e) => setMentions(Array.from(e.target.selectedOptions).map((o) => o.value))}
+          >
+            {props.agents!.map((a) => (
+              <option key={a.id} value={a.id}>
+                @{a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <AttachmentPicker key={key} onChange={setAttachmentIds} />
+      {info && <Alert kind="info">{info}</Alert>}
       {error && <Alert>{error}</Alert>}
-      <button type="submit" className="btn-primary" disabled={busy}>
-        {t('article.send')}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" className="btn-primary" disabled={busy}>
+          {t('article.send')}
+        </button>
+        {props.staff && (
+          <>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => void saveShared()}
+              disabled={!body}
+            >
+              {t('article.saveShared')}
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => void loadShared()}>
+              {t('article.loadShared')}
+            </button>
+          </>
+        )}
+      </div>
     </form>
   );
 }

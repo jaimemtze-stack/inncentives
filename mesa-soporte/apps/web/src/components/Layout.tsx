@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, setCsrfToken } from '../api';
 import { setLanguage } from '../i18n';
@@ -16,6 +17,39 @@ export function Layout() {
   const authed = me.data?.state === 'authenticated';
   const agent = authed && area.data?.area === 'agent';
   useRealtimeInvalidation(authed);
+
+  // Keyboard shortcuts (ignored while typing): "/" search, "n" new ticket, "r" reply.
+  useEffect(() => {
+    if (!authed) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)))
+      )
+        return;
+      if (e.key === '/') {
+        const q = document.getElementById('q');
+        if (q) {
+          e.preventDefault();
+          q.focus();
+        }
+      } else if (e.key === 'n') {
+        e.preventDefault();
+        void navigate({ to: '/tickets/nuevo' });
+      } else if (e.key === 'r') {
+        const body = document.getElementById('abody');
+        if (body) {
+          e.preventDefault();
+          body.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [authed, navigate]);
 
   async function logout() {
     await api('POST', '/auth/logout').catch(() => undefined);
@@ -42,6 +76,11 @@ export function Layout() {
             {agent && (
               <Link to="/telefono" className="link">
                 {t('nav.phone')}
+              </Link>
+            )}
+            {agent && (
+              <Link to="/tiempo" className="link">
+                {t('nav.time')}
               </Link>
             )}
             {agent && (
@@ -87,6 +126,9 @@ export function Layout() {
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
         <Outlet />
+        {authed && (
+          <p className="mt-6 text-center text-xs text-slate-500">{t('tickets.shortcuts')}</p>
+        )}
       </main>
       {agent && <CallToast />}
     </div>

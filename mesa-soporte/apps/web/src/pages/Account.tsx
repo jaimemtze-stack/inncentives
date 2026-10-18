@@ -1,3 +1,4 @@
+import { PreferencesSection } from '../components/Preferences';
 import { Link } from '@tanstack/react-router';
 import type { SessionInfo } from '@mesa/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -211,6 +212,7 @@ export function AccountPage() {
           </table>
         </div>
       </section>
+      {me.data?.area === 'agent' && <PreferencesSection />}
     </div>
   );
 }
