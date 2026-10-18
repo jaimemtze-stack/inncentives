@@ -7,7 +7,7 @@ import { vi } from 'vitest';
 import { createApp } from '../src/bootstrap';
 import { MailService } from '../src/mail/mail.service';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { JobQueuesService, type WebhookJob } from '../src/queue/job-queues.service';
+import { JobQueuesService, type TeamsJob, type WebhookJob } from '../src/queue/job-queues.service';
 
 export const PORTAL = 'soporte.test';
 export const AGENT = 'agentes.soporte.test';
@@ -22,6 +22,7 @@ export interface TestApp {
   webhooks: WebhookJob[];
   /** Attachment ids queued for scanning. */
   scans: string[];
+  teams: TeamsJob[];
   close(): Promise<void>;
 }
 
@@ -35,12 +36,16 @@ export async function startApp(): Promise<TestApp> {
   const outbound: string[] = [];
   const webhooks: WebhookJob[] = [];
   const scans: string[] = [];
+  const teams: TeamsJob[] = [];
   const queues = app.get(JobQueuesService);
   vi.spyOn(queues, 'outbound').mockImplementation(async (id: string) => {
     outbound.push(id);
   });
   vi.spyOn(queues, 'webhook').mockImplementation(async (job) => {
     webhooks.push(job);
+  });
+  vi.spyOn(queues, 'teams').mockImplementation(async (job) => {
+    teams.push(job);
   });
   vi.spyOn(queues, 'scan').mockImplementation(async (id: string) => {
     scans.push(id);
@@ -52,6 +57,7 @@ export async function startApp(): Promise<TestApp> {
     outbound,
     webhooks,
     scans,
+    teams,
     close: () => app.close(),
   };
 }

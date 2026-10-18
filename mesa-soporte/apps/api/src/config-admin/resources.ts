@@ -13,6 +13,7 @@ import {
 } from '@mesa/shared';
 import { z } from 'zod';
 import { GraphConfigSchema, ImapConfigSchema } from '../channels/email/adapters';
+import { TeamsEvents, isTeamsWebhookUrl } from '../integrations/teams';
 import { validateCalendar, type CalendarDefinition } from '../sla/calendar';
 
 /**
@@ -488,6 +489,29 @@ export const RESOURCES: Record<string, ResourceDef> = {
       })
       .strict(),
     serialize: ({ secretEnc, ...rest }) => ({ ...rest, hasSecret: !!secretEnc }),
+    orderBy: { name: 'asc' },
+  },
+  'teams-channels': {
+    model: 'teamsChannel',
+    create: z
+      .object({
+        groupId: Uuid,
+        name: Name,
+        /** Write-only; the URL embeds a credential and is stored encrypted. */
+        url: z
+          .string()
+          .max(2000)
+          .refine(isTeamsWebhookUrl, 'Teams or Workflows HTTPS URL only')
+          .optional(),
+        events: z.array(z.enum(TeamsEvents)).min(1),
+        active: z.boolean().default(true),
+      })
+      .strict(),
+    validate: (d) => {
+      if (!d.url && !d.urlEnc) throw new RuleValidationError(['url is required']);
+      return [];
+    },
+    serialize: ({ urlEnc, ...rest }) => ({ ...rest, hasUrl: !!urlEnc }),
     orderBy: { name: 'asc' },
   },
   'retention-policies': {

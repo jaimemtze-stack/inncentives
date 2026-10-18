@@ -10,6 +10,12 @@ export interface WebhookJob {
   triggerId: string | null;
 }
 
+export interface TeamsJob {
+  channelId: string;
+  ticketId: string;
+  event: string;
+}
+
 const DEFAULTS: JobsOptions = {
   attempts: 8,
   backoff: { type: 'exponential', delay: 30_000 },
@@ -43,6 +49,10 @@ export class JobQueuesService implements OnModuleDestroy {
 
   async webhook(job: WebhookJob): Promise<void> {
     await this.queue(Q.webhooks).add('call', job, { attempts: 5 });
+  }
+
+  async teams(job: TeamsJob): Promise<void> {
+    await this.queue(Q.webhooks).add('teams', job, { attempts: 5 });
   }
 
   async scan(attachmentId: string): Promise<void> {

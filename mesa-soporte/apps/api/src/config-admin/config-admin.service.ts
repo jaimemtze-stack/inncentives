@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { AuditService } from '../audit/audit.service';
 import { SlaService } from '../automation/sla.service';
 import { AppError } from '../common/errors';
+import { teamsUrlAad } from '../integrations/teams';
 import { webhookSecretAad } from '../jobs/webhook-caller.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FieldEncryption } from '../security/field-encryption';
@@ -97,6 +98,11 @@ export class ConfigAdminService {
     };
     if (resource === 'webhooks' && secret !== undefined && id)
       cols.secretEnc = this.fields.encrypt(secret, webhookSecretAad(id));
+    if (resource === 'teams-channels' && typeof cols.url === 'string') {
+      // The row id is part of the associated data: a placeholder first, then the real envelope.
+      cols.urlEnc = id ? this.fields.encrypt(cols.url, teamsUrlAad(id)) : 'pending';
+      delete cols.url;
+    }
     // Only one default priority / calendar.
     if ((resource === 'priorities' || resource === 'calendars') && cols.isDefault === true) {
       await this.delegate(tx, this.def(resource)).updateMany({
@@ -115,6 +121,12 @@ export class ConfigAdminService {
     const row = await this.write(async (tx) => {
       const { cols, targets } = await this.columns(tx, resource, null, data);
       let created = await this.delegate(tx, d).create({ data: cols });
+      if (resource === 'teams-channels' && data.url) {
+        created = await this.delegate(tx, d).update({
+          where: { id: created.id },
+          data: { urlEnc: this.fields.encrypt(String(data.url), teamsUrlAad(String(created.id))) },
+        });
+      }
       if (resource === 'webhooks' && data.secret) {
         created = await this.delegate(tx, d).update({
           where: { id: created.id },

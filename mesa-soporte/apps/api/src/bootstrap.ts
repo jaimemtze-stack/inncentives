@@ -115,7 +115,9 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestF
     return payload;
   });
 
-  app.setGlobalPrefix('api/v1', { exclude: ['health', 'ready', 'hooks/cti'] });
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['health', 'ready', 'hooks/cti', 'hooks/azure-devops'],
+  });
   app.useWebSocketAdapter(new IoAdapter(app));
   app.enableShutdownHooks();
   await app.init();

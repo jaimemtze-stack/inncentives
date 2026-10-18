@@ -408,6 +408,81 @@ interface HistoryRow {
   createdAt: string;
 }
 
+interface DevOpsLinkRow {
+  id: string;
+  workItemId: number;
+  workItemType: string;
+  title: string;
+  state: string;
+  url: string;
+}
+
+/** Azure DevOps work items of the ticket. */
+function DevOpsPanel({ ticketId }: { ticketId: string }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const links = useQuery({
+    queryKey: ['ticket', ticketId, 'devops'],
+    queryFn: () => api<DevOpsLinkRow[]>('GET', `/tickets/${ticketId}/devops`),
+  });
+  const [wid, setWid] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
+  async function run(fn: () => Promise<unknown>) {
+    setMsg(null);
+    try {
+      await fn();
+      await links.refetch();
+    } catch (err) {
+      setMsg(errorText(err));
+    }
+  }
+  return (
+    <div>
+      <h3 className="font-semibold">Azure DevOps</h3>
+      <ul>
+        {links.data?.map((l) => (
+          <li key={l.id}>
+            <a className="link" href={l.url} target="_blank" rel="noopener noreferrer">
+              {l.workItemType} #{l.workItemId}
+            </a>{' '}
+            · {l.state} · <span className="text-xs">{l.title}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-1 flex flex-wrap gap-1">
+        <button
+          type="button"
+          className="btn-secondary px-2 py-1 text-xs"
+          onClick={() => void run(() => api('POST', `/tickets/${ticketId}/devops`, {}))}
+        >
+          {t('devops.create')}
+        </button>
+        <input
+          aria-label={t('devops.workItem')}
+          placeholder={t('devops.workItem')}
+          className="input mt-0 w-28"
+          inputMode="numeric"
+          value={wid}
+          onChange={(e) => setWid(e.target.value)}
+        />
+        <button
+          type="button"
+          className="btn-secondary px-2 py-1 text-xs"
+          disabled={!/^\d+$/.test(wid)}
+          onClick={() =>
+            void run(() =>
+              api('POST', `/tickets/${ticketId}/devops/link`, { workItemId: Number(wid) }),
+            ).then(() => setWid(''))
+          }
+        >
+          {t('devops.link')}
+        </button>
+      </div>
+      {msg && <p className="text-red-700">{msg}</p>}
+    </div>
+  );
+}
+
 /** History, links and the customer's other tickets (agents). */
 function TicketPanels({ ticketId }: { ticketId: string }) {
   const { t, i18n } = useTranslation();
@@ -506,6 +581,7 @@ function TicketPanels({ ticketId }: { ticketId: string }) {
           </ul>
         </div>
       )}
+      <DevOpsPanel ticketId={ticketId} />
       <details>
         <summary className="cursor-pointer font-semibold">{t('tickets.history')}</summary>
         <ul className="mt-2 space-y-1 text-xs">

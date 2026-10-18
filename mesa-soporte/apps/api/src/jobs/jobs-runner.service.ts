@@ -11,7 +11,8 @@ import { EmailChannelsService, NotReadyError } from '../channels/email/email-cha
 import { APP_CONFIG, AppConfig } from '../config/config';
 import { PrivacyService } from '../privacy/privacy.service';
 import { bullConnection } from '../queue/bull-connection';
-import type { WebhookJob } from '../queue/job-queues.service';
+import type { TeamsJob, WebhookJob } from '../queue/job-queues.service';
+import { DevOpsService } from '../integrations/devops.service';
 import { MaintenanceService } from './maintenance.service';
 import { ScanService } from './scan.service';
 import { WebhookCallerService } from './webhook-caller.service';
@@ -25,6 +26,7 @@ const SCHEDULE: Record<string, number> = {
   privacy: 60_000,
   cleanup: 3_600_000,
   retention: 6 * 3_600_000,
+  'devops-sync': 15 * 60_000,
 };
 
 const isFinal = (job: Job) => job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
@@ -45,6 +47,7 @@ export class JobsRunnerService implements OnApplicationBootstrap, OnApplicationS
     private readonly webhooks: WebhookCallerService,
     private readonly maintenance: MaintenanceService,
     private readonly privacy: PrivacyService,
+    private readonly devops: DevOpsService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -66,6 +69,11 @@ export class JobsRunnerService implements OnApplicationBootstrap, OnApplicationS
         return this.maintenance.cleanupStaged();
       case 'retention':
         return this.maintenance.retention();
+      case 'devops-sync':
+        await this.devops
+          .sync()
+          .catch((err: Error) => this.logger.debug(`devops sync: ${err.message}`));
+        return;
       default:
         throw new Error(`Unknown task ${name}`);
     }
@@ -91,7 +99,12 @@ export class JobsRunnerService implements OnApplicationBootstrap, OnApplicationS
       (job) => this.scanner.scan(job.data.attachmentId, isFinal(job)),
       2,
     );
-    worker<WebhookJob>(JobQueues.webhooks, (job) => this.webhooks.call(job.data), 2);
+    worker<WebhookJob & TeamsJob>(
+      JobQueues.webhooks,
+      (job) =>
+        job.name === 'teams' ? this.webhooks.callTeams(job.data) : this.webhooks.call(job.data),
+      2,
+    );
     worker<Record<string, never>>(JobQueues.maintenance, (job) => this.runTask(job.name));
 
     this.maintenanceQueue = new Queue(JobQueues.maintenance, { connection });

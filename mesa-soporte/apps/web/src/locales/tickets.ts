@@ -135,6 +135,7 @@ export const ticketsEs = {
     logCall: 'Registrar llamada',
   },
   notif: { empty: 'Sin notificaciones.', markAll: 'Marcar todas como leídas' },
+  devops: { create: 'Crear work item', workItem: 'ID del work item', link: 'Vincular' },
   reports: {
     filters: 'Filtros',
     from: 'Desde',
@@ -224,6 +225,7 @@ export const ticketsEs = {
       'email-channels': 'Canales de correo',
       'postmaster-filters': 'Filtros postmaster',
       webhooks: 'Webhooks',
+      'teams-channels': 'Canales de Teams',
       'retention-policies': 'Retención',
     },
     settings: 'Ajustes generales',
@@ -383,6 +385,7 @@ export const ticketsEn: typeof ticketsEs = {
     logCall: 'Log call',
   },
   notif: { empty: 'No notifications.', markAll: 'Mark all as read' },
+  devops: { create: 'Create work item', workItem: 'Work item ID', link: 'Link' },
   reports: {
     filters: 'Filters',
     from: 'From',
@@ -472,6 +475,7 @@ export const ticketsEn: typeof ticketsEs = {
       'email-channels': 'E-mail channels',
       'postmaster-filters': 'Postmaster filters',
       webhooks: 'Webhooks',
+      'teams-channels': 'Teams channels',
       'retention-policies': 'Retention',
     },
     settings: 'General settings',

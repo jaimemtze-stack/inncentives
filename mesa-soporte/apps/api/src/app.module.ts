@@ -4,6 +4,7 @@ import { AdminModule } from './admin/admin.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { ChannelsModule } from './channels/channels.module';
 import { ConfigAdminModule } from './config-admin/config-admin.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { KbModule } from './kb/kb.module';
 import { ReportsModule } from './reports/reports.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -46,6 +47,7 @@ const featureModules = [
   ConfigAdminModule,
   KbModule,
   ReportsModule,
+  IntegrationsModule,
 ];
 
 @Module({})

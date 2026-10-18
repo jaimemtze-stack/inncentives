@@ -14,6 +14,7 @@ import { SecurityModule } from '../security/security.module';
 import { SettingsModule } from '../settings/settings.module';
 import { StorageModule } from '../storage/storage.module';
 import { TicketsModule } from '../tickets/tickets.module';
+import { IntegrationsModule } from '../integrations/integrations.module';
 import { JobsRunnerService } from './jobs-runner.service';
 import { MaintenanceService } from './maintenance.service';
 import { safePost } from './safe-fetch';
@@ -48,6 +49,7 @@ export class JobsModule {
         AttachmentsModule,
         ChannelsModule,
         PrivacyModule,
+        IntegrationsModule,
       ],
       providers: [...jobProviders, ...(opts.runner === false ? [] : [JobsRunnerService])],
       exports: jobProviders,

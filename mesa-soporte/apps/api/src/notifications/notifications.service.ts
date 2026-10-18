@@ -2,7 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { Ticket } from '@prisma/client';
 import { DomainEvents } from '../events/ticket-events';
 import { MailService } from '../mail/mail.service';
+import { TeamsEvents } from '../integrations/teams';
 import { PrismaService } from '../prisma/prisma.service';
+import { JobQueuesService } from '../queue/job-queues.service';
 
 export type NotificationKind =
   | 'ticket_created'
@@ -49,7 +51,22 @@ export class NotificationsService {
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
     private readonly events: DomainEvents,
+    private readonly queues: JobQueuesService,
   ) {}
+
+  /** Queues a Teams card for the channels of the ticket group that listen to this event. */
+  private async teams(ticket: TicketRef, kind: NotificationKind): Promise<void> {
+    if (!(TeamsEvents as readonly string[]).includes(kind)) return;
+    const channels = await this.prisma.teamsChannel.findMany({
+      where: { groupId: ticket.groupId, active: true, events: { has: kind } },
+      select: { id: true },
+    });
+    for (const c of channels) {
+      await this.queues
+        .teams({ channelId: c.id, ticketId: ticket.id, event: kind })
+        .catch((err: Error) => this.logger.warn(`teams queue: ${err.message}`));
+    }
+  }
 
   /** Active agents with read access to the group. */
   async groupMembers(groupId: string): Promise<string[]> {
@@ -71,6 +88,7 @@ export class NotificationsService {
     title: string,
     opts: { excludeUserId?: string | null; emailSubject?: string; emailBody?: string } = {},
   ): Promise<void> {
+    await this.teams(ticket, kind);
     const ids = new Set([...userIds].filter((id) => id && id !== opts.excludeUserId));
     if (!ids.size) return;
     const users = await this.prisma.user.findMany({

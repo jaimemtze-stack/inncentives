@@ -11,6 +11,17 @@ export const SettingDefaults = {
   portal_group_id: '00000000-0000-4000-8000-000000000301',
   privacy_notice: { es: '', en: '' } as { es: string; en: string },
   default_locale: 'es-MX',
+  azure_devops: {
+    organization: '',
+    project: '',
+    defaultType: 'Bug',
+    secretName: 'azure_devops_pat',
+  } as {
+    organization: string;
+    project: string;
+    defaultType: string;
+    secretName: string;
+  },
   branding: { productName: 'Soporte Inncentives', primaryColor: '#1d4ed8' } as {
     productName: string;
     primaryColor: string;

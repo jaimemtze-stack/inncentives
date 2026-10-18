@@ -39,6 +39,17 @@ const SettingsSchema = z
     portal_group_id: z.string().uuid(),
     privacy_notice: z.object({ es: z.string().max(4000), en: z.string().max(4000) }).strict(),
     default_locale: z.enum(['es-MX', 'en']),
+    azure_devops: z
+      .object({
+        organization: z.string().regex(/^([A-Za-z0-9][A-Za-z0-9-]{0,49})?$/),
+        project: z
+          .string()
+          .max(64)
+          .regex(/^[^/\\?#%]*$/),
+        defaultType: z.enum(['Bug', 'Task', 'User Story', 'Issue']),
+        secretName: z.string().regex(/^[a-z0-9_]{1,60}$/),
+      })
+      .strict(),
     branding: z
       .object({
         productName: z.string().trim().min(1).max(80),
@@ -79,6 +90,7 @@ const PrivacyTaskSchema = z
     reason: z.string().trim().min(5).max(500),
   })
   .strict();
+const DeliveriesQuery = z.object({ targetId: z.string().uuid().optional() }).strict();
 const ViewAsSchema = z
   .object({ userId: z.string().uuid(), reason: z.string().trim().min(5).max(500) })
   .strict();
@@ -331,6 +343,16 @@ export class ConfigAdminController {
       return o;
     });
     return updated;
+  }
+
+  @Get('webhook-deliveries')
+  @RequirePermissions(Permission.AdminConfig)
+  deliveries(@Query(new ZodPipe(DeliveriesQuery)) q: z.infer<typeof DeliveriesQuery>) {
+    return this.prisma.webhookDelivery.findMany({
+      where: q.targetId ? { targetId: q.targetId } : {},
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
   }
 
   // ---------------------------------------------------------- data privacy

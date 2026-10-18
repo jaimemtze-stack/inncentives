@@ -93,6 +93,12 @@ const TEMPLATES: Record<string, unknown> = {
     set: { tags: ['ejemplo'] },
   },
   webhooks: { name: '', url: 'https://', secret: '' },
+  'teams-channels': {
+    groupId: '00000000-0000-4000-8000-000000000301',
+    name: '',
+    url: 'https://<tenant>.webhook.office.com/…',
+    events: ['ticket_created', 'customer_reply', 'sla_breach'],
+  },
 };
 
 const READ_ONLY = new Set([
@@ -105,6 +111,7 @@ const READ_ONLY = new Set([
   'lastStatus',
   'lastCalledAt',
   'hasSecret',
+  'hasUrl',
   'target',
   'isTriage',
   'warnings',
