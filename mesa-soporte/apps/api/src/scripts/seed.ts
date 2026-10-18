@@ -49,11 +49,21 @@ async function main(): Promise<void> {
     },
   ];
   for (const u of users) {
-    await prisma.user.upsert({
+    const user = await prisma.user.upsert({
       where: { email: u.email },
       update: {},
       create: { ...u, passwordHash },
     });
+    // Demo agents work every default group (N1-N3 and triage).
+    if (u.role !== 'CUSTOMER') {
+      for (const g of await prisma.group.findMany({ select: { id: true } })) {
+        await prisma.groupAccess.upsert({
+          where: { userId_groupId: { userId: user.id, groupId: g.id } },
+          update: {},
+          create: { userId: user.id, groupId: g.id, levels: ['full'] },
+        });
+      }
+    }
   }
   await prisma.$disconnect();
   console.log(`Seed listo. Usuarios: ${users.map((u) => u.email).join(', ')}`);

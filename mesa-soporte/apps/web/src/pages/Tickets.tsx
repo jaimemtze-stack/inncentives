@@ -158,6 +158,9 @@ export function TicketsPage() {
         ))}
       </aside>
       <section className="card space-y-4">
+        <h1 className="text-xl font-semibold">
+          {t(staff ? 'agent.welcome' : 'portal.welcome', { name: me.data?.user.name ?? '' })}
+        </h1>
         <form onSubmit={submit} role="search" className="flex gap-2">
           <label htmlFor="q" className="sr-only">
             {t('tickets.search')}
