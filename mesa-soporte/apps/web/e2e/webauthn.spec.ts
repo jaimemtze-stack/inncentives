@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { PASSWORD } from './seed';
 
 const PORTAL = 'http://soporte.localhost:5173';
-const PASSWORD = 'frase de prueba e2e 2026';
 
 test('a customer adds a passkey and then uses it as second factor', async ({ page }) => {
   const cdp = await page.context().newCDPSession(page);

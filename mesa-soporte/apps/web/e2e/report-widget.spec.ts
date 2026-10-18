@@ -1,8 +1,8 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
+import { PASSWORD } from './seed';
 
 const PORTAL = 'http://soporte.localhost:5173';
-const PASSWORD = 'frase de prueba e2e 2026';
 
 /** What the Inncentives backend does: an HS256 context token for the widget. */
 function contextToken(): string {

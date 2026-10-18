@@ -331,19 +331,23 @@ export class TicketExtrasService {
   }
 
   private touch(ticketId: string, actorId: string) {
-    void this.prisma.ticket.findUnique({ where: { id: ticketId } }).then((t) => {
-      if (t) {
-        this.events.emit({
-          type: 'ticket.updated',
-          ticketId,
-          groupId: t.groupId,
-          customerId: t.customerId,
-          organizationId: t.organizationId,
-          actorId,
-          internal: true,
-        });
-      }
-    });
+    void this.prisma.ticket
+      .findUnique({ where: { id: ticketId } })
+      .then((t) => {
+        if (t) {
+          this.events.emit({
+            type: 'ticket.updated',
+            ticketId,
+            groupId: t.groupId,
+            customerId: t.customerId,
+            organizationId: t.organizationId,
+            actorId,
+            internal: true,
+          });
+        }
+      })
+      // Best-effort notification: a failed lookup must not become an unhandled rejection.
+      .catch(() => undefined);
   }
 
   /** Other recent tickets of the same customer (agent sidebar). */

@@ -44,7 +44,8 @@ services:
           'wget -q --no-check-certificate -O /dev/null https://localhost:8333/status || wget -q -O /dev/null http://localhost:9333/cluster/status',
         ]
       interval: 2s
-      retries: 40
+      start_period: 60s
+      retries: 60
 
   postgres:
     image: ${IMAGE_POSTGRES:-mesa-postgres:dev}

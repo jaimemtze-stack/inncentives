@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { authenticator } from 'otplib';
+import { PASSWORD } from './seed';
 
 const AGENT = 'http://agentes.soporte.localhost:5173';
 const PORTAL = 'http://soporte.localhost:5173';
-const PASSWORD = 'frase de prueba e2e 2026';
 
 test('an administrator enrolls MFA, signs out and back in with a recovery code', async ({
   page,

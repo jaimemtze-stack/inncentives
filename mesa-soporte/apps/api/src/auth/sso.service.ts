@@ -144,9 +144,9 @@ export class SsoService {
     id: string,
     q: { code?: string; state?: string; error?: string },
   ): Promise<{ redirect: string; session?: CreatedSession }> {
-    const fail = (reason: string) => {
+    const fail = async (reason: string) => {
       this.logger.warn(`sso ${id} failed: ${reason}`);
-      void this.audit.record({
+      await this.audit.record({
         ...AuditService.fromRequest(req),
         action: 'auth.sso.failed',
         data: { provider: id, reason },

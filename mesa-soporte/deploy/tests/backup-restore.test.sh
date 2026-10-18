@@ -19,7 +19,7 @@ psql_q() { compose exec -T -u postgres postgres psql -v ON_ERROR_STOP=1 -d mesa 
 
 cleanup() {
   local rc=$?
-  if [[ $rc -ne 0 ]]; then compose logs --no-color --tail 40 postgres >&2 || true; fi
+  if [[ $rc -ne 0 ]]; then compose logs --no-color --tail 60 s3 postgres >&2 || true; fi
   compose down -v --remove-orphans >/dev/null 2>&1 || true
   # Files written by containers belong to other uids.
   docker run --rm --user 0 --entrypoint rm -v "$WORK:/w" "${IMAGE_POSTGRES:-mesa-postgres:dev}" -rf /w/pgdata /w/pgdata.before-restore-* >/dev/null 2>&1 || true

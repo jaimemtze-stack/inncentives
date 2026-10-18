@@ -68,7 +68,13 @@ export class RealtimeGateway
         this.logger.warn(`bad event: ${(err as Error).message}`);
       }
     });
-    this.timer = setInterval(() => void this.revalidate(), REVALIDATE_MS);
+    this.timer = setInterval(
+      () =>
+        void this.revalidate().catch((err: Error) =>
+          this.logger.warn(`revalidate: ${err.message}`),
+        ),
+      REVALIDATE_MS,
+    );
     this.timer.unref();
   }
 

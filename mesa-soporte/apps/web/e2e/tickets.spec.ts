@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { authenticator } from 'otplib';
+import { PASSWORD } from './seed';
 
 const AGENT = 'http://agentes.soporte.localhost:5173';
 const PORTAL = 'http://soporte.localhost:5173';
-const PASSWORD = 'frase de prueba e2e 2026';
 
 test('an agent logs a call, the customer answers in the portal and the agent sees it live', async ({
   browser,
