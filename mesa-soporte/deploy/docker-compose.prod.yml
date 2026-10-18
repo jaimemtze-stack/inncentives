@@ -147,12 +147,16 @@ services:
     environment:
       NODE_ENV: production
       SECRETS_DIR: /run/secrets
+      # "graph" (recommended) sends through Microsoft Graph instead of SMTP AUTH.
       MAIL_TRANSPORT: ${MAIL_TRANSPORT:-smtp}
       SMTP_HOST: ${SMTP_HOST:-smtp.office365.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_TLS: starttls
       MAIL_FROM: ${MAIL_FROM:?}
-    secrets: [redis_url, smtp_username, smtp_password]
+      GRAPH_TENANT_ID: ${GRAPH_TENANT_ID:-}
+      GRAPH_CLIENT_ID: ${GRAPH_CLIENT_ID:-}
+      GRAPH_SENDER: ${GRAPH_SENDER:-}
+    secrets: [redis_url, smtp_username, smtp_password, graph_client_secret]
     tmpfs: ['/tmp:size=32m']
     networks: [egress, data]
     depends_on:

@@ -3,6 +3,7 @@ import { Worker } from 'bullmq';
 import nodemailer from 'nodemailer';
 import pino from 'pino';
 import { loadWorkerConfig } from './config';
+import { GraphMailer } from './graph';
 import { render } from './templates';
 
 const config = loadWorkerConfig();
@@ -12,8 +13,9 @@ const logger = pino({
   redact: { paths: ['*.link', '*.params', 'to'], censor: '[redacted]' },
 });
 
+const graph = config.graph ? new GraphMailer(config.graph) : null;
 const transport =
-  config.MAIL_TRANSPORT === 'log'
+  config.MAIL_TRANSPORT !== 'smtp'
     ? null
     : nodemailer.createTransport({
         host: config.SMTP_HOST,
@@ -30,6 +32,16 @@ const worker = new Worker<MailJob>(
   MAIL_QUEUE,
   async (job) => {
     const mail = render(job.data);
+    if (graph) {
+      await graph.send({
+        to: job.data.to,
+        subject: mail.subject,
+        text: mail.text,
+        html: mail.html,
+      });
+      logger.info({ jobId: job.id, template: job.data.template }, 'Mail sent (Graph)');
+      return;
+    }
     if (!transport) {
       logger.info(
         { jobId: job.id, template: job.data.template },
