@@ -2,13 +2,14 @@ import { Module } from '@nestjs/common';
 import { TicketsModule } from '../tickets/tickets.module';
 import { DevOpsController, DevOpsHookController } from './devops.controller';
 import { DevOpsService } from './devops.service';
-import { INNCENTIVES_CLIENT, MockInncentivesClient } from './inncentives/inncentives.client';
+import { InncentivesController, WidgetController } from './inncentives/inncentives.controller';
+import { InncentivesService } from './inncentives/inncentives.service';
+import { WidgetService } from './inncentives/widget.service';
 
 @Module({
   imports: [TicketsModule],
-  controllers: [DevOpsController, DevOpsHookController],
-  // Phase 3 replaces the mock with the HTTP client once the Inncentives API exists.
-  providers: [DevOpsService, { provide: INNCENTIVES_CLIENT, useClass: MockInncentivesClient }],
-  exports: [DevOpsService, INNCENTIVES_CLIENT],
+  controllers: [DevOpsController, DevOpsHookController, InncentivesController, WidgetController],
+  providers: [DevOpsService, InncentivesService, WidgetService],
+  exports: [DevOpsService, InncentivesService],
 })
 export class IntegrationsModule {}

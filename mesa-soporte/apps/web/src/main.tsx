@@ -4,7 +4,10 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './i18n';
 import './index.css';
+import { captureHandoff } from './lib/handoff';
 import { router } from './router';
+
+captureHandoff();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: true, staleTime: 30_000 } },

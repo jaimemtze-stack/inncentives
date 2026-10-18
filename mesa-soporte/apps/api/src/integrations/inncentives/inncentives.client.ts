@@ -42,8 +42,6 @@ export interface InncentivesClient {
   recentEvents(environmentId: string, limit: number): Promise<InncentivesLogEvent[]>;
 }
 
-export const INNCENTIVES_CLIENT = Symbol('INNCENTIVES_CLIENT');
-
 /** Deterministic in-memory data for development, tests and demos. */
 export class MockInncentivesClient implements InncentivesClient {
   private readonly base = new Date('2026-10-01T15:00:00Z').getTime();

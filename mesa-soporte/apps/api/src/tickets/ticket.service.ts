@@ -209,6 +209,7 @@ export class TicketService {
   async createByCustomer(
     actor: AuthenticatedUser,
     input: PortalTicketCreateInput,
+    opts: { channel?: 'web' | 'widget' } = {},
   ): Promise<string> {
     const attrs = await this.ticketAttributes();
     const customFields = applyCustomFields(attrs, {}, input.customFields ?? undefined, {
@@ -234,7 +235,7 @@ export class TicketService {
     return this.createCore(
       {
         ...draft,
-        channel: 'web',
+        channel: opts.channel ?? 'web',
         article: {
           type: 'web',
           sender: 'customer',

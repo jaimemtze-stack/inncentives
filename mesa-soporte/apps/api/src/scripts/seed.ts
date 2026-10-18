@@ -65,6 +65,26 @@ async function main(): Promise<void> {
       }
     }
   }
+  // Demo data for the phase 3 sidebar (mock Inncentives API) and the live chat.
+  await prisma.organization.update({
+    where: { id: acme.id },
+    data: { inncentivesTenantKey: 'acme' },
+  });
+  for (const [key, value] of [
+    [
+      'inncentives',
+      {
+        mode: 'mock',
+        baseUrl: '',
+        secretName: 'inncentives_api_token',
+        widgetSecretName: 'inncentives_widget_secret',
+        widgetIssuer: 'inncentives',
+      },
+    ],
+    ['chat', { enabled: true, groupId: '00000000-0000-4000-8000-000000000301', idleMinutes: 15 }],
+  ] as const) {
+    await prisma.appSetting.upsert({ where: { key }, update: {}, create: { key, value } });
+  }
   await prisma.$disconnect();
   console.log(`Seed listo. Usuarios: ${users.map((u) => u.email).join(', ')}`);
   if (!process.env.SEED_PASSWORD)

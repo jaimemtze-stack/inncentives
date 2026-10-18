@@ -31,6 +31,10 @@ model Organization {
   supportPlan             SupportPlan?                @relation(fields: [supportPlanId], references: [id])
   notes                   String?                     @db.VarChar(2000)
   customFields            Json                        @default("{}") @map("custom_fields")
+  /// Customer key in the Inncentives API (phase 3 sidebar and widget).
+  inncentivesTenantKey    String?                     @unique @map("inncentives_tenant_key") @db.VarChar(63)
+  /// AI suggestions allowed for this customer's tickets (section 5.12; off by default).
+  aiEnabled               Boolean                     @default(false) @map("ai_enabled")
   createdAt               DateTime                    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt               DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(3)
   users                   User[]
@@ -436,6 +440,8 @@ model Article {
   callNumber      String?                  @map("call_number") @db.VarChar(30)
   callDurationSec Int?                     @map("call_duration_sec")
   callOutcome     String?                  @map("call_outcome") @db.VarChar(40)
+  /// Provider message id of WhatsApp / SMS messages (inbound dedupe, delivery receipts).
+  externalId      String?                  @unique @map("external_id") @db.VarChar(200)
   sensitiveData   Boolean                  @default(false) @map("sensitive_data")
   redactedAt      DateTime?                @map("redacted_at") @db.Timestamptz(3)
   createdById     String?                  @map("created_by_id") @db.Uuid
@@ -1029,4 +1035,44 @@ model WebhookDelivery {
 
   @@index([targetId, createdAt])
   @@map("webhook_deliveries")
+}
+
+/// WhatsApp Business (Meta Cloud API) or SMS (Twilio) number routed to a group.
+model MessagingChannel {
+  id            String   @id @default(uuid()) @db.Uuid
+  /// whatsapp | sms
+  kind          String   @db.VarChar(10)
+  name          String   @db.VarChar(120)
+  /// WhatsApp phone_number_id, or the Twilio number in E.164 for SMS.
+  providerId    String   @map("provider_id") @db.VarChar(64)
+  /// Number shown to agents (E.164).
+  displayNumber String   @map("display_number") @db.VarChar(30)
+  groupId       String   @map("group_id") @db.Uuid
+  active        Boolean  @default(true)
+  lastError     String?  @map("last_error") @db.VarChar(500)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([kind, providerId])
+  @@map("messaging_channels")
+}
+
+/// Live chat conversation; its messages are the articles of the ticket.
+model ChatSession {
+  id             String    @id @default(uuid()) @db.Uuid
+  ticketId       String    @unique @map("ticket_id") @db.Uuid
+  customerId     String    @map("customer_id") @db.Uuid
+  /// waiting | active | ended
+  state          String    @db.VarChar(10)
+  agentId        String?   @map("agent_id") @db.Uuid
+  /// portal | widget
+  origin         String    @db.VarChar(10)
+  startedAt      DateTime  @default(now()) @map("started_at") @db.Timestamptz(3)
+  acceptedAt     DateTime? @map("accepted_at") @db.Timestamptz(3)
+  endedAt        DateTime? @map("ended_at") @db.Timestamptz(3)
+  lastActivityAt DateTime  @default(now()) @map("last_activity_at") @db.Timestamptz(3)
+
+  @@index([state, startedAt])
+  @@index([customerId, state])
+  @@map("chat_sessions")
 }

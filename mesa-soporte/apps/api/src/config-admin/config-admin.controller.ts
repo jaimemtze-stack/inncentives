@@ -69,6 +69,36 @@ const SettingsSchema = z
         secretName: z.string().regex(/^[a-z0-9_]{1,60}$/),
       })
       .strict(),
+    inncentives: z
+      .object({
+        mode: z.enum(['off', 'mock', 'http']),
+        baseUrl: z.union([z.literal(''), z.string().url().max(300).startsWith('https://')]),
+        secretName: z.string().regex(/^[a-z0-9_]{1,60}$/),
+        widgetSecretName: z.string().regex(/^[a-z0-9_]{1,60}$/),
+        widgetIssuer: z.string().min(1).max(200),
+      })
+      .strict(),
+    messaging: z
+      .object({
+        whatsappApiVersion: z.string().regex(/^v\d{1,2}\.\d$/),
+        twilioAccountSid: z.string().regex(/^(AC[0-9a-f]{32})?$/),
+        reopenDays: z.number().int().min(0).max(90),
+      })
+      .strict(),
+    chat: z
+      .object({
+        enabled: z.boolean(),
+        groupId: z.string().uuid(),
+        idleMinutes: z.number().int().min(2).max(240),
+      })
+      .strict(),
+    ai: z
+      .object({
+        enabled: z.boolean(),
+        model: z.string().regex(/^[a-z0-9.-]{3,80}$/),
+        secretName: z.string().regex(/^[a-z0-9_]{1,60}$/),
+      })
+      .strict(),
     branding: z
       .object({
         productName: z.string().trim().min(1).max(80),
@@ -99,6 +129,12 @@ const OrganizationUpdateSchema = z
     supportPlanId: z.string().uuid().nullable().optional(),
     notes: z.string().max(5000).nullable().optional(),
     active: z.boolean().optional(),
+    inncentivesTenantKey: z
+      .string()
+      .regex(/^[a-z0-9-]{2,63}$/)
+      .nullable()
+      .optional(),
+    aiEnabled: z.boolean().optional(),
   })
   .strict();
 
@@ -346,6 +382,19 @@ export class ConfigAdminController {
   ) {
     const before = await this.prisma.organization.findUnique({ where: { id: p.id } });
     if (!before) throw new AppError('not_found');
+    // Sending customer data to an AI provider is a configuration decision (section 5.12).
+    if (
+      body.aiEnabled !== undefined &&
+      !req.auth!.user.permissions.includes(Permission.AdminConfig)
+    )
+      throw new AppError('forbidden');
+    if (
+      body.inncentivesTenantKey &&
+      (await this.prisma.organization.findFirst({
+        where: { inncentivesTenantKey: body.inncentivesTenantKey, NOT: { id: p.id } },
+      }))
+    )
+      throw new AppError('conflict', 'Another organization already uses this tenant key.');
     const updated = await this.prisma.$transaction(async (tx) => {
       const o = await tx.organization.update({ where: { id: p.id }, data: body });
       await this.audit.record(

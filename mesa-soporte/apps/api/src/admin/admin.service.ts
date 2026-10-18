@@ -54,6 +54,8 @@ export class AdminService {
         isInternal: true,
         mfaRequiredForCustomers: true,
         active: true,
+        inncentivesTenantKey: true,
+        aiEnabled: true,
         createdAt: true,
       },
       ...pageArgs(p),

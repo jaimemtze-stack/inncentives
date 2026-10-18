@@ -11,6 +11,61 @@ interface Org {
   name: string;
   domains: string[];
   isInternal: boolean;
+  inncentivesTenantKey: string | null;
+  aiEnabled: boolean;
+}
+
+/** Inncentives tenant key and AI opt-in of a customer organization. */
+function OrgIntegrations({ org, canAi }: { org: Org; canAi: boolean }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const qc = useQueryClient();
+  const [key, setKey] = useState(org.inncentivesTenantKey ?? '');
+  const [msg, setMsg] = useState<string | null>(null);
+  async function save(patch: Partial<Org>) {
+    setMsg(null);
+    try {
+      await api('PATCH', `/admin/organizations/${org.id}`, patch);
+      await qc.invalidateQueries({ queryKey: ['orgs'] });
+      setMsg(t('tickets.saved'));
+    } catch (err) {
+      setMsg(errorText(err));
+    }
+  }
+  if (org.isInternal) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <input
+        aria-label={t('admin.tenantKey', { name: org.name })}
+        placeholder={t('admin.tenantKeyHint')}
+        className="input mt-0 w-36"
+        value={key}
+        onChange={(e) => setKey(e.target.value.toLowerCase())}
+      />
+      <button
+        type="button"
+        className="btn-secondary px-2 py-1 text-xs"
+        onClick={() => void save({ inncentivesTenantKey: key || null })}
+      >
+        {t('common.save')}
+      </button>
+      {canAi && (
+        <label className="flex items-center gap-1 text-xs">
+          <input
+            type="checkbox"
+            checked={org.aiEnabled}
+            onChange={(e) => void save({ aiEnabled: e.target.checked })}
+          />
+          {t('admin.aiEnabled')}
+        </label>
+      )}
+      {msg && (
+        <span role="status" className="text-xs">
+          {msg}
+        </span>
+      )}
+    </div>
+  );
 }
 
 interface ImportReport {
@@ -285,6 +340,7 @@ export function AdminPage() {
                 <th>{t('common.name')}</th>
                 <th>{t('admin.domains')}</th>
                 <th />
+                <th>{t('admin.integrations')}</th>
               </tr>
             </thead>
             <tbody>
@@ -293,6 +349,11 @@ export function AdminPage() {
                   <td>{o.name}</td>
                   <td>{o.domains.join(', ')}</td>
                   <td>{o.isInternal ? t('admin.internal') : ''}</td>
+                  <td>
+                    {can('admin.organizations.write') && (
+                      <OrgIntegrations org={o} canAi={can('admin.config')} />
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

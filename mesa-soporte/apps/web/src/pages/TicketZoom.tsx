@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
+import { InncentivesPanel } from './Report';
 import { ArticleView, type ArticleAction } from '../components/ArticleView';
 import { Composer, CustomFieldInputs, type ComposerPreset } from '../components/Composer';
 import { Alert, useErrorText } from '../components/ui';
@@ -582,6 +583,7 @@ function TicketPanels({ ticketId }: { ticketId: string }) {
         </div>
       )}
       <DevOpsPanel ticketId={ticketId} />
+      <InncentivesPanel ticketId={ticketId} />
       <details>
         <summary className="cursor-pointer font-semibold">{t('tickets.history')}</summary>
         <ul className="mt-2 space-y-1 text-xs">

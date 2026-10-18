@@ -34,6 +34,41 @@ export const SettingDefaults = {
     defaultType: string;
     secretName: string;
   },
+  /**
+   * Inncentives API (phase 3). "off" until the API exists; "mock" serves
+   * demo data (development only); "http" calls baseUrl with the API token.
+   */
+  inncentives: {
+    mode: 'off',
+    baseUrl: '',
+    secretName: 'inncentives_api_token',
+    widgetSecretName: 'inncentives_widget_secret',
+    widgetIssuer: 'inncentives',
+  } as {
+    mode: 'off' | 'mock' | 'http';
+    baseUrl: string;
+    secretName: string;
+    widgetSecretName: string;
+    widgetIssuer: string;
+  },
+  /** WhatsApp Business (Meta Cloud API) and SMS (Twilio). Credentials are secret files. */
+  messaging: { whatsappApiVersion: 'v21.0', twilioAccountSid: '', reopenDays: 7 } as {
+    whatsappApiVersion: string;
+    twilioAccountSid: string;
+    /** A new message joins the contact's open ticket of the same channel updated within these days. */
+    reopenDays: number;
+  },
+  chat: {
+    enabled: false,
+    groupId: '00000000-0000-4000-8000-000000000301',
+    idleMinutes: 15,
+  } as { enabled: boolean; groupId: string; idleMinutes: number },
+  /** AI suggestions (section 5.12): off globally and per organization by default. */
+  ai: {
+    enabled: false,
+    model: 'claude-sonnet-5-5',
+    secretName: 'anthropic_api_key',
+  } as { enabled: boolean; model: string; secretName: string },
   branding: { productName: 'Soporte Inncentives', primaryColor: '#1d4ed8' } as {
     productName: string;
     primaryColor: string;

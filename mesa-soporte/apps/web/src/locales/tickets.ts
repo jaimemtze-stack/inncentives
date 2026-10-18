@@ -152,6 +152,25 @@ export const ticketsEs = {
     link: 'Vincular con {{provider}}',
   },
   devops: { create: 'Crear work item', workItem: 'ID del work item', link: 'Vincular' },
+  widget: {
+    title: 'Reportar un problema',
+    noContext:
+      'Este formulario se abre desde Inncentives con el contexto de la pantalla. Para otros casos crea un ticket normal.',
+    environment: 'Ambiente',
+    module: 'Módulo',
+    version: 'Versión',
+    time: 'Hora',
+    pasteHint: 'Puedes pegar una captura de pantalla (Ctrl+V) en el mensaje.',
+    send: 'Enviar reporte',
+  },
+  inncentives: {
+    failedRuns: 'Procesos con error',
+    events: 'Bitácora reciente',
+    no_organization: 'El ticket no tiene organización.',
+    no_tenant: 'La organización no tiene clave de Inncentives.',
+    disabled: 'Integración desactivada.',
+    unavailable: 'La API de Inncentives no respondió.',
+  },
   globalSearch: {
     kb: 'Artículos',
     users: 'Personas',
@@ -445,6 +464,25 @@ export const ticketsEn: typeof ticketsEs = {
     link: 'Link with {{provider}}',
   },
   devops: { create: 'Create work item', workItem: 'Work item ID', link: 'Link' },
+  widget: {
+    title: 'Report a problem',
+    noContext:
+      'This form is opened from Inncentives with the context of the screen. For anything else, create a regular ticket.',
+    environment: 'Environment',
+    module: 'Module',
+    version: 'Version',
+    time: 'Time',
+    pasteHint: 'You can paste a screenshot (Ctrl+V) into the message.',
+    send: 'Send report',
+  },
+  inncentives: {
+    failedRuns: 'Failed processes',
+    events: 'Recent log',
+    no_organization: 'The ticket has no organization.',
+    no_tenant: 'The organization has no Inncentives key.',
+    disabled: 'Integration disabled.',
+    unavailable: 'The Inncentives API did not respond.',
+  },
   globalSearch: {
     kb: 'Articles',
     users: 'People',

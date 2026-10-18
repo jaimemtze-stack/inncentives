@@ -18,10 +18,28 @@ export const OpenStates: readonly TicketState[] = [
 ];
 export const PendingStates: readonly TicketState[] = ['pending_reminder', 'pending_close'];
 
-export const TicketChannels = ['email', 'phone', 'web', 'agent'] as const;
+export const TicketChannels = [
+  'email',
+  'phone',
+  'web',
+  'agent',
+  'widget',
+  'chat',
+  'whatsapp',
+  'sms',
+] as const;
 export type TicketChannel = (typeof TicketChannels)[number];
 
-export const ArticleTypes = ['email', 'phone', 'note', 'web', 'system'] as const;
+export const ArticleTypes = [
+  'email',
+  'phone',
+  'note',
+  'web',
+  'system',
+  'chat',
+  'whatsapp',
+  'sms',
+] as const;
 export type ArticleType = (typeof ArticleTypes)[number];
 
 export const ArticleSenders = ['customer', 'agent', 'system'] as const;

@@ -8,6 +8,7 @@ import { ForgotPage } from './pages/Forgot';
 import { ConfigAdminPage } from './pages/ConfigAdmin';
 import { PhonePage } from './pages/Phone';
 import { ReportsPage } from './pages/Reports';
+import { ReportPage } from './pages/Report';
 import { KbAnswerPage, KbNewPage, KbPage } from './pages/Kb';
 import { TimeSummaryPage } from './pages/TimeSummary';
 import { TicketNewPage } from './pages/TicketNew';
@@ -44,6 +45,11 @@ const routes = [
     component: protectedPage(PhonePage),
   }),
   createRoute({ getParentRoute: () => root, path: '/kb', component: protectedPage(KbPage) }),
+  createRoute({
+    getParentRoute: () => root,
+    path: '/reportar',
+    component: protectedPage(ReportPage),
+  }),
   createRoute({
     getParentRoute: () => root,
     path: '/reportes',
