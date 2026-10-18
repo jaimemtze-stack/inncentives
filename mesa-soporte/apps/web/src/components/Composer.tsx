@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { api, uploadFile } from '../api';
 import { textToHtml, useFormMeta, type Attribute, type Ref } from '../lib/tickets';
+import { AiCompose } from './AiPanel';
 import { useKbSearch } from '../pages/Kb';
 import { Alert, useErrorText } from './ui';
 
@@ -250,6 +251,8 @@ export function Composer(props: {
   ticketUpdatedAt?: string;
   /** Messaging channels the customer wrote on (reply options). */
   messaging?: Array<'whatsapp' | 'sms'>;
+  /** AI writing assistant available for this ticket. */
+  ai?: boolean;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -543,6 +546,9 @@ export function Composer(props: {
             ))}
           </select>
         </div>
+      )}
+      {props.ai && props.staff && (
+        <AiCompose ticketId={props.ticketId} draft={body} onResult={setBody} />
       )}
       {messagingReply ? (
         <p className="text-xs text-slate-600 dark:text-slate-300">

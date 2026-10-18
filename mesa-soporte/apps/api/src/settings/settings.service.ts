@@ -66,7 +66,7 @@ export const SettingDefaults = {
   /** AI suggestions (section 5.12): off globally and per organization by default. */
   ai: {
     enabled: false,
-    model: 'claude-sonnet-5-5',
+    model: 'claude-opus-5-5',
     secretName: 'anthropic_api_key',
   } as { enabled: boolean; model: string; secretName: string },
   branding: { productName: 'Soporte Inncentives', primaryColor: '#1d4ed8' } as {

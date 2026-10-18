@@ -10,6 +10,7 @@ import { ReportsModule } from './reports/reports.module';
 import { SearchModule } from './search/search.module';
 import { OpenApiModule } from './openapi/openapi.module';
 import { ChatModule } from './chat/chat.module';
+import { AiModule } from './ai/ai.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { AuditModule } from './audit/audit.module';
@@ -53,6 +54,7 @@ const featureModules = [
   IntegrationsModule,
   SearchModule,
   ChatModule,
+  AiModule,
   OpenApiModule,
 ];
 

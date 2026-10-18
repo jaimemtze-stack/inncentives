@@ -186,6 +186,23 @@ export const ticketsEs = {
     select: 'Selecciona un chat activo.',
     states: { waiting: 'En espera', active: 'Activo', ended: 'Terminado' },
   },
+  ai: {
+    title: 'Asistente de IA',
+    notice: 'Sugerencias para revisar; los datos personales se ocultan antes de enviarse.',
+    summary: 'Resumir',
+    suggest: 'Sugerir respuesta',
+    classify: 'Clasificar',
+    apply: 'Aplicar clasificación',
+    compose: 'Reescribir con IA',
+    replaceDraft: '¿Reemplazar tu borrador por este texto?',
+    modes: {
+      improve: 'Corregir',
+      formal: 'Más formal',
+      shorter: 'Más breve',
+      to_en: 'Traducir al inglés',
+      to_es: 'Traducir al español',
+    },
+  },
   widget: {
     title: 'Reportar un problema',
     noContext:
@@ -536,6 +553,23 @@ export const ticketsEn: typeof ticketsEs = {
     open: 'Open',
     select: 'Select an active chat.',
     states: { waiting: 'Waiting', active: 'Active', ended: 'Ended' },
+  },
+  ai: {
+    title: 'AI assistant',
+    notice: 'Suggestions to review; personal data is hidden before sending.',
+    summary: 'Summarize',
+    suggest: 'Suggest reply',
+    classify: 'Classify',
+    apply: 'Apply classification',
+    compose: 'Rewrite with AI',
+    replaceDraft: 'Replace your draft with this text?',
+    modes: {
+      improve: 'Fix',
+      formal: 'More formal',
+      shorter: 'Shorter',
+      to_en: 'Translate to English',
+      to_es: 'Translate to Spanish',
+    },
   },
   widget: {
     title: 'Report a problem',

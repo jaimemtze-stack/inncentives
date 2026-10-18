@@ -16,7 +16,8 @@ type LimiterName =
   | 'reauth'
   | 'upload'
   | 'sensitiveCheck'
-  | 'download';
+  | 'download'
+  | 'ai';
 
 /**
  * Progressive throttling for authentication endpoints (ASVS 2.2.1). Keys that
@@ -47,6 +48,7 @@ export class RateLimitService {
       upload: make('upload', 120, 3600),
       sensitiveCheck: make('sensitive_check', 600, 3600),
       download: make('download', 600, 3600),
+      ai: make('ai', 60, 3600),
     };
   }
 

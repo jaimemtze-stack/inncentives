@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { InncentivesPanel } from './Report';
+import { AiPanel, useAiEnabled } from '../components/AiPanel';
 import { htmlText } from '../lib/tickets';
 import { ArticleView, type ArticleAction } from '../components/ArticleView';
 import { Composer, CustomFieldInputs, type ComposerPreset } from '../components/Composer';
@@ -613,6 +614,7 @@ export function TicketZoomPage() {
     queryFn: () => api<Article[]>('GET', `/tickets/${id}/articles`),
   });
   const presence = usePresence(id, staff);
+  const aiEnabled = useAiEnabled(id, staff);
   const reload = () => void qc.invalidateQueries({ queryKey: ['ticket', id] });
   const navigate = useNavigate();
   const [preset, setPreset] = useState<ComposerPreset | null>(null);
@@ -717,6 +719,7 @@ export function TicketZoomPage() {
             preset={preset}
             agents={tk.group ? meta.data?.ownersByGroup?.[tk.group.id] : undefined}
             ticketUpdatedAt={tk.updatedAt}
+            ai={aiEnabled}
             messaging={(['whatsapp', 'sms'] as const).filter((k) =>
               articles.data?.some((a) => a.type === k && a.sender === 'customer'),
             )}
@@ -726,6 +729,12 @@ export function TicketZoomPage() {
       {staff && (
         <div className="space-y-4">
           <AgentSidebar ticket={tk} reload={reload} />
+          {aiEnabled && (
+            <AiPanel
+              ticketId={tk.id}
+              onSuggestion={(text) => setPreset({ key: Date.now(), type: 'email', body: text })}
+            />
+          )}
           <TicketPanels ticketId={tk.id} />
         </div>
       )}
