@@ -83,6 +83,11 @@ export function Layout() {
                 {t('nav.phone')}
               </Link>
             )}
+            {agent && me.data?.permissions.includes('reports.read') && (
+              <Link to="/reportes" className="link">
+                {t('nav.reports')}
+              </Link>
+            )}
             {agent && (
               <Link to="/tiempo" className="link">
                 {t('nav.time')}

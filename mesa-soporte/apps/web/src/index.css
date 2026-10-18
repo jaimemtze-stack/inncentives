@@ -37,3 +37,21 @@
     @apply border-b border-slate-100 py-2 pr-4 align-top dark:border-slate-800;
   }
 }
+
+/* Chart tokens (validated two-series palette; dark steps chosen for the dark surface). */
+.viz-root {
+  --viz-surface: #fcfcfb;
+  --viz-grid: #e5e4e0;
+  --viz-axis: #52514e;
+  --viz-series-1: #2a78d6;
+  --viz-series-2: #eb6834;
+}
+@media (prefers-color-scheme: dark) {
+  .viz-root {
+    --viz-surface: #1a1a19;
+    --viz-grid: #34332f;
+    --viz-axis: #c3c2b7;
+    --viz-series-1: #3987e5;
+    --viz-series-2: #d95926;
+  }
+}
