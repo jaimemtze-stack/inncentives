@@ -68,7 +68,11 @@ function Conversation({ session, onEnded }: { session: Session; onEnded?: () => 
     queryFn: () => api<Article[]>('GET', `/tickets/${session.ticketId}/articles`),
   });
   const messages = (articles.data ?? []).filter((a) => a.type === 'chat');
-  useEffect(() => end.current?.scrollIntoView({ block: 'nearest' }), [messages.length]);
+  // Braces matter: newer browsers return a Promise from scrollIntoView, which
+  // React would otherwise call as the effect's cleanup.
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: 'nearest' });
+  }, [messages.length]);
   const mine = (a: Article) =>
     me.data?.user.role === 'CUSTOMER' ? a.sender === 'customer' : a.sender === 'agent';
 

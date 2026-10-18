@@ -285,7 +285,9 @@ export function Composer(props: {
     document.getElementById('abody')?.focus();
   }, [props.preset]);
 
-  useEffect(() => writeLocalDraft(props.ticketId, body), [props.ticketId, body]);
+  useEffect(() => {
+    writeLocalDraft(props.ticketId, body);
+  }, [props.ticketId, body]);
 
   // Collision warning: the ticket changed after this reply was started.
   useEffect(() => {
