@@ -13,6 +13,138 @@ interface Org {
   isInternal: boolean;
 }
 
+interface ImportReport {
+  dryRun: boolean;
+  total: number;
+  valid: number;
+  created: number;
+  errors: Array<{ row: number; field: string; message: string }>;
+}
+
+/** CSV import of organizations or users: validate first, then apply. */
+function CsvImport({ canOrgs }: { canOrgs: boolean }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const qc = useQueryClient();
+  const [kind, setKind] = useState<'organizations' | 'users'>(canOrgs ? 'organizations' : 'users');
+  const [csv, setCsv] = useState<string | null>(null);
+  const [report, setReport] = useState<ImportReport | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run(dryRun: boolean) {
+    if (csv === null) return;
+    setError(null);
+    try {
+      const r = await api<ImportReport>('POST', `/admin/import/${kind}`, { csv, dryRun });
+      setReport(r);
+      if (!dryRun && r.created) await qc.invalidateQueries({ queryKey: ['orgs'] });
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
+
+  return (
+    <section className="card space-y-3">
+      <h2 className="text-lg font-semibold">{t('csvImport.title')}</h2>
+      <p className="text-sm text-slate-600 dark:text-slate-300">{t('csvImport.help')}</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="label" htmlFor="imp-kind">
+            {t('csvImport.kind')}
+          </label>
+          <select
+            id="imp-kind"
+            className="input"
+            value={kind}
+            onChange={(e) => {
+              setKind(e.target.value as typeof kind);
+              setReport(null);
+            }}
+          >
+            {canOrgs && <option value="organizations">{t('csvImport.organizations')}</option>}
+            <option value="users">{t('csvImport.users')}</option>
+          </select>
+        </div>
+        <div>
+          <label className="label" htmlFor="imp-file">
+            {t('csvImport.file')}
+          </label>
+          <input
+            id="imp-file"
+            className="input"
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              setReport(null);
+              if (!f) return setCsv(null);
+              if (f.size > 900_000) return setError(errorText(new Error('too_large')));
+              void f.text().then(setCsv);
+            }}
+          />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={csv === null}
+          onClick={() => void run(true)}
+        >
+          {t('csvImport.validate')}
+        </button>
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={!report?.dryRun || report.errors.length > 0}
+          onClick={() => void run(false)}
+        >
+          {t('csvImport.apply')}
+        </button>
+      </div>
+      {error && <Alert kind="error">{error}</Alert>}
+      {report && (
+        <div role="status" className="space-y-2">
+          <p className="text-sm">
+            {t('csvImport.result', {
+              valid: report.valid,
+              total: report.total,
+              created: report.created,
+            })}
+          </p>
+          {report.errors.length > 0 && (
+            <>
+              <p className="text-sm text-red-800 dark:text-red-300">
+                {t('csvImport.nothingWritten')}
+              </p>
+              <div className="overflow-x-auto">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>{t('csvImport.row')}</th>
+                      <th>{t('csvImport.field')}</th>
+                      <th>{t('csvImport.error')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.errors.slice(0, 200).map((e, i) => (
+                      <tr key={i}>
+                        <td>{e.row}</td>
+                        <td>{e.field}</td>
+                        <td>{e.message}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function AdminPage() {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -167,6 +299,9 @@ export function AdminPage() {
           </table>
         </div>
       </section>
+      {can('admin.users.invite_customer') && (
+        <CsvImport canOrgs={can('admin.organizations.write')} />
+      )}
     </div>
   );
 }

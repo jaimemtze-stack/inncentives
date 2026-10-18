@@ -199,6 +199,61 @@ function BulkBar({ ids, onDone }: { ids: string[]; onDone: (message: string) => 
   );
 }
 
+interface GlobalResults {
+  tickets: TicketRow[];
+  kb: Array<{ id: string; title: string; snippet: string }>;
+  users: Array<{ id: string; name: string; email: string; organization: { name: string } | null }>;
+  organizations: Array<{ id: string; name: string; domains: string[] }>;
+}
+
+/** Knowledge base, people and organizations found by the global search. */
+function OtherResults({ data }: { data: GlobalResults }) {
+  const { t } = useTranslation();
+  const sections = [
+    {
+      key: 'kb',
+      rows: data.kb.map((a) => (
+        <li key={a.id}>
+          <Link to="/kb/$id" params={{ id: a.id }} className="underline">
+            {a.title}
+          </Link>
+        </li>
+      )),
+    },
+    {
+      key: 'users',
+      rows: data.users.map((u) => (
+        <li key={u.id}>
+          {u.name} · {u.email}
+          {u.organization ? ` · ${u.organization.name}` : ''}
+        </li>
+      )),
+    },
+    {
+      key: 'organizations',
+      rows: data.organizations.map((o) => (
+        <li key={o.id}>
+          {o.name}
+          {o.domains.length ? ` · ${o.domains.join(', ')}` : ''}
+        </li>
+      )),
+    },
+  ].filter((x) => x.rows.length);
+  if (!sections.length) return null;
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      {sections.map((x) => (
+        <section key={x.key} aria-labelledby={`gs-${x.key}`}>
+          <h2 id={`gs-${x.key}`} className="mb-1 text-sm font-semibold">
+            {t(`globalSearch.${x.key}`)}
+          </h2>
+          <ul className="space-y-1 text-sm">{x.rows}</ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 /** Ticket overviews (agents and customers) with full-text search. */
 export function TicketsPage() {
   const { t } = useTranslation();
@@ -231,7 +286,7 @@ export function TicketsPage() {
     queryKey: ['search', search],
     enabled: search !== null,
     queryFn: () =>
-      api<{ items: TicketRow[] }>('GET', `/search?q=${encodeURIComponent(search ?? '')}&limit=50`),
+      api<GlobalResults>('GET', `/search/global?q=${encodeURIComponent(search ?? '')}`),
   });
 
   function submit(e: FormEvent) {
@@ -240,7 +295,9 @@ export function TicketsPage() {
   }
 
   const items =
-    search !== null ? (found.data?.items ?? []) : (list.data?.pages.flatMap((p) => p.items) ?? []);
+    search !== null
+      ? (found.data?.tickets ?? [])
+      : (list.data?.pages.flatMap((p) => p.items) ?? []);
 
   return (
     <div className="grid gap-6 md:grid-cols-[14rem_1fr]">
@@ -303,6 +360,7 @@ export function TicketsPage() {
             {bulkMsg}
           </p>
         )}
+        {search !== null && found.data && <OtherResults data={found.data} />}
         <TicketTable items={items} staff={staff} selected={selected} onSelect={setSelected} />
         {search === null && list.hasNextPage && (
           <button type="button" className="btn-secondary" onClick={() => void list.fetchNextPage()}>

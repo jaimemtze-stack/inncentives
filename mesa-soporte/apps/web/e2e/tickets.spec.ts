@@ -52,6 +52,11 @@ test('an agent logs a call, the customer answers in the portal and the agent see
 
   // Bulk action from the overview: close the ticket.
   await agent.getByRole('link', { name: 'Tickets', exact: true }).click();
+  await agent.getByLabel('Buscar tickets').fill('recibos org:"ACME"');
+  await agent.getByRole('button', { name: 'Buscar tickets' }).click();
+  await expect(
+    agent.getByRole('row', { name: /No se generan los recibos de bonos/ }),
+  ).toBeVisible();
   await agent.getByRole('button', { name: /Todos los abiertos/ }).click();
   const row = agent.getByRole('row', { name: /No se generan los recibos de bonos/ });
   await row.getByRole('checkbox').check();
