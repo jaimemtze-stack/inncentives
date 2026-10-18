@@ -33,6 +33,7 @@ import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { AppError } from '../common/errors';
 import { ZodPipe } from '../common/zod-validation.pipe';
+import { ApiBody } from '../openapi/api-body';
 import { OverviewsService } from '../overviews/overviews.service';
 import { Area, RequireAnyPermission, RequirePermissions } from '../policy/decorators';
 import { TicketAccessService } from './access.service';
@@ -86,6 +87,7 @@ export class TicketsController {
 
   @Post('tickets')
   @Any()
+  @ApiBody(TicketCreateSchema, PortalTicketCreateSchema)
   async create(@Req() req: FastifyRequest, @Body() body: unknown) {
     const actor = req.auth!.user;
     const id = this.access.isStaff(actor)
