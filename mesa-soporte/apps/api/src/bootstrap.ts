@@ -116,7 +116,15 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestF
   });
 
   app.setGlobalPrefix('api/v1', {
-    exclude: ['health', 'ready', 'hooks/cti', 'hooks/azure-devops'],
+    exclude: [
+      'health',
+      'ready',
+      'hooks/cti',
+      'hooks/azure-devops',
+      'hooks/twilio/voice',
+      'hooks/twilio/sms',
+      'hooks/whatsapp',
+    ],
   });
   app.useWebSocketAdapter(new IoAdapter(app));
   app.enableShutdownHooks();

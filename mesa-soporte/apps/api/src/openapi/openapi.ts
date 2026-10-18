@@ -14,7 +14,7 @@ import {
 } from '../policy/decorators';
 
 const PREFIX = '/api/v1';
-const UNPREFIXED = new Set(['/health', '/ready', '/hooks/cti', '/hooks/azure-devops']);
+const isUnprefixed = (p: string) => p === '/health' || p === '/ready' || p.startsWith('/hooks/');
 
 type Json = Record<string, unknown>;
 
@@ -117,7 +117,7 @@ export function buildOpenApi(
       for (const b of bases) {
         for (const s of subs) {
           const raw = join(b, s);
-          const full = UNPREFIXED.has(raw) ? raw : join(PREFIX, raw);
+          const full = isUnprefixed(raw) ? raw : join(PREFIX, raw);
           const isPublic = meta<boolean>(PUBLIC_KEY, handler, ctrl) === true;
           // Path parameters without a Zod schema (rare) are still declared.
           for (const m of raw.matchAll(/:([A-Za-z0-9_]+)/g)) {

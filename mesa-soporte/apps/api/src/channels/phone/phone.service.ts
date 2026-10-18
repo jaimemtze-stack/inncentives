@@ -9,6 +9,7 @@ import { DomainEvents } from '../../events/ticket-events';
 import { PrismaService } from '../../prisma/prisma.service';
 import { REDIS } from '../../redis/redis.module';
 import { TicketAccessService } from '../../tickets/access.service';
+import { TwilioTelephonyProvider, asParams, verifyTwilio } from '../twilio/twilio';
 import { GenericTelephonyProvider, normalizePhone, phoneDigits, type CtiEvent } from './phone';
 import { verifySignature } from './signature';
 
@@ -94,6 +95,26 @@ export class PhoneService {
     let event: CtiEvent;
     try {
       event = GenericTelephonyProvider.parse(payload);
+    } catch {
+      throw new AppError('validation_failed');
+    }
+    await this.apply(event);
+  }
+
+  /**
+   * Twilio Programmable Voice status callback, authenticated by
+   * X-Twilio-Signature over the public URL and the form parameters. Events
+   * are idempotent (upsert by CallSid), so a replay changes nothing.
+   */
+  async handleTwilioVoice(url: string, signature: string | undefined, body: unknown) {
+    const token = this.secrets.get('twilio_auth_token');
+    const params = asParams(body);
+    if (!token || !params || !verifyTwilio(token, url, params, signature))
+      throw new AppError('unauthenticated');
+    const agent = new URL(url).searchParams.get('agent') ?? undefined;
+    let event: CtiEvent;
+    try {
+      event = TwilioTelephonyProvider.parse(params, agent);
     } catch {
       throw new AppError('validation_failed');
     }
