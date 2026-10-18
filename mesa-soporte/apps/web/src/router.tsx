@@ -5,7 +5,11 @@ import { AccountPage } from './pages/Account';
 import { AdminPage } from './pages/Admin';
 import { AuditPage } from './pages/Audit';
 import { ForgotPage } from './pages/Forgot';
-import { HomePage } from './pages/Home';
+import { ConfigAdminPage } from './pages/ConfigAdmin';
+import { PhonePage } from './pages/Phone';
+import { TicketNewPage } from './pages/TicketNew';
+import { TicketsPage } from './pages/Tickets';
+import { TicketZoomPage } from './pages/TicketZoom';
 import { InvitationPage } from './pages/Invitation';
 import { LoginPage } from './pages/Login';
 import { MfaEnrollPage } from './pages/MfaEnroll';
@@ -20,7 +24,27 @@ const protectedPage = (Page: () => JSX.Element | null) => () => (
 );
 
 const routes = [
-  createRoute({ getParentRoute: () => root, path: '/', component: protectedPage(HomePage) }),
+  createRoute({ getParentRoute: () => root, path: '/', component: protectedPage(TicketsPage) }),
+  createRoute({
+    getParentRoute: () => root,
+    path: '/tickets/nuevo',
+    component: protectedPage(TicketNewPage),
+  }),
+  createRoute({
+    getParentRoute: () => root,
+    path: '/tickets/$id',
+    component: protectedPage(TicketZoomPage),
+  }),
+  createRoute({
+    getParentRoute: () => root,
+    path: '/telefono',
+    component: protectedPage(PhonePage),
+  }),
+  createRoute({
+    getParentRoute: () => root,
+    path: '/configuracion',
+    component: protectedPage(ConfigAdminPage),
+  }),
   createRoute({ getParentRoute: () => root, path: '/entrar', component: LoginPage }),
   createRoute({ getParentRoute: () => root, path: '/verificar', component: MfaVerifyPage }),
   createRoute({ getParentRoute: () => root, path: '/configurar-mfa', component: MfaEnrollPage }),

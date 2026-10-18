@@ -19,6 +19,7 @@ export default defineConfig({
     allowedHosts: ['.localhost'],
     proxy: {
       '/api': { target: apiTarget, changeOrigin: false, xfwd: true },
+      '/socket.io': { target: apiTarget, changeOrigin: false, xfwd: true, ws: true },
     },
   },
   build: {

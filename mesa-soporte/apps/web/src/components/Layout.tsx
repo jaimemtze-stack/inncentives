@@ -3,6 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api, setCsrfToken } from '../api';
 import { setLanguage } from '../i18n';
+import { closeSocket, useRealtimeInvalidation } from '../lib/realtime';
+import { CallToast, NotificationBell } from './Notifications';
 import { useArea, useMe } from '../session';
 
 export function Layout() {
@@ -12,10 +14,13 @@ export function Layout() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const authed = me.data?.state === 'authenticated';
+  const agent = authed && area.data?.area === 'agent';
+  useRealtimeInvalidation(authed);
 
   async function logout() {
     await api('POST', '/auth/logout').catch(() => undefined);
     setCsrfToken(null);
+    closeSocket();
     await qc.invalidateQueries({ queryKey: ['me'] });
     await navigate({ to: '/entrar' });
   }
@@ -29,11 +34,27 @@ export function Layout() {
             <span>{area.data?.area === 'agent' ? t('app.agent') : t('app.portal')}</span>
           </Link>
           <nav className="flex items-center gap-4 text-sm">
-            {authed && area.data?.area === 'agent' && (
+            {authed && (
+              <Link to="/" className="link">
+                {t('nav.tickets')}
+              </Link>
+            )}
+            {agent && (
+              <Link to="/telefono" className="link">
+                {t('nav.phone')}
+              </Link>
+            )}
+            {agent && (
               <Link to="/admin" className="link">
                 {t('admin.organizations')}
               </Link>
             )}
+            {agent && (
+              <Link to="/configuracion" className="link">
+                {t('nav.config')}
+              </Link>
+            )}
+            {agent && <NotificationBell />}
             {authed && me.data?.permissions.includes('admin.audit.read') && (
               <Link to="/admin/bitacora" className="link">
                 {t('admin.audit')}
@@ -67,6 +88,7 @@ export function Layout() {
       <main className="mx-auto max-w-6xl px-4 py-6">
         <Outlet />
       </main>
+      {agent && <CallToast />}
     </div>
   );
 }

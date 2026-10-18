@@ -57,3 +57,25 @@ export function takeFragmentToken(): string | null {
   }
   return m?.[1] ?? null;
 }
+
+/** Multipart upload of one file to the staging area; returns the attachment id. */
+export async function uploadFile(
+  file: File,
+): Promise<{ id: string; filename: string; size: number }> {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  const res = await fetch('/api/v1/attachments', {
+    method: 'POST',
+    headers,
+    credentials: 'same-origin',
+    body: form,
+  });
+  const data = (await res.json().catch(() => undefined)) as unknown;
+  if (!res.ok) {
+    const err = (data as ApiErrorBody | undefined)?.error;
+    throw new ApiError(res.status, err?.code ?? 'internal_error', err?.message ?? res.statusText);
+  }
+  return data as { id: string; filename: string; size: number };
+}

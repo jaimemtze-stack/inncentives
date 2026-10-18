@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { ticketsEn, ticketsEs } from './locales/tickets';
 
 const es = {
   app: {
@@ -248,7 +249,10 @@ const saved = (() => {
 })();
 
 void i18n.use(initReactI18next).init({
-  resources: { es: { translation: es }, en: { translation: en } },
+  resources: {
+    es: { translation: { ...es, ...ticketsEs } },
+    en: { translation: { ...en, ...ticketsEn } },
+  },
   lng: saved ?? (navigator.language.toLowerCase().startsWith('en') ? 'en' : 'es'),
   fallbackLng: 'es',
   interpolation: { escapeValue: false }, // React already escapes
