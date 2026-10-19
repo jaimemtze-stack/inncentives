@@ -81,6 +81,12 @@ resource "oci_core_instance" "app" {
       name          = "Compute Instance Monitoring"
       desired_state = "ENABLED"
     }
+    # Emergency diagnostics when SSH is unavailable (runs as the unprivileged
+    # ocarun user; output only visible to tenancy operators).
+    plugins_config {
+      name          = "Compute Instance Run Command"
+      desired_state = "ENABLED"
+    }
   }
 
   metadata = {

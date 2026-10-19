@@ -28,6 +28,8 @@ resource "oci_identity_policy" "vm" {
     "Allow dynamic-group ${oci_identity_dynamic_group.vm.name} to use log-content in ${local.comp}",
     "Allow dynamic-group ${oci_identity_dynamic_group.vm.name} to use metrics in ${local.comp} where target.metrics.namespace = 'mesa'",
     "Allow dynamic-group ${oci_identity_dynamic_group.vm.name} to use ons-topics in ${local.comp} where target.topic.id = '${oci_ons_notification_topic.alerts.id}'",
+    # Run Command: the agent may fetch and answer commands for itself only.
+    "Allow dynamic-group ${oci_identity_dynamic_group.vm.name} to use instance-agent-command-execution-family in ${local.comp} where request.instance.id = target.instance.id",
   ]
   freeform_tags = local.tags
 }
