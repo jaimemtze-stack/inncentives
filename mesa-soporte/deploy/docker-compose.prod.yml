@@ -276,7 +276,7 @@ services:
 
   redis:
     <<: *hardening
-    image: redis:7.4-alpine
+    image: redis:8.10-alpine
     user: '999:1000'
     entrypoint:
       [
