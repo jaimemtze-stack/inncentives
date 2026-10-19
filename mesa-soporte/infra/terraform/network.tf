@@ -98,6 +98,7 @@ resource "oci_core_network_security_group_security_rule" "ssh_from_bastion" {
 locals {
   egress_rules = {
     https           = { protocol = "6", port = 443, description = "HTTPS (Cloudflare, Microsoft Graph, GitHub, sigstore, package mirrors)" }
+    apt_http        = { protocol = "6", port = 80, description = "Ubuntu package mirrors (plain HTTP; packages are GPG-signed)" }
     cloudflared_tcp = { protocol = "6", port = 7844, description = "Cloudflare Tunnel (TCP)" }
     cloudflared_udp = { protocol = "17", port = 7844, description = "Cloudflare Tunnel (QUIC)" }
     smtp_submission = { protocol = "6", port = 587, description = "SMTP submission with STARTTLS (Microsoft 365)" }
