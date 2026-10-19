@@ -49,7 +49,7 @@ services:
 
   # Test mailbox with IMAP + SMTP for the inbound e-mail channel (any user/password).
   greenmail:
-    image: greenmail/standalone:2.1.5
+    image: greenmail/standalone:2.1.14
     environment:
       GREENMAIL_OPTS: >-
         -Dgreenmail.setup.test.smtp -Dgreenmail.setup.test.imap
