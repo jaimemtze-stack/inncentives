@@ -1,0 +1,16 @@
+# OWASP ZAP baseline rules for the DAST step of deploy/tests/prod-stack.smoke.sh.
+# Columns: rule id, action (FAIL / WARN / IGNORE), name. Unlisted rules warn.
+10010	FAIL	Cookie No HttpOnly Flag
+10011	FAIL	Cookie Without Secure Flag
+10054	FAIL	Cookie without SameSite Attribute
+10020	FAIL	Anti-clickjacking Header
+10021	FAIL	X-Content-Type-Options Header Missing
+10038	FAIL	Content Security Policy (CSP) Header Not Set
+10023	FAIL	Information Disclosure - Debug Error Messages
+90022	FAIL	Application Error Disclosure
+10037	FAIL	Server Leaks Information via X-Powered-By
+10098	FAIL	Cross-Domain Misconfiguration
+10027	IGNORE	Information Disclosure - Suspicious Comments (minified bundles)
+10109	IGNORE	Modern Web Application
+10049	IGNORE	Storable and Cacheable Content
+10055	WARN	CSP: img-src https: is accepted for agent-requested remote images (docs/seguridad/modelo-amenazas.md)

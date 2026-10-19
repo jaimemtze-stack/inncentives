@@ -1,0 +1,17 @@
+[Unit]
+Description=mesa-soporte: application stack (docker compose)
+Requires=docker.service mesa-secrets-sync.service
+After=docker.service mesa-secrets-sync.service srv-mesa.mount
+ConditionPathExists=/opt/mesa/images.env
+OnFailure=mesa-alert@%n.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/mesa
+ExecStart=/usr/bin/docker compose -p mesa -f /opt/mesa/docker-compose.prod.yml --env-file /opt/mesa/stack.env --env-file /opt/mesa/images.env up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -p mesa -f /opt/mesa/docker-compose.prod.yml --env-file /opt/mesa/stack.env --env-file /opt/mesa/images.env stop
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

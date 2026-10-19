@@ -1,0 +1,74 @@
+# Test double of the production data tier: same PostgreSQL image and
+# pgBackRest settings, an S3-compatible store (with TLS) in place of OCI
+# Object Storage.
+name: mesa-backup-test
+
+secrets:
+  postgres_superuser_password:
+    file: ${WORK:?}/secrets/postgres_superuser_password
+  postgres_migrator_password:
+    file: ${WORK:?}/secrets/postgres_migrator_password
+  postgres_app_password:
+    file: ${WORK:?}/secrets/postgres_app_password
+  pgbackrest_s3_key:
+    file: ${WORK:?}/secrets/pgbackrest_s3_key
+  pgbackrest_s3_key_secret:
+    file: ${WORK:?}/secrets/pgbackrest_s3_key_secret
+  pgbackrest_cipher_pass:
+    file: ${WORK:?}/secrets/pgbackrest_cipher_pass
+
+services:
+  # S3-compatible store with TLS (SeaweedFS; MinIO no longer ships images).
+  s3:
+    image: chrislusf/seaweedfs:3.97
+    command:
+      [
+        'server',
+        '-dir=/data',
+        '-ip.bind=0.0.0.0',
+        '-master.volumeSizeLimitMB=64',
+        '-volume.max=100',
+        '-s3',
+        '-s3.port=8333',
+        '-s3.config=/conf/s3.json',
+        '-s3.cert.file=/certs/public.crt',
+        '-s3.key.file=/certs/private.key',
+      ]
+    volumes:
+      - ${WORK:?}/certs:/certs:ro
+      - ${WORK:?}/s3conf:/conf:ro
+    networks: { default: { aliases: [s3.test] } }
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'wget -q --no-check-certificate -O /dev/null https://127.0.0.1:8333/status || wget -q -O /dev/null http://127.0.0.1:9333/cluster/status',
+        ]
+      interval: 2s
+      start_period: 60s
+      retries: 60
+
+  postgres:
+    image: ${IMAGE_POSTGRES:-mesa-postgres:dev}
+    environment:
+      POSTGRES_DB: mesa
+      BACKUP_ENABLED: 'true'
+      BACKUP_STANZA: mesa
+      BACKUP_S3_ENDPOINT: s3.test:8333
+      BACKUP_S3_BUCKET: respaldos-pitr
+      BACKUP_S3_REGION: us-east-1
+      BACKUP_S3_CA_FILE: /certs/CAs/ca.crt
+      PG_SHARED_BUFFERS: 128MB
+      PG_EFFECTIVE_CACHE_SIZE: 256MB
+    secrets:
+      - postgres_superuser_password
+      - postgres_migrator_password
+      - postgres_app_password
+      - pgbackrest_s3_key
+      - pgbackrest_s3_key_secret
+      - pgbackrest_cipher_pass
+    volumes:
+      - ${WORK:?}/pgdata:/var/lib/postgresql/data
+      - ${WORK:?}/certs:/certs:ro
+    depends_on:
+      s3: { condition: service_healthy }

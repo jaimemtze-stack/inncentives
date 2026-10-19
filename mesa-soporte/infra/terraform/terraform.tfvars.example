@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars (git-ignored) and fill in.
+tenancy_ocid            = "ocid1.tenancy.oc1..xxxxx"
+parent_compartment_ocid = "ocid1.tenancy.oc1..xxxxx"
+region                  = "mx-queretaro-1"
+environment             = "prod"
+
+bastion_allowed_cidrs = ["203.0.113.10/32"] # office / VPN egress IPs
+alert_emails          = ["xxxxxxxx.neitek.onmicrosoft.com@amer.teams.ms"]
+budget_monthly_usd    = 20
+budget_alert_emails   = ["finanzas@neitek.com", "infra@neitek.com"]
+
+github_repository = "jaimemtze-stack/inncentives"
+public_hosts = {
+  portal = "soporte.inncentives.com"
+  agent  = "agentes.soporte.inncentives.com"
+}
+mail_from = "Soporte Inncentives <soporte@inncentives.com>"

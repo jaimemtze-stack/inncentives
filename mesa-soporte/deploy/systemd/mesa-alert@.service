@@ -1,0 +1,7 @@
+[Unit]
+Description=mesa-soporte: notify failure of %i
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/mesa/deployer.env
+ExecStart=/opt/mesa/scripts/report.sh alert %i

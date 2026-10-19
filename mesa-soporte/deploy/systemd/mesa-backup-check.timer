@@ -1,0 +1,10 @@
+[Unit]
+Description=mesa-soporte: hourly WAL archive and repository check
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300
+Unit=mesa-backup@check.service
+
+[Install]
+WantedBy=timers.target

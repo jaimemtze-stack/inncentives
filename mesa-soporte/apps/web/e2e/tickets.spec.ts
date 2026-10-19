@@ -1,0 +1,108 @@
+import { expect, test } from '@playwright/test';
+import { authenticator } from 'otplib';
+import { PASSWORD } from './seed';
+
+const AGENT = 'http://agentes.soporte.localhost:5173';
+const PORTAL = 'http://soporte.localhost:5173';
+
+test('an agent logs a call, the customer answers in the portal and the agent sees it live', async ({
+  browser,
+}) => {
+  const agentCtx = await browser.newContext();
+  const agent = await agentCtx.newPage();
+  await agent.goto(`${AGENT}/entrar`);
+  await agent.getByLabel('Correo electrónico').fill('agente@neitek.example');
+  await agent.getByLabel('Contraseña').fill(PASSWORD);
+  await agent.getByRole('button', { name: 'Entrar' }).click();
+  const secret = (await agent.getByTestId('totp-secret').textContent())!.trim();
+  await agent.getByLabel('Código de 6 dígitos').fill(authenticator.generate(secret));
+  await agent.getByRole('button', { name: 'Activar' }).click();
+  await agent.getByRole('button', { name: 'Ya los guardé' }).click();
+  await expect(agent.getByRole('heading', { name: /Hola, Agente Demo/ })).toBeVisible();
+
+  await agent.getByRole('link', { name: 'Nuevo ticket' }).click();
+  await agent.getByLabel('Buscar cliente (nombre, correo o teléfono)').fill('Cliente');
+  await agent.getByRole('button', { name: /Cliente Demo/ }).click();
+  await agent.getByLabel('Título').fill('No se generan los recibos de bonos');
+  await agent.getByLabel('Mensaje').fill('El cliente llamó para reportar el problema.');
+  await agent.getByRole('button', { name: 'Crear ticket' }).click();
+  await expect(
+    agent.getByRole('heading', { name: 'No se generan los recibos de bonos' }),
+  ).toBeVisible();
+  await agent.getByLabel('Mensaje').fill('Nota interna: revisar el proceso calendarizado.');
+  await agent.getByRole('button', { name: 'Enviar', exact: true }).click();
+  await expect(agent.getByText('Nota interna: revisar el proceso calendarizado.')).toBeVisible();
+
+  const customerCtx = await browser.newContext();
+  const customer = await customerCtx.newPage();
+  await customer.goto(`${PORTAL}/entrar`);
+  await customer.getByLabel('Correo electrónico').fill('cliente@acme.example');
+  await customer.getByLabel('Contraseña').fill(PASSWORD);
+  await customer.getByRole('button', { name: 'Entrar' }).click();
+  await customer.getByRole('link', { name: 'No se generan los recibos de bonos' }).click();
+  await expect(customer.getByText('El cliente llamó para reportar el problema.')).toBeVisible();
+  // Internal notes never reach the portal.
+  await expect(customer.getByText('Nota interna: revisar')).toHaveCount(0);
+  await customer.getByLabel('Mensaje').fill('Ya adjunto el detalle, gracias.');
+  await customer.getByRole('button', { name: 'Enviar', exact: true }).click();
+  await expect(customer.getByText('Ya adjunto el detalle, gracias.')).toBeVisible();
+
+  // Realtime: the agent page refreshes without reloading.
+  await expect(agent.getByText('Ya adjunto el detalle, gracias.')).toBeVisible({ timeout: 10_000 });
+
+  // Bulk action from the overview: close the ticket.
+  await agent.getByRole('link', { name: 'Tickets', exact: true }).click();
+  await agent.getByLabel('Buscar tickets').fill('recibos org:"ACME"');
+  await agent.getByRole('button', { name: 'Buscar tickets' }).click();
+  await expect(
+    agent.getByRole('row', { name: /No se generan los recibos de bonos/ }),
+  ).toBeVisible();
+  await agent.getByRole('button', { name: /Todos los abiertos/ }).click();
+  const row = agent.getByRole('row', { name: /No se generan los recibos de bonos/ });
+  await row.getByRole('checkbox').check();
+  await agent.getByLabel('Estado').selectOption('closed');
+  await agent.getByRole('button', { name: 'Aplicar' }).click();
+  await expect(agent.getByText('1 de 1 actualizados')).toBeVisible();
+
+  // Live chat: the agent goes available, the customer starts a chat, the agent accepts.
+  await agent.getByRole('link', { name: 'Chat', exact: true }).click();
+  // The checkbox is optimistic: wait until the server has the agent as available.
+  const availability = agent.waitForResponse(
+    (r) => r.url().endsWith('/api/v1/chat/availability') && r.request().method() === 'POST',
+  );
+  await agent.getByLabel('Disponible para chat').check();
+  expect((await availability).status()).toBe(201);
+  // Kept for the failure message: what the portal saw while the chat started.
+  const seen: string[] = [];
+  customer.on('pageerror', (err) => seen.push(`pageerror: ${err.message}`));
+  customer.on('response', (r) => {
+    if (r.url().includes('/api/v1/chat/'))
+      void r
+        .text()
+        .then((body) => seen.push(`${r.request().method()} ${r.url()} ${r.status()} ${body}`))
+        .catch(() => undefined);
+  });
+  await customer.getByRole('link', { name: 'Chat', exact: true }).click();
+  await customer.getByLabel('¿En qué te ayudamos?').fill('¿Cómo exporto la liquidación?');
+  const started = customer.waitForResponse(
+    (r) => r.url().endsWith('/api/v1/chat/sessions') && r.request().method() === 'POST',
+  );
+  await customer.getByRole('button', { name: 'Iniciar chat' }).click();
+  const startRes = await started;
+  // On failure, show the API's answer instead of a bare timeout.
+  expect(startRes.status(), await startRes.text()).toBe(201);
+  try {
+    await expect(customer.getByText('Esperando a que un agente se una')).toBeVisible({
+      timeout: 10_000,
+    });
+  } catch (err) {
+    throw new Error(`${(err as Error).message}\n\nPortal chat traffic:\n${seen.join('\n')}`);
+  }
+  await agent.getByRole('button', { name: 'Atender' }).click({ timeout: 15_000 });
+  await agent.getByLabel('Mensaje', { exact: true }).fill('Desde Reportes > Exportar.');
+  await agent.getByRole('button', { name: 'Enviar', exact: true }).click();
+  await expect(customer.getByText('Desde Reportes > Exportar.')).toBeVisible({ timeout: 10_000 });
+  await customer.getByRole('button', { name: 'Terminar chat' }).click();
+  await agentCtx.close();
+  await customerCtx.close();
+});

@@ -1,0 +1,148 @@
+#cloud-config
+# Rendered by Terraform (templatefile). Prepares the Ampere A1 VM; it does NOT
+# contain secrets: those are fetched at boot from OCI Vault by secrets-sync.
+timezone: UTC
+locale: C.UTF-8
+ssh_pwauth: false
+disable_root: true
+package_update: true
+package_upgrade: true
+
+packages:
+  - docker.io
+  - docker-compose-v2
+  - age
+  - jq
+  - curl
+  - ufw
+  - auditd
+  - unattended-upgrades
+  - apparmor
+  - python3-venv
+  - xfsprogs
+
+write_files:
+%{ for path, f in bundle ~}
+  - path: ${path}
+    encoding: b64
+    permissions: "${f.mode}"
+    content: ${f.b64}
+%{ endfor ~}
+  - path: /etc/apt/apt.conf.d/52mesa-unattended
+    content: |
+      Unattended-Upgrade::Allowed-Origins { "$${distro_id}:$${distro_codename}-security"; };
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "09:00";
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+  - path: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": { "max-size": "20m", "max-file": "5" },
+        "live-restore": true,
+        "no-new-privileges": true,
+        "userland-proxy": false,
+        "icc": false
+      }
+  - path: /etc/ssh/sshd_config.d/10-mesa.conf
+    content: |
+      # Keys are never installed: access is through Cloudflare Access (short-lived
+      # certificates signed by the Access CA) or OCI Bastion sessions.
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      X11Forwarding no
+      AllowTcpForwarding no
+      MaxAuthTries 3
+      LoginGraceTime 30
+      TrustedUserCAKeys /etc/ssh/cloudflare_access_ca.pub
+      AuthorizedPrincipalsFile /etc/ssh/principals/%u
+  - path: /etc/ssh/cloudflare_access_ca.pub
+    permissions: "0644"
+    content: |
+      # Replace with the SSH CA public key from Cloudflare Zero Trust (docs/despliegue.md).
+  - path: /etc/sysctl.d/90-mesa.conf
+    content: |
+      kernel.kptr_restrict = 2
+      kernel.dmesg_restrict = 1
+      kernel.unprivileged_bpf_disabled = 1
+      net.ipv4.conf.all.rp_filter = 1
+      net.ipv4.conf.all.accept_redirects = 0
+      net.ipv4.conf.all.send_redirects = 0
+      net.ipv4.conf.all.accept_source_route = 0
+      net.ipv6.conf.all.accept_redirects = 0
+      fs.protected_hardlinks = 1
+      fs.protected_symlinks = 1
+      vm.overcommit_memory = 1
+  - path: /etc/audit/rules.d/mesa.rules
+    content: |
+      -w /etc/ssh/sshd_config -p wa -k sshd
+      -w /etc/ssh/sshd_config.d -p wa -k sshd
+      -w /opt/mesa -p wa -k mesa-config
+      -w /etc/docker -p wa -k docker
+      -w /usr/bin/docker -p x -k docker
+      -a always,exit -F arch=b64 -S execve -F euid=0 -F auid>=1000 -F auid!=unset -k root-commands
+  - path: /opt/mesa/stack.env
+    permissions: "0644"
+    content: |
+      PORTAL_HOST=${portal_host}
+      AGENT_HOST=${agent_host}
+      OCI_REGION=${oci_region}
+      OCI_NAMESPACE=${oci_namespace}
+      MAIL_FROM=${mail_from}
+  - path: /opt/mesa/deployer.env
+    permissions: "0644"
+    content: |
+      GITHUB_REPO=${github_repository}
+      MESA_HOME=/opt/mesa
+      MESA_STATE_DIR=/var/lib/mesa
+      ALERTS_TOPIC_ID=${alerts_topic_id}
+      COMPARTMENT_ID=${compartment_id}
+      OCI_CLI_AUTH=instance_principal
+
+runcmd:
+  # Data volume (PostgreSQL, Redis, ClamAV) on the encrypted block volume.
+  - |
+    set -eu
+    dev=/dev/oracleoci/oraclevdb
+    for i in $(seq 1 60); do [ -e "$dev" ] && break; sleep 5; done
+    blkid "$dev" >/dev/null 2>&1 || mkfs.xfs -L mesa-data "$dev"
+    mkdir -p /srv/mesa
+    grep -q mesa-data /etc/fstab || echo "LABEL=mesa-data /srv/mesa xfs defaults,nofail,noatime,nodev,nosuid 0 2" >> /etc/fstab
+    mount -a
+    install -d -m 0700 -o 5432 -g 5432 /srv/mesa/pgdata   # postgres uid in the image
+    install -d -m 0750 -o 999 -g 1000 /srv/mesa/redis
+    install -d -m 0750 /srv/mesa/clamav
+  # Secrets live on a RAM-backed filesystem only.
+  - grep -q /run/mesa /etc/fstab || echo "tmpfs /run/mesa tmpfs nodev,nosuid,noexec,size=16m,mode=0711 0 0" >> /etc/fstab
+  - mkdir -p /run/mesa && mount /run/mesa || true
+  # Firewall: nothing inbound except SSH from the subnet (OCI Bastion).
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow from 10.40.1.0/24 to any port 22 proto tcp
+  - ufw --force enable
+  - sysctl --system
+  - augenrules --load || true
+  - systemctl restart ssh || systemctl restart sshd
+  - systemctl enable --now docker auditd unattended-upgrades
+  # OCI CLI (instance principal auth) in an isolated virtualenv.
+  - python3 -m venv /opt/oci-cli
+  - /opt/oci-cli/bin/pip install --no-cache-dir "oci-cli==3.95.0"
+  - ln -sf /opt/oci-cli/bin/oci /usr/local/bin/oci
+  # cosign (signature verification of releases), pinned and checksum-verified.
+  - |
+    set -eu
+    v=v2.6.1
+    case "$(uname -m)" in
+      aarch64) a=arm64; sum=56a16480bdd56ec789abaa65924402f6b92c0041f06885995853c05567b76f34 ;;
+      x86_64) a=amd64; sum=064954c5d8c7e3b28188eee5b1727b31c411550bc5fefd41aa672d3c761d103a ;;
+    esac
+    curl -fsSL -o /tmp/cosign "https://github.com/sigstore/cosign/releases/download/$v/cosign-linux-$a"
+    echo "$sum  /tmp/cosign" | sha256sum -c -
+    install -m 0755 /tmp/cosign /usr/local/bin/cosign && rm -f /tmp/cosign
+  - install -d -m 0750 /var/lib/mesa /var/log/mesa
+  - systemctl daemon-reload
+  - systemctl enable mesa-secrets-sync.service mesa-stack.service
+  - systemctl enable --now mesa-deployer.timer mesa-backup-full.timer mesa-backup-diff.timer mesa-backup-check.timer mesa-dump.timer mesa-report.timer
+
+final_message: "mesa-soporte VM ready after $UPTIME s. Load secrets into OCI Vault and run: systemctl start mesa-secrets-sync mesa-deployer"

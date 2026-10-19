@@ -1,0 +1,73 @@
+import { DynamicModule, Module } from '@nestjs/common';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { AdminModule } from './admin/admin.module';
+import { AttachmentsModule } from './attachments/attachments.module';
+import { ChannelsModule } from './channels/channels.module';
+import { ConfigAdminModule } from './config-admin/config-admin.module';
+import { IntegrationsModule } from './integrations/integrations.module';
+import { KbModule } from './kb/kb.module';
+import { ReportsModule } from './reports/reports.module';
+import { SearchModule } from './search/search.module';
+import { OpenApiModule } from './openapi/openapi.module';
+import { ChatModule } from './chat/chat.module';
+import { AiModule } from './ai/ai.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { RealtimeModule } from './realtime/realtime.module';
+import { AuditModule } from './audit/audit.module';
+import { AuthModule } from './auth/auth.module';
+import { AllExceptionsFilter } from './common/exception.filter';
+import type { AppConfig } from './config/config';
+import { ConfigModule } from './config/config.module';
+import { HealthModule } from './health/health.module';
+import { MailModule } from './mail/mail.module';
+import { AuthzGuard } from './policy/authz.guard';
+import { PolicyModule } from './policy/policy.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './redis/redis.module';
+import { SecurityModule } from './security/security.module';
+import { StorageModule } from './storage/storage.module';
+import { EventsModule } from './events/ticket-events';
+import { SettingsModule } from './settings/settings.module';
+import { TicketsModule } from './tickets/tickets.module';
+
+const featureModules = [
+  PrismaModule,
+  RedisModule,
+  SecurityModule,
+  PolicyModule,
+  AuditModule,
+  MailModule,
+  StorageModule,
+  HealthModule,
+  AuthModule,
+  AdminModule,
+  EventsModule,
+  SettingsModule,
+  TicketsModule,
+  AttachmentsModule,
+  ChannelsModule,
+  NotificationsModule,
+  RealtimeModule,
+  ConfigAdminModule,
+  KbModule,
+  ReportsModule,
+  IntegrationsModule,
+  SearchModule,
+  ChatModule,
+  AiModule,
+  OpenApiModule,
+];
+
+@Module({})
+export class AppModule {
+  static forRoot(config: AppConfig): DynamicModule {
+    return {
+      module: AppModule,
+      imports: [ConfigModule.forRoot(config), ...featureModules],
+      providers: [
+        { provide: APP_GUARD, useClass: AuthzGuard },
+        { provide: APP_FILTER, useClass: AllExceptionsFilter },
+      ],
+    };
+  }
+}

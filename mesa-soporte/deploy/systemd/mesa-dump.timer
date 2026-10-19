@@ -1,0 +1,9 @@
+[Unit]
+Description=mesa-soporte: daily immutable dump (03:00 Mexico City)
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 America/Mexico_City
+Persistent=true
+
+[Install]
+WantedBy=timers.target

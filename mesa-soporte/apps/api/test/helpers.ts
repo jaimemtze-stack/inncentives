@@ -1,0 +1,239 @@
+import { randomBytes } from 'node:crypto';
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { MailJob } from '@mesa/shared';
+import { Algorithm, hash } from '@node-rs/argon2';
+import { authenticator } from 'otplib';
+import { vi } from 'vitest';
+import { createApp } from '../src/bootstrap';
+import { MailService } from '../src/mail/mail.service';
+import { PrismaService } from '../src/prisma/prisma.service';
+import { JobQueuesService, type TeamsJob, type WebhookJob } from '../src/queue/job-queues.service';
+
+export const PORTAL = 'soporte.test';
+export const AGENT = 'agentes.soporte.test';
+export const PASSWORD = 'una frase de prueba larga 2026';
+
+export interface TestApp {
+  app: NestFastifyApplication;
+  prisma: PrismaService;
+  mails: MailJob[];
+  /** Article ids queued for outbound e-mail. */
+  outbound: string[];
+  webhooks: WebhookJob[];
+  /** Attachment ids queued for scanning. */
+  scans: string[];
+  teams: TeamsJob[];
+  close(): Promise<void>;
+}
+
+export async function startApp(): Promise<TestApp> {
+  const app = await createApp();
+  const mails: MailJob[] = [];
+  const mail = app.get(MailService);
+  vi.spyOn(mail, 'send').mockImplementation(async (job: MailJob) => {
+    mails.push(job);
+  });
+  const outbound: string[] = [];
+  const webhooks: WebhookJob[] = [];
+  const scans: string[] = [];
+  const teams: TeamsJob[] = [];
+  const queues = app.get(JobQueuesService);
+  vi.spyOn(queues, 'outbound').mockImplementation(async (id: string) => {
+    outbound.push(id);
+  });
+  vi.spyOn(queues, 'webhook').mockImplementation(async (job) => {
+    webhooks.push(job);
+  });
+  vi.spyOn(queues, 'teams').mockImplementation(async (job) => {
+    teams.push(job);
+  });
+  vi.spyOn(queues, 'scan').mockImplementation(async (id: string) => {
+    scans.push(id);
+  });
+  return {
+    app,
+    prisma: app.get(PrismaService),
+    mails,
+    outbound,
+    webhooks,
+    scans,
+    teams,
+    close: () => app.close(),
+  };
+}
+
+export function uniqueEmail(prefix: string): string {
+  return `${prefix}.${randomBytes(4).toString('hex')}@example.test`;
+}
+
+let passwordHashCache: Promise<string> | undefined;
+export function passwordHash(): Promise<string> {
+  passwordHashCache ??= hash(PASSWORD, {
+    algorithm: Algorithm.Argon2id,
+    memoryCost: 19_456,
+    timeCost: 2,
+    parallelism: 1,
+  });
+  return passwordHashCache;
+}
+
+export async function makeOrg(
+  prisma: PrismaService,
+  opts: { internal?: boolean; mfaRequired?: boolean } = {},
+) {
+  return prisma.organization.create({
+    data: {
+      name: `Org ${randomBytes(3).toString('hex')}`,
+      isInternal: opts.internal ?? false,
+      mfaRequiredForCustomers: opts.mfaRequired ?? false,
+    },
+  });
+}
+
+export async function makeUser(
+  prisma: PrismaService,
+  role: 'ADMIN' | 'AGENT' | 'CUSTOMER',
+  organizationId: string,
+  extra: { orgTicketAccess?: boolean; phone?: string } = {},
+) {
+  return prisma.user.create({
+    data: {
+      email: uniqueEmail(role.toLowerCase()),
+      name: `${role} test`,
+      role,
+      organizationId,
+      passwordHash: await passwordHash(),
+      ...extra,
+    },
+  });
+}
+
+/** Default groups created by the phase 1 migration. */
+export const GROUP_N1 = '00000000-0000-4000-8000-000000000301';
+export const GROUP_N2 = '00000000-0000-4000-8000-000000000302';
+export const GROUP_TRIAGE = '00000000-0000-4000-8000-000000000304';
+
+export async function grantGroup(
+  prisma: PrismaService,
+  userId: string,
+  groupId: string,
+  levels = ['full'],
+) {
+  await prisma.groupAccess.upsert({
+    where: { userId_groupId: { userId, groupId } },
+    create: { userId, groupId, levels },
+    update: { levels },
+  });
+}
+
+interface Res {
+  statusCode: number;
+  /** Raw body (non-JSON answers such as TwiML). */
+  text: string;
+  json: <T = any>() => T; // eslint-disable-line @typescript-eslint/no-explicit-any
+  headers: Record<string, string | string[] | number | undefined>;
+}
+
+/** A browser-like client bound to one host: keeps its cookie and CSRF token. */
+export class Client {
+  cookie?: string;
+  csrf?: string;
+  ip = `198.51.100.${Math.floor(Math.random() * 250) + 1}`;
+
+  constructor(
+    private readonly app: NestFastifyApplication,
+    readonly host: string,
+  ) {}
+
+  async request(
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    url: string,
+    body?: unknown,
+    opts: { origin?: string | null; csrf?: string | null; headers?: Record<string, string> } = {},
+  ): Promise<Res> {
+    const headers: Record<string, string> = {
+      host: this.host,
+      'user-agent': 'vitest',
+      'x-forwarded-for': this.ip,
+      ...(opts.headers ?? {}),
+    };
+    if (this.cookie) headers.cookie = `__Host-sid=${this.cookie}`;
+    if (method !== 'GET') {
+      const origin = opts.origin === undefined ? `https://${this.host}` : opts.origin;
+      if (origin) headers.origin = origin;
+      const csrf = opts.csrf === undefined ? this.csrf : opts.csrf;
+      if (csrf) headers['x-csrf-token'] = csrf;
+    }
+    const res = await this.app
+      .getHttpAdapter()
+      .getInstance()
+      .inject({ method, url, headers, ...(body !== undefined ? { payload: body as object } : {}) });
+    const setCookie = res.headers['set-cookie'];
+    const cookies = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
+    for (const c of cookies) {
+      const m = /^__Host-sid=([^;]*)/.exec(String(c));
+      if (m) this.cookie = m[1] || undefined;
+    }
+    const parsed = res.body ? safeJson(res.body) : undefined;
+    if (parsed && typeof parsed === 'object' && 'csrfToken' in parsed)
+      this.csrf = (parsed as { csrfToken: string }).csrfToken;
+    return {
+      statusCode: res.statusCode,
+      text: res.body,
+      json: () => parsed as never,
+      headers: res.headers,
+    };
+  }
+
+  get(url: string) {
+    return this.request('GET', url);
+  }
+  post(url: string, body?: unknown, opts?: Parameters<Client['request']>[3]) {
+    return this.request('POST', url, body ?? {}, opts);
+  }
+  patch(url: string, body?: unknown, opts?: Parameters<Client['request']>[3]) {
+    return this.request('PATCH', url, body ?? {}, opts);
+  }
+  put(url: string, body?: unknown, opts?: Parameters<Client['request']>[3]) {
+    return this.request('PUT', url, body ?? {}, opts);
+  }
+  delete(url: string, opts?: Parameters<Client['request']>[3]) {
+    return this.request('DELETE', url, undefined, opts);
+  }
+
+  async login(email: string, password = PASSWORD) {
+    return this.post('/api/v1/auth/login', { email, password });
+  }
+
+  /** Login + TOTP enrollment for staff; returns the TOTP secret and recovery codes. */
+  async loginAndEnroll(email: string): Promise<{ secret: string; recoveryCodes: string[] }> {
+    const login = await this.login(email);
+    if (login.json().state !== 'mfa_enrollment_required')
+      throw new Error(`Unexpected state ${login.json().state}`);
+    const setup = await this.post('/api/v1/auth/mfa/totp/setup');
+    const secret = setup.json().secret as string;
+    const confirm = await this.post('/api/v1/auth/mfa/totp/confirm', {
+      code: authenticator.generate(secret),
+    });
+    if (confirm.statusCode !== 200)
+      throw new Error(`Enrollment failed: ${JSON.stringify(confirm.json())}`);
+    return { secret, recoveryCodes: confirm.json().recoveryCodes };
+  }
+}
+
+function safeJson(body: string): unknown {
+  try {
+    return JSON.parse(body);
+  } catch {
+    return body;
+  }
+}
+
+/** Token from the last mail of a template (the link carries it in the fragment). */
+export function tokenFromMail(mails: MailJob[], template: MailJob['template'], to: string): string {
+  const job = [...mails].reverse().find((m) => m.template === template && m.to === to);
+  if (!job || !('link' in job.params)) throw new Error(`No ${template} mail for ${to}`);
+  const token = /#token=([A-Za-z0-9_-]{43})$/.exec(job.params.link)?.[1];
+  if (!token) throw new Error('No token in link');
+  return token;
+}

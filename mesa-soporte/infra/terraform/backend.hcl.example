@@ -1,0 +1,6 @@
+# Copy to backend.hcl (git-ignored). The bucket is created once by hand with
+# versioning enabled and no public access; see docs/despliegue.md.
+bucket    = "mesa-terraform-state"
+namespace = "<object-storage-namespace>"
+key       = "mesa-soporte/prod.tfstate"
+region    = "mx-queretaro-1"

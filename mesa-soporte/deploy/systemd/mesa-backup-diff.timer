@@ -1,0 +1,10 @@
+[Unit]
+Description=mesa-soporte: daily differential backup (Mon-Sat 02:00 Mexico City)
+
+[Timer]
+OnCalendar=Mon..Sat *-*-* 02:00:00 America/Mexico_City
+Persistent=true
+Unit=mesa-backup@diff.service
+
+[Install]
+WantedBy=timers.target
