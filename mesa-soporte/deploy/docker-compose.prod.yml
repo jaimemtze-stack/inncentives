@@ -303,7 +303,7 @@ services:
   clamav:
     <<: *hardening
     profiles: ['${CLAMAV_PROFILE:-default}']
-    image: clamav/clamav-debian:1.4
+    image: clamav/clamav-debian:1.5
     read_only: false
     cap_add: ['CHOWN', 'SETUID', 'SETGID', 'DAC_OVERRIDE']
     volumes:
