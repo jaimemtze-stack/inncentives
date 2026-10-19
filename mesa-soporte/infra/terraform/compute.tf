@@ -119,11 +119,13 @@ resource "oci_core_volume" "data" {
 }
 
 resource "oci_core_volume_attachment" "data" {
-  attachment_type                     = "paravirtualized"
-  instance_id                         = oci_core_instance.app.id
-  volume_id                           = oci_core_volume.data.id
-  device                              = "/dev/oracleoci/oraclevdb"
-  is_pv_encryption_in_transit_enabled = true
+  attachment_type = "paravirtualized"
+  instance_id     = oci_core_instance.app.id
+  volume_id       = oci_core_volume.data.id
+  device          = "/dev/oracleoci/oraclevdb"
+  # Ampere A1 instances reject in-transit encryption for paravirtualized
+  # attachments. The volume stays encrypted at rest with the vault key.
+  is_pv_encryption_in_transit_enabled = false
 }
 
 # No Oracle volume-backup policy: it would exceed the 5 free volume backups.
