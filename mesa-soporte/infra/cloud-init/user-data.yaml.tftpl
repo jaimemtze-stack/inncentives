@@ -105,7 +105,8 @@ runcmd:
   - |
     set -eu
     dev=/dev/oracleoci/oraclevdb
-    for i in $(seq 1 60); do [ -e "$dev" ] && break; sleep 5; done
+    # Terraform attaches the volume after the instance exists; wait up to 30 min.
+    for i in $(seq 1 360); do [ -e "$dev" ] && break; sleep 5; done
     blkid "$dev" >/dev/null 2>&1 || mkfs.xfs -L mesa-data "$dev"
     mkdir -p /srv/mesa
     grep -q mesa-data /etc/fstab || echo "LABEL=mesa-data /srv/mesa xfs defaults,nofail,noatime,nodev,nosuid 0 2" >> /etc/fstab
