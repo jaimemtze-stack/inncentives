@@ -145,3 +145,9 @@ variable "mail_from" {
   description = "Sender of system e-mails, e.g. 'Soporte Inncentives <soporte@inncentives.com>'."
   type        = string
 }
+
+variable "service_user_email" {
+  description = "Primary e-mail of the pgBackRest service user (identity domains require one). Empty = first of alert_emails."
+  type        = string
+  default     = ""
+}

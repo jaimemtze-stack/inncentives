@@ -6,6 +6,7 @@ environment             = "prod"
 
 bastion_allowed_cidrs = ["203.0.113.10/32"] # office / VPN egress IPs
 alert_emails          = ["xxxxxxxx.neitek.onmicrosoft.com@amer.teams.ms"]
+# service_user_email  = "infra+pgbackrest@neitek.com" # optional; defaults to alert_emails[0]
 budget_monthly_usd    = 20
 budget_alert_emails   = ["finanzas@neitek.com", "infra@neitek.com"]
 

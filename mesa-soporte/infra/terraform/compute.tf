@@ -54,6 +54,8 @@ resource "oci_core_instance" "app" {
   }
 
   launch_options {
+    # The API requires network_type whenever launch_options is present.
+    network_type                        = "PARAVIRTUALIZED"
     is_pv_encryption_in_transit_enabled = true
   }
 
