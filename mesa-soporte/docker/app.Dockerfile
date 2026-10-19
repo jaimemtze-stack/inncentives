@@ -85,7 +85,7 @@ CMD ["--enable-source-maps", "dist/main.js"]
 # ---------------------------------------------------------------------- web
 # Static assets served by nginx-unprivileged (uid 101), which also proxies the
 # API (see docker/nginx/default.conf).
-FROM nginxinc/nginx-unprivileged:1.30.6-alpine3.24@sha256:782bb89768cc87b7f95c18b95baa1af250e5d451f26794f59363540161147c01 AS web
+FROM nginxinc/nginx-unprivileged:1.31.7-alpine3.24@sha256:378d0c32f6562f7fd9629170797f57d2b953aa09be983b3daaf4809bb039ca00 AS web
 # Security fixes released after the pinned base image (e.g. libexpat CVE-2026-77214).
 USER root
 RUN --mount=type=secret,id=ca,required=false \
