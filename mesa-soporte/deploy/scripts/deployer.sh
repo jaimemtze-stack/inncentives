@@ -10,6 +10,9 @@ require docker cosign curl jq
 GITHUB_REPO="${GITHUB_REPO:?owner/repo}"
 RELEASE_WORKFLOW="${RELEASE_WORKFLOW:-.github/workflows/mesa-soporte-release.yml}"
 TOKEN_FILE="${GITHUB_TOKEN_FILE:-/run/mesa/secrets/github_read_token}"
+# GHCR does not accept fine-grained tokens: the registry uses a separate
+# classic token limited to read:packages.
+GHCR_TOKEN_FILE="${GHCR_TOKEN_FILE:-/run/mesa/secrets/ghcr_read_token}"
 STATE="$MESA_STATE_DIR/deploy"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-180}"
 FORCE="${1:-}"
@@ -50,6 +53,13 @@ for svc in "${SERVICES[@]}"; do
   image[$svc]="$ref"
 done
 
+# GHCR packages are private: log in for the signature checks and the pull,
+# then forget the token.
+if [[ -r "$GHCR_TOKEN_FILE" ]]; then
+  docker login ghcr.io --username mesa-deployer --password-stdin < "$GHCR_TOKEN_FILE" >/dev/null
+  trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+fi
+
 identity="^https://github.com/${GITHUB_REPO}/${RELEASE_WORKFLOW}@refs/heads/main$"
 for svc in "${SERVICES[@]}"; do
   log "Verifying signature of ${image[$svc]}"
@@ -71,11 +81,6 @@ new_env="$STATE/images-$version.env"
 previous_env="$COMPOSE_ENV_FILE.previous"
 [[ -f "$COMPOSE_ENV_FILE" ]] && cp -f "$COMPOSE_ENV_FILE" "$previous_env"
 
-# GHCR packages are private: log in only for the pull, then forget the token.
-if [[ -r "$TOKEN_FILE" ]]; then
-  docker login ghcr.io --username mesa-deployer --password-stdin < "$TOKEN_FILE" >/dev/null
-  trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
-fi
 COMPOSE_ENV_FILE="$new_env" compose pull api worker web migrator postgres
 
 if [[ -n "$current" ]]; then

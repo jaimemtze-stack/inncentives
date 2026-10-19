@@ -4,6 +4,7 @@
 |---|---|---|
 | `pgbackrest_s3_key` / `_secret` (Customer Secret Key) | 90 días | Genera una llave nueva en el usuario `svc-mesa-prod-pgbackrest` → `oci vault secret update-base64` con el nuevo valor → `systemctl restart mesa-secrets-sync` → `docker compose restart postgres` → `backup.sh check` → borra la llave anterior en OCI |
 | `github_read_token` | 90 días (caducidad del token) | Nuevo token de solo lectura → actualizar el secreto → `mesa-secrets-sync` |
+| `ghcr_read_token` | 90 días (caducidad del token) | Nuevo token clásico solo con `read:packages` → actualizar el secreto → `mesa-secrets-sync` |
 | `cloudflared_token` | Si se sospecha fuga | Zero Trust → Tunnel → *Refresh token* → actualizar → reiniciar `cloudflared` |
 | `smtp_password` | 180 días o al salir alguien del equipo | Nueva contraseña de aplicación → actualizar → reiniciar `worker` |
 | `redis_password` (+ `redis_url`) | Anual | Actualiza **ambos** secretos → reinicia `redis`, `api` y `worker` (las sesiones se conservan en el AOF) |

@@ -68,7 +68,8 @@ create twilio_auth_token "$APP_UID" "$(orunused 'Twilio Auth Token (voice and SM
 create whatsapp_access_token "$APP_UID" "$(orunused 'WhatsApp Cloud API system user token')"
 create whatsapp_app_secret "$APP_UID" "$(orunused 'Meta app secret (webhook signatures)')"
 create anthropic_api_key "$APP_UID" "$(orunused 'Anthropic API key (zero data retention org; only if AI is approved)')"
-create github_read_token "$ROOT_UID" "$(ask 'GitHub fine-grained token (contents:read, packages:read)')"
+create github_read_token "$ROOT_UID" "$(ask 'GitHub fine-grained token (this repository only, Contents: read)')"
+create ghcr_read_token "$ROOT_UID" "$(ask 'GitHub classic token for GHCR (read:packages only)')"
 
 echo "# name ocid owner-uid   (copy to /opt/mesa/secrets.map on the VM)"
 printf '%s\n' "${map_lines[@]}"
