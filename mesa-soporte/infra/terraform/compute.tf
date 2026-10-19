@@ -55,8 +55,10 @@ resource "oci_core_instance" "app" {
 
   launch_options {
     # The API requires network_type whenever launch_options is present.
-    network_type                        = "PARAVIRTUALIZED"
-    is_pv_encryption_in_transit_enabled = true
+    network_type = "PARAVIRTUALIZED"
+    # Not supported on Ampere A1 (OCI stores false regardless); volumes stay
+    # encrypted at rest with the vault key.
+    is_pv_encryption_in_transit_enabled = false
   }
 
   agent_config {
