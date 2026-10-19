@@ -4,7 +4,7 @@ name: mesa-dev
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: mesa
       POSTGRES_PASSWORD: mesa_dev_pw
