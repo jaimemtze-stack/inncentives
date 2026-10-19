@@ -58,7 +58,7 @@ services:
 
   # Optional (large download, ~1.5 GB RAM): docker compose --profile full up -d
   clamav:
-    image: clamav/clamav-debian:1.4
+    image: clamav/clamav-debian:1.5
     profiles: ['full']
     ports: ['127.0.0.1:3310:3310']
 
