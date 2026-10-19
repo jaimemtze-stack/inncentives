@@ -56,9 +56,9 @@ resource "oci_core_instance" "app" {
   launch_options {
     # The API requires network_type whenever launch_options is present.
     network_type = "PARAVIRTUALIZED"
-    # Not supported on Ampere A1 (OCI stores false regardless); volumes stay
-    # encrypted at rest with the vault key.
-    is_pv_encryption_in_transit_enabled = false
+    # is_pv_encryption_in_transit_enabled is left unset: Ampere A1 does not
+    # support it and the API rejects overriding it. Volumes stay encrypted at
+    # rest with the vault key.
   }
 
   agent_config {
@@ -101,7 +101,7 @@ resource "oci_core_instance" "app" {
 
   lifecycle {
     # A new image does not replace the running server; rebuilds are deliberate.
-    ignore_changes = [source_details[0].source_id, metadata]
+    ignore_changes = [source_details[0].source_id, metadata, launch_options[0].is_pv_encryption_in_transit_enabled]
   }
 }
 
