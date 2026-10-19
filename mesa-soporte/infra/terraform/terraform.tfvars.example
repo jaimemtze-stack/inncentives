@@ -12,7 +12,7 @@ budget_alert_emails   = ["finanzas@neitek.com", "infra@neitek.com"]
 
 github_repository = "jaimemtze-stack/inncentives"
 public_hosts = {
-  portal = "soporte.inncentives.com"
-  agent  = "agentes.soporte.inncentives.com"
+  portal = "supportinncentives.neitek.net"
+  agent  = "agents-supportinncentives.neitek.net"
 }
 mail_from = "Soporte Inncentives <soporte@inncentives.com>"
