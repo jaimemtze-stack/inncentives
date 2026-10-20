@@ -20,6 +20,18 @@ resource "oci_core_default_security_list" "default" {
   manage_default_resource_id = oci_core_vcn.main.default_security_list_id
   display_name               = "${local.name}-default-deny"
   freeform_tags              = local.tags
+
+  # The OCI Bastion endpoint lives in this subnet but cannot use NSGs: its
+  # outbound SSH to the VM is governed by this list. Nothing else is allowed.
+  egress_security_rules {
+    destination = var.private_subnet_cidr
+    protocol    = "6"
+    description = "OCI Bastion endpoint to SSH on the VM"
+    tcp_options {
+      min = 22
+      max = 22
+    }
+  }
 }
 
 resource "oci_core_nat_gateway" "nat" {
