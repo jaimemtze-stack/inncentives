@@ -175,11 +175,19 @@ def callout(kind, title, body):
     return f'<div class="callout {kind}"><b class="t">{title}</b>{body}</div>'
 
 
-def page(slug, title, area, intro, audience, chapters, links):
+FOOTER = ('Soporte Inncentives · Neitek. Las pantallas de este manual usan datos de ejemplo; los nombres de vistas, '
+          'grupos y campos pueden variar según la configuración de tu mesa de soporte.')
+
+
+def page(slug, title, area, intro, audience, chapters, links, manuals=None,
+         eyebrow='Soporte Inncentives · Guía de uso', footer=FOOTER, version='1.0 · octubre 2026',
+         meta_extra='<span><b>Idioma de las pantallas:</b> español (México)</span>'):
+    manuals = manuals or MANUALS
+    head, _, last = title.rpartition(' ')
     toc = ''.join(f'<a href="#{cid}"><span class="n">{i:02d}</span><span>{name}</span></a>'
                   for i, (cid, name, _lead, _body) in enumerate(chapters, 1))
     others = ''.join(
-        f'<a href="{links.get(s, "#")}"{" aria-current=\"page\"" if s == slug else ""}>{t}</a>' for s, t, _ in MANUALS)
+        f'<a href="{links.get(s, "#")}"{" aria-current=\"page\"" if s == slug else ""}>{t}</a>' for s, t, _ in manuals)
     body = ''.join(
         f'<section class="chapter" id="{cid}"><h2><span class="num">{i:02d}</span>{name}</h2>'
         f'<p class="lead">{lead}</p>{content}</section>'
@@ -199,13 +207,13 @@ def page(slug, title, area, intro, audience, chapters, links):
   <main id="inicio">
     <div class="wrap">
       <header class="cover">
-        <div class="eyebrow">Soporte Inncentives · Guía de uso</div>
-        <h1>{title.replace("Manual del ", "Manual del <em>")}</em></h1>
+        <div class="eyebrow">{eyebrow}</div>
+        <h1>{head} <em>{last}</em></h1>
         <p>{intro}</p>
-        <div class="meta"><span><b>Para:</b> {audience}</span><span><b>Versión:</b> 1.0 · octubre 2026</span><span><b>Idioma de las pantallas:</b> español (México)</span></div>
+        <div class="meta"><span><b>Para:</b> {audience}</span><span><b>Versión:</b> {version}</span>{meta_extra}</div>
       </header>
       {body}
-      <footer class="end">Soporte Inncentives · Neitek. Las pantallas de este manual usan datos de ejemplo; los nombres de vistas, grupos y campos pueden variar según la configuración de tu mesa de soporte.</footer>
+      <footer class="end">{footer}</footer>
     </div>
   </main>
 </div>
@@ -762,12 +770,17 @@ def standalone(html):
     return ('<!doctype html>\n<html lang="es-MX">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
             f'{head}</head>\n<body>\n<div class="shell">{body}</body>\n</html>\n')
-for slug, chapters, intro, audience in [
-    ('cliente', cliente, 'Cómo pedir ayuda al equipo de Soporte Inncentives: crear tickets, dar seguimiento, usar el chat y la base de conocimiento, y cuidar tu cuenta.', 'usuarios de las empresas cliente'),
-    ('agente', agente, 'Cómo atender tickets en la mesa de soporte: vistas, búsqueda, respuestas, notas internas, chat, teléfono, reportes y registro de tiempo.', 'agentes de soporte de Neitek'),
-    ('administrador', administrador, 'Cómo administrar la mesa de soporte: organizaciones, usuarios y accesos, catálogos y reglas, ajustes generales, base de conocimiento y cumplimiento.', 'administradores de la mesa de soporte'),
-]:
-    title, area = next((t, a) for s, t, a in MANUALS if s == slug)
-    html = page(slug, title, area, intro, audience, chapters, LINKS)
-    (OUT / f'manual-{slug}.html').write_text(html if ARTIFACT else standalone(html), encoding='utf-8')
-print('ok')
+def main():
+    for slug, chapters, intro, audience in [
+        ('cliente', cliente, 'Cómo pedir ayuda al equipo de Soporte Inncentives: crear tickets, dar seguimiento, usar el chat y la base de conocimiento, y cuidar tu cuenta.', 'usuarios de las empresas cliente'),
+        ('agente', agente, 'Cómo atender tickets en la mesa de soporte: vistas, búsqueda, respuestas, notas internas, chat, teléfono, reportes y registro de tiempo.', 'agentes de soporte de Neitek'),
+        ('administrador', administrador, 'Cómo administrar la mesa de soporte: organizaciones, usuarios y accesos, catálogos y reglas, ajustes generales, base de conocimiento y cumplimiento.', 'administradores de la mesa de soporte'),
+    ]:
+        title, area = next((t, a) for s, t, a in MANUALS if s == slug)
+        html = page(slug, title, area, intro, audience, chapters, LINKS)
+        (OUT / f'manual-{slug}.html').write_text(html if ARTIFACT else standalone(html), encoding='utf-8')
+    print('ok')
+
+
+if __name__ == '__main__':
+    main()
