@@ -255,7 +255,7 @@ function AgentSidebar({ ticket, reload }: { ticket: TicketDetail; reload: () => 
               <button
                 key={x}
                 type="button"
-                className="rounded bg-slate-200 px-2 text-xs dark:bg-slate-700"
+                className="rounded bg-plum-200 px-2 text-xs dark:bg-plum-700"
                 title="×"
                 onClick={() =>
                   void act(() => api('POST', `/tickets/${ticket.id}/tags/remove`, { tags: [x] }))
@@ -655,7 +655,7 @@ export function TicketZoomPage() {
     <div className={staff ? 'grid gap-6 lg:grid-cols-[1fr_20rem]' : 'space-y-6'}>
       <div className="space-y-4">
         <header className="card space-y-2">
-          <p className="font-mono text-xs text-slate-500">#{tk.number}</p>
+          <p className="font-mono text-xs text-plum-500">#{tk.number}</p>
           <h1 className="text-xl font-semibold">{tk.title}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <StateBadge state={tk.state} />
@@ -663,7 +663,7 @@ export function TicketZoomPage() {
             <span>{tk.priority.name}</span>
             {tk.customer && <span>· {tk.customer.name}</span>}
             {tk.organization && <span>· {tk.organization.name}</span>}
-            <span className="text-slate-500">· {formatDate(tk.createdAt, i18n.language)}</span>
+            <span className="text-plum-500">· {formatDate(tk.createdAt, i18n.language)}</span>
           </div>
           {staff && tk.firstResponseDueAt && (
             <p className="text-xs">

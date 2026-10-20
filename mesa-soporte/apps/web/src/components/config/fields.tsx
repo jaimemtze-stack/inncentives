@@ -27,7 +27,7 @@ function Labeled(props: { id: string; label: string; hint?: string; children: Re
         {props.label}
       </label>
       {props.children}
-      {props.hint && <p className="mt-1 text-xs text-slate-500">{props.hint}</p>}
+      {props.hint && <p className="mt-1 text-xs text-plum-500">{props.hint}</p>}
     </div>
   );
 }
@@ -231,7 +231,7 @@ export function Rows<T>(props: {
       {props.items.map((item, i) => (
         <div
           key={keys[i]}
-          className="flex items-start gap-2 rounded border border-slate-200 p-2 dark:border-slate-700"
+          className="flex items-start gap-2 rounded border border-plum-200 p-2 dark:border-plum-700"
         >
           <div className="min-w-0 flex-1">
             {props.render(item, (v) =>
@@ -272,7 +272,7 @@ export function Rows<T>(props: {
 
 export function Section(props: { title: string; children: ReactNode }) {
   return (
-    <fieldset className="space-y-3 rounded border border-slate-200 p-3 dark:border-slate-700">
+    <fieldset className="space-y-3 rounded border border-plum-200 p-3 dark:border-plum-700">
       <legend className="px-1 text-sm font-semibold">{props.title}</legend>
       {props.children}
     </fieldset>

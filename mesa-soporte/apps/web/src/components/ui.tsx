@@ -38,7 +38,7 @@ export function Field(props: {
         aria-describedby={props.hint ? `${id}-hint` : undefined}
       />
       {props.hint && (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-slate-500">
+        <p id={`${id}-hint`} className="mt-1 text-xs text-plum-500">
           {props.hint}
         </p>
       )}
@@ -58,7 +58,7 @@ export function Alert({
       'border-red-300 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200',
     success:
       'border-green-300 bg-green-50 text-green-900 dark:border-green-900 dark:bg-green-950 dark:text-green-200',
-    info: 'border-blue-300 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200',
+    info: 'border-brand-300 bg-brand-50 text-brand-900 dark:border-brand-900 dark:bg-brand-950 dark:text-brand-200',
   }[kind];
   return (
     <div

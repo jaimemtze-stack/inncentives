@@ -249,7 +249,7 @@ export function TicketNewPage() {
       )}
       {!!suggestions.data?.length && (
         <div
-          className="rounded border border-blue-200 bg-blue-50 p-3 text-sm dark:border-blue-900 dark:bg-blue-950"
+          className="rounded border border-brand-200 bg-brand-50 p-3 text-sm dark:border-brand-900 dark:bg-brand-950"
           role="status"
         >
           <p className="font-medium">{t('kb.suggestions')}</p>
@@ -286,7 +286,7 @@ export function TicketNewPage() {
             customer={!staff}
             onChange={setCustomFields}
           />
-          {required.length > 0 && <p className="text-xs text-slate-600">* {required.join(', ')}</p>}
+          {required.length > 0 && <p className="text-xs text-plum-600">* {required.join(', ')}</p>}
         </fieldset>
       )}
       <AttachmentPicker onChange={setAttachmentIds} />

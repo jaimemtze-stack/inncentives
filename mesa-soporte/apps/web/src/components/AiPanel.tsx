@@ -50,7 +50,7 @@ export function AiPanel(props: { ticketId: string; onSuggestion: (text: string) 
   return (
     <div>
       <h3 className="font-semibold">{t('ai.title')}</h3>
-      <p className="text-xs text-slate-600 dark:text-slate-300">{t('ai.notice')}</p>
+      <p className="text-xs text-plum-600 dark:text-plum-300">{t('ai.notice')}</p>
       <div className="mt-1 flex flex-wrap gap-1">
         <button
           type="button"

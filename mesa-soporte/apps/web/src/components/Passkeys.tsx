@@ -174,7 +174,7 @@ export function SsoButtons() {
   });
   if (!providers.data?.length) return null;
   return (
-    <div className="space-y-2 border-t border-slate-200 pt-4 dark:border-slate-800">
+    <div className="space-y-2 border-t border-plum-200 pt-4 dark:border-plum-800">
       {providers.data.map((p) => (
         <button
           key={p.id}
@@ -190,7 +190,7 @@ export function SsoButtons() {
           {t('sso.signIn', { provider: p.label })}
         </button>
       ))}
-      <p className="text-xs text-slate-500">{t('sso.hint')}</p>
+      <p className="text-xs text-plum-500">{t('sso.hint')}</p>
     </div>
   );
 }

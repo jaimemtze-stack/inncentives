@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
+import { Icon } from './Icon';
 import { getSocket } from '../lib/realtime';
 
 interface Notif {
@@ -13,7 +14,7 @@ interface Notif {
   ticket: { id: string; number: string } | null;
 }
 
-export function NotificationBell() {
+export function NotificationBell({ variant }: { variant?: 'sidebar' }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -30,20 +31,25 @@ export function NotificationBell() {
     <div className="relative">
       <button
         type="button"
-        className="btn-secondary px-3"
+        className={variant === 'sidebar' ? 'nav-item w-full' : 'btn-secondary px-3'}
         aria-expanded={open}
         onClick={() => setOpen(!open)}
         aria-label={t('nav.notifications')}
       >
-        🔔
+        <Icon name="bell" />
+        {variant === 'sidebar' && <span aria-hidden="true">{t('nav.notifications')}</span>}
         {list.data?.unread ? (
-          <span className="ml-1 rounded-full bg-red-700 px-1.5 text-xs text-white">
+          <span className="ml-auto rounded-full bg-accent-400 px-1.5 text-xs font-semibold text-plum-900">
             {list.data.unread}
           </span>
         ) : null}
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div
+          className={`z-50 w-80 rounded-lg border border-plum-200 bg-white p-3 text-plum-900 shadow-lg dark:border-plum-700 dark:bg-plum-850 dark:text-slate-100 ${
+            variant === 'sidebar' ? 'fixed bottom-24 left-4 md:left-64' : 'absolute right-0 mt-2'
+          }`}
+        >
           {!list.data?.items.length && <p className="text-sm">{t('notif.empty')}</p>}
           <ul className="max-h-80 space-y-2 overflow-y-auto text-sm">
             {list.data?.items.map((n) => (
@@ -93,7 +99,7 @@ export function CallToast() {
   return (
     <div
       role="alert"
-      className="fixed bottom-4 right-4 z-30 rounded-lg bg-blue-800 p-4 text-white shadow-lg"
+      className="fixed bottom-4 right-4 z-30 rounded-lg bg-brand-800 p-4 text-white shadow-lg"
     >
       <p className="font-semibold">{t('phone.incoming', { number: call.number })}</p>
       <a className="underline" href={`/telefono?number=${encodeURIComponent(call.number)}`}>
