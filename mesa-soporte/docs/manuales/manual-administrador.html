@@ -160,7 +160,7 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
     <div class="area">Mesa de soporte — Agentes</div>
     <div class="manual-name">Manual del administrador</div>
     <h2>Contenido</h2>
-    <nav aria-label="Contenido"><a href="#rol"><span class="n">01</span><span>Tu rol</span></a><a href="#organizaciones"><span class="n">02</span><span>Organizaciones y usuarios</span></a><a href="#accesos"><span class="n">03</span><span>Agentes y accesos a grupos</span></a><a href="#configuracion"><span class="n">04</span><span>Configuración de la mesa</span></a><a href="#reglas"><span class="n">05</span><span>Reglas: condiciones y acciones</span></a><a href="#ajustes"><span class="n">06</span><span>Ajustes generales</span></a><a href="#kb"><span class="n">07</span><span>Base de conocimiento: edición</span></a><a href="#cumplimiento"><span class="n">08</span><span>Seguridad y cumplimiento</span></a></nav>
+    <nav aria-label="Contenido"><a href="#rol"><span class="n">01</span><span>Tu rol</span></a><a href="#organizaciones"><span class="n">02</span><span>Organizaciones y usuarios</span></a><a href="#usuarios"><span class="n">03</span><span>Usuarios</span></a><a href="#accesos"><span class="n">04</span><span>Agentes y accesos a grupos</span></a><a href="#configuracion"><span class="n">05</span><span>Configuración de la mesa</span></a><a href="#reglas"><span class="n">06</span><span>Reglas: condiciones y acciones</span></a><a href="#ajustes"><span class="n">07</span><span>Ajustes generales</span></a><a href="#kb"><span class="n">08</span><span>Base de conocimiento: edición</span></a><a href="#cumplimiento"><span class="n">09</span><span>Seguridad y cumplimiento</span></a></nav>
     <div class="others"><h2 style="margin-top:0">Manuales</h2><a href="manual-cliente.html">Manual del cliente</a><a href="manual-agente.html">Manual del agente</a><a href="manual-administrador.html" aria-current="page">Manual del administrador</a></div>
   </aside>
   <main id="inicio">
@@ -180,6 +180,7 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
 <tr><td>Editar la base de conocimiento</td><td class="yes">Sí</td><td class="no">No*</td><td class="no">No</td></tr>
 <tr><td>Crear organizaciones</td><td class="yes">Sí</td><td class="no">No</td><td class="no">No</td></tr>
 <tr><td>Invitar usuarios</td><td class="yes">Cualquier rol</td><td>Solo clientes</td><td class="no">No</td></tr>
+<tr><td>Editar usuarios, cambiar su rol y restablecer su verificación</td><td class="yes">Sí</td><td>Solo consultar clientes</td><td class="no">No</td></tr>
 <tr><td>Configuración</td><td class="yes">Completa</td><td>Solo Tokens de API*</td><td class="no">No</td></tr>
 <tr><td>Bitácora de auditoría</td><td class="yes">Sí</td><td class="no">No*</td><td class="no">No</td></tr>
 <tr><td>Privacidad (ARCO) y Ver como cliente</td><td class="yes">Sí</td><td class="no">No*</td><td class="no">No</td></tr>
@@ -201,7 +202,30 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
 <li><b>Organizaciones</b>: columnas nombre, dominios (separados por <code>|</code>), plan y mfa.</li>
 <li><b>Usuarios</b>: correo, nombre, organizacion y rol. Cada uno recibe su invitación.</li>
 </ul>
-<p>Primero pulsa <span class="ui">Validar (sin guardar)</span>; el botón <span class="btn">Importar</span> se habilita solo cuando no hay errores. Si hay errores, no se guarda nada.</p></section><section class="chapter" id="accesos"><h2><span class="num">03</span>Agentes y accesos a grupos</h2><p class="lead">Define qué grupos ve cada agente y qué puede hacer en ellos.</p>
+<p>Primero pulsa <span class="ui">Validar (sin guardar)</span>; el botón <span class="btn">Importar</span> se habilita solo cuando no hay errores. Si hay errores, no se guarda nada.</p></section><section class="chapter" id="usuarios"><h2><span class="num">03</span>Usuarios</h2><p class="lead">Consulta y edita a cualquier persona: datos, rol, organización, permisos, estado y seguridad.</p>
+<figure><div class="frame"><img src="img/admin-users.jpg" alt="Usuarios. Lista con filtros a la izquierda; a la derecha la ficha del usuario elegido, aquí con la confirmación para restablecer su verificación en dos pasos." loading="lazy"></div><figcaption><b>Usuarios.</b> Lista con filtros a la izquierda; a la derecha la ficha del usuario elegido, aquí con la confirmación para restablecer su verificación en dos pasos.</figcaption></figure>
+<h3>Buscar</h3>
+<p>Abre <span class="path">Usuarios</span> en el menú Administrar. Busca por nombre o correo y filtra por rol, estado u organización. Pulsa el nombre de una persona para abrir su ficha. Los agentes también ven esta página, pero solo con los clientes y sin poder editarlos.</p>
+<h3>Editar la ficha</h3>
+<ol class="steps">
+<li>En <b>Datos</b> corrige el nombre, el teléfono o el celular.</li>
+<li>En <b>Rol y organización</b> cambia el <span class="ui">Rol</span> (Administrador, Agente o Cliente) y la <span class="ui">Organización</span>. La lista solo ofrece organizaciones válidas para el rol: el personal pertenece a la organización interna y los clientes a una organización cliente.</li>
+<li>Para un cliente, marca si <span class="ui">Puede ver los tickets de toda su organización</span> y sus <span class="ui">Organizaciones adicionales</span>.</li>
+<li>Para un agente o administrador, asigna <span class="ui">Roles personalizados</span> y su <span class="ui">Acceso a grupos</span> (niveles en el capítulo siguiente).</li>
+<li>Pulsa <span class="btn">Guardar cambios</span> y confirma tu contraseña si se te pide.</li>
+</ol>
+<div class="callout warn"><b class="t">Al cambiar el rol</b><p>La persona debe iniciar sesión de nuevo. Si pasa a Cliente pierde sus accesos a grupos, roles personalizados y tokens de API. No puedes cambiar tu propio rol, estado u organización, y la mesa nunca se queda sin un administrador activo.</p></div>
+<h3>Desactivar o reactivar</h3>
+<p>En <b>Cuenta</b>, <span class="ui">Desactivar cuenta</span> impide que la persona entre y cierra sus sesiones; sus tickets e historial se conservan. <span class="ui">Reactivar cuenta</span> la habilita de nuevo.</p>
+<h3>Seguridad</h3>
+<ul>
+<li><span class="ui">Cerrar sus sesiones</span>: la saca de todos los dispositivos.</li>
+<li><span class="ui">Restablecer verificación en dos pasos</span>: para quien perdió su teléfono o su llave. Borra su app de autenticación, sus llaves o passkeys y sus códigos de recuperación, y cierra sus sesiones. Si es agente o administrador, deberá configurar un nuevo método al entrar. Pide confirmación y tu contraseña, y queda en la bitácora.</li>
+</ul>
+<div class="callout "><b class="t">Antes de restablecer</b><p>Confirma la identidad de la persona por otro medio (por ejemplo, una llamada a su número registrado). Quien restablece la verificación de otro le da acceso solo con su contraseña.</p></div>
+<h3>Invitaciones pendientes</h3>
+<p>Al final de la página están las invitaciones que nadie ha aceptado. <span class="ui">Reenviar</span> manda un enlace nuevo (el anterior deja de servir) y <span class="ui">Revocar</span> la cancela. Las vencidas se marcan como <b>Vencida</b>.</p></section><section class="chapter" id="accesos"><h2><span class="num">04</span>Agentes y accesos a grupos</h2><p class="lead">Define qué grupos ve cada agente y qué puede hacer en ellos.</p>
+<p>El acceso a grupos se edita en la ficha del usuario (<span class="path">Usuarios</span>) o en <span class="path">Configuración</span> → <b>Agentes y accesos</b>; ambos guardan lo mismo.</p>
 <figure><div class="frame"><img src="img/admin-access.jpg" alt="Agentes y accesos. Un grupo por fila con sus niveles de acceso." loading="lazy"></div><figcaption><b>Agentes y accesos.</b> Un grupo por fila con sus niveles de acceso.</figcaption></figure>
 <ol class="steps">
 <li>Abre <span class="path">Configuración</span> → <b>Agentes y accesos</b> y elige al agente.</li>
@@ -214,7 +238,7 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
 <tr><td>Modificar</td><td>Responder y cambiar datos de los tickets.</td></tr>
 <tr><td>Ver en vistas</td><td>Que los tickets del grupo aparezcan en sus vistas.</td></tr>
 <tr><td>Completo</td><td>Todo lo anterior.</td></tr>
-</tbody></table></div></section><section class="chapter" id="configuracion"><h2><span class="num">04</span>Configuración de la mesa</h2><p class="lead">Cada pestaña administra un catálogo con los botones Nuevo, Editar y Eliminar.</p>
+</tbody></table></div></section><section class="chapter" id="configuracion"><h2><span class="num">05</span>Configuración de la mesa</h2><p class="lead">Cada pestaña administra un catálogo con los botones Nuevo, Editar y Eliminar.</p>
 <figure><div class="frame"><img src="img/admin-config.jpg" alt="Configuración. Pestañas de catálogos a la izquierda; lista y formulario a la derecha." loading="lazy"></div><figcaption><b>Configuración.</b> Pestañas de catálogos a la izquierda; lista y formulario a la derecha.</figcaption></figure>
 <h3>Cómo se usa cada pestaña</h3>
 <ol class="steps">
@@ -257,7 +281,7 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
 <tr><td>Canales de Teams</td><td>Avisos a canales de Microsoft Teams por evento; incluye <b>Entregas</b>.</td></tr>
 <tr><td>WhatsApp y SMS</td><td>Números de WhatsApp Business o Twilio y el grupo que los atiende.</td></tr>
 <tr><td>Retención</td><td>Cuántos días se conserva cada tipo de dato (solo se editan; no se crean ni eliminan).</td></tr>
-</tbody></table></div></section><section class="chapter" id="reglas"><h2><span class="num">05</span>Reglas: condiciones y acciones</h2><p class="lead">Triggers, planificadores, SLAs, vistas y Core Workflows comparten el mismo editor de condiciones.</p>
+</tbody></table></div></section><section class="chapter" id="reglas"><h2><span class="num">06</span>Reglas: condiciones y acciones</h2><p class="lead">Triggers, planificadores, SLAs, vistas y Core Workflows comparten el mismo editor de condiciones.</p>
 <figure><div class="frame"><img src="img/admin-trigger.jpg" alt="Nuevo trigger. Nombre, evento, condiciones y acciones." loading="lazy"></div><figcaption><b>Nuevo trigger.</b> Nombre, evento, condiciones y acciones.</figcaption></figure>
 <h3>Condiciones</h3>
 <ul>
@@ -278,7 +302,7 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
 <tr><td>Responder al cliente</td><td>Acuse de recibo o recordatorio.</td></tr>
 </tbody></table></div>
 <p>En notificaciones y respuestas puedes usar variables como <code>{{ticket.number}}</code>, <code>{{customer.name}}</code> u <code>{{agent.name}}</code>.</p>
-<div class="callout "><b class="t">Ejemplo</b><p>Trigger «Etiquetar correos entrantes»: se ejecuta al <b>Crear un ticket</b>, con la condición <b>Canal es Correo</b> y la acción <b>Agregar etiquetas: correo</b>.</p></div></section><section class="chapter" id="ajustes"><h2><span class="num">06</span>Ajustes generales</h2><p class="lead">Parámetros globales de la mesa de soporte.</p>
+<div class="callout "><b class="t">Ejemplo</b><p>Trigger «Etiquetar correos entrantes»: se ejecuta al <b>Crear un ticket</b>, con la condición <b>Canal es Correo</b> y la acción <b>Agregar etiquetas: correo</b>.</p></div></section><section class="chapter" id="ajustes"><h2><span class="num">07</span>Ajustes generales</h2><p class="lead">Parámetros globales de la mesa de soporte.</p>
 <figure><div class="frame"><img src="img/admin-settings.jpg" alt="Ajustes generales, agrupados por sección." loading="lazy"></div><figcaption><b>Ajustes generales</b>, agrupados por sección.</figcaption></figure>
 <div class="tbl"><table><thead><tr><th>Sección</th><th>Ajustes</th></tr></thead><tbody>
 <tr><td>General</td><td>Nombre del producto, color principal, idioma predeterminado y prefijo del ticket en el asunto.</td></tr>
@@ -291,7 +315,7 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
 <tr><td>Inteligencia artificial</td><td>Activado y modelo. Además, cada organización debe tener su casilla IA marcada.</td></tr>
 <tr><td>Inicio de sesión único (SSO)</td><td>Hasta 5 proveedores (por ejemplo, Microsoft Entra ID): identificador, área, issuer, client ID, secreto, scopes y si se confía en su MFA.</td></tr>
 </tbody></table></div>
-<div class="callout warn"><b class="t">Secretos</b><p>Los campos «Nombre del secreto» guardan el <b>nombre</b> de un secreto en el resguardo de OCI Vault, nunca la contraseña o el token. Los valores reales los carga el equipo de infraestructura.</p></div></section><section class="chapter" id="kb"><h2><span class="num">07</span>Base de conocimiento: edición</h2><p class="lead">Crea artículos en borrador, tradúcelos y publícalos.</p>
+<div class="callout warn"><b class="t">Secretos</b><p>Los campos «Nombre del secreto» guardan el <b>nombre</b> de un secreto en el resguardo de OCI Vault, nunca la contraseña o el token. Los valores reales los carga el equipo de infraestructura.</p></div></section><section class="chapter" id="kb"><h2><span class="num">08</span>Base de conocimiento: edición</h2><p class="lead">Crea artículos en borrador, tradúcelos y publícalos.</p>
 <ol class="steps">
 <li>En <span class="path">Base de conocimiento</span> pulsa <span class="btn">Nueva respuesta</span>.</li>
 <li>Elige la <span class="ui">Categoría</span>, escribe el <span class="ui">Título</span> y el <span class="ui">Mensaje</span>. Marca <span class="ui">Solo para agentes (interna)</span> si no debe verla el cliente.</li>
@@ -299,7 +323,7 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
 <li>Abre el artículo. Con <span class="ui">Agregar traducción</span> escribe la versión en el otro idioma.</li>
 <li>Pulsa <span class="btn">Publicar</span>. Si quieres programarlo, usa <span class="ui">Publicar a partir de</span>.</li>
 </ol>
-<p>También puedes <span class="ui">Archivar</span> un artículo, cambiarlo con <span class="ui">Hacer interna</span> / <span class="ui">Hacer visible a clientes</span> y consultar las <b>Versiones anteriores</b>.</p></section><section class="chapter" id="cumplimiento"><h2><span class="num">08</span>Seguridad y cumplimiento</h2><p class="lead">Herramientas para auditoría, derechos ARCO y soporte asistido.</p>
+<p>También puedes <span class="ui">Archivar</span> un artículo, cambiarlo con <span class="ui">Hacer interna</span> / <span class="ui">Hacer visible a clientes</span> y consultar las <b>Versiones anteriores</b>.</p></section><section class="chapter" id="cumplimiento"><h2><span class="num">09</span>Seguridad y cumplimiento</h2><p class="lead">Herramientas para auditoría, derechos ARCO y soporte asistido.</p>
 <h3>Bitácora de auditoría</h3>
 <figure><div class="frame"><img src="img/admin-audit.jpg" alt="Bitácora de auditoría con la verificación de integridad." loading="lazy"></div><figcaption><b>Bitácora de auditoría</b> con la verificación de integridad.</figcaption></figure>
 <p>Muestra los últimos registros con fecha, acción, usuario e IP (inicios de sesión, cambios de configuración, accesos a datos). Pulsa <span class="ui">Verificar integridad</span> para comprobar que ningún registro fue alterado; el resultado es «Integridad verificada: N registros sin alteraciones».</p>
@@ -314,11 +338,7 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
 <h3>Tokens de API</h3>
 <p>Crea tokens para integraciones con nombre, permisos y vigencia. El token se muestra una sola vez; revócalo con <span class="ui">Eliminar</span> cuando ya no se use.</p>
 <h3>Lo que hoy no se hace desde pantalla</h3>
-<ul>
-<li>Crear o renombrar categorías de la base de conocimiento.</li>
-<li>Editar o desactivar usuarios existentes, y dar a un cliente acceso a los tickets de su organización.</li>
-</ul>
-<p>Para estos cambios, solicita apoyo al equipo técnico de Neitek.</p></section>
+<p>Crear o renombrar categorías de la base de conocimiento. Para eso, solicita apoyo al equipo técnico de Neitek.</p></section>
       <footer class="end">Soporte Inncentives · Neitek. Las pantallas de este manual usan datos de ejemplo; los nombres de vistas, grupos y campos pueden variar según la configuración de tu mesa de soporte.</footer>
     </div>
   </main>

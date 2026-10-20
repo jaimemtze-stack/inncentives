@@ -620,6 +620,7 @@ administrador = [
 <tr><td>Editar la base de conocimiento</td><td class="yes">Sí</td><td class="no">No*</td><td class="no">No</td></tr>
 <tr><td>Crear organizaciones</td><td class="yes">Sí</td><td class="no">No</td><td class="no">No</td></tr>
 <tr><td>Invitar usuarios</td><td class="yes">Cualquier rol</td><td>Solo clientes</td><td class="no">No</td></tr>
+<tr><td>Editar usuarios, cambiar su rol y restablecer su verificación</td><td class="yes">Sí</td><td>Solo consultar clientes</td><td class="no">No</td></tr>
 <tr><td>Configuración</td><td class="yes">Completa</td><td>Solo Tokens de API*</td><td class="no">No</td></tr>
 <tr><td>Bitácora de auditoría</td><td class="yes">Sí</td><td class="no">No*</td><td class="no">No</td></tr>
 <tr><td>Privacidad (ARCO) y Ver como cliente</td><td class="yes">Sí</td><td class="no">No*</td><td class="no">No</td></tr>
@@ -645,9 +646,35 @@ administrador = [
 <li><b>Usuarios</b>: correo, nombre, organizacion y rol. Cada uno recibe su invitación.</li>
 </ul>
 <p>Primero pulsa <span class="ui">Validar (sin guardar)</span>; el botón <span class="btn">Importar</span> se habilita solo cuando no hay errores. Si hay errores, no se guarda nada.</p>"""),
+    ('usuarios', 'Usuarios',
+     'Consulta y edita a cualquier persona: datos, rol, organización, permisos, estado y seguridad.',
+     f"""
+{fig('admin-users', '<b>Usuarios.</b> Lista con filtros a la izquierda; a la derecha la ficha del usuario elegido, aquí con la confirmación para restablecer su verificación en dos pasos.')}
+<h3>Buscar</h3>
+<p>Abre <span class="path">Usuarios</span> en el menú Administrar. Busca por nombre o correo y filtra por rol, estado u organización. Pulsa el nombre de una persona para abrir su ficha. Los agentes también ven esta página, pero solo con los clientes y sin poder editarlos.</p>
+<h3>Editar la ficha</h3>
+<ol class="steps">
+<li>En <b>Datos</b> corrige el nombre, el teléfono o el celular.</li>
+<li>En <b>Rol y organización</b> cambia el <span class="ui">Rol</span> (Administrador, Agente o Cliente) y la <span class="ui">Organización</span>. La lista solo ofrece organizaciones válidas para el rol: el personal pertenece a la organización interna y los clientes a una organización cliente.</li>
+<li>Para un cliente, marca si <span class="ui">Puede ver los tickets de toda su organización</span> y sus <span class="ui">Organizaciones adicionales</span>.</li>
+<li>Para un agente o administrador, asigna <span class="ui">Roles personalizados</span> y su <span class="ui">Acceso a grupos</span> (niveles en el capítulo siguiente).</li>
+<li>Pulsa <span class="btn">Guardar cambios</span> y confirma tu contraseña si se te pide.</li>
+</ol>
+{callout('warn', 'Al cambiar el rol', '<p>La persona debe iniciar sesión de nuevo. Si pasa a Cliente pierde sus accesos a grupos, roles personalizados y tokens de API. No puedes cambiar tu propio rol, estado u organización, y la mesa nunca se queda sin un administrador activo.</p>')}
+<h3>Desactivar o reactivar</h3>
+<p>En <b>Cuenta</b>, <span class="ui">Desactivar cuenta</span> impide que la persona entre y cierra sus sesiones; sus tickets e historial se conservan. <span class="ui">Reactivar cuenta</span> la habilita de nuevo.</p>
+<h3>Seguridad</h3>
+<ul>
+<li><span class="ui">Cerrar sus sesiones</span>: la saca de todos los dispositivos.</li>
+<li><span class="ui">Restablecer verificación en dos pasos</span>: para quien perdió su teléfono o su llave. Borra su app de autenticación, sus llaves o passkeys y sus códigos de recuperación, y cierra sus sesiones. Si es agente o administrador, deberá configurar un nuevo método al entrar. Pide confirmación y tu contraseña, y queda en la bitácora.</li>
+</ul>
+{callout('', 'Antes de restablecer', '<p>Confirma la identidad de la persona por otro medio (por ejemplo, una llamada a su número registrado). Quien restablece la verificación de otro le da acceso solo con su contraseña.</p>')}
+<h3>Invitaciones pendientes</h3>
+<p>Al final de la página están las invitaciones que nadie ha aceptado. <span class="ui">Reenviar</span> manda un enlace nuevo (el anterior deja de servir) y <span class="ui">Revocar</span> la cancela. Las vencidas se marcan como <b>Vencida</b>.</p>"""),
     ('accesos', 'Agentes y accesos a grupos',
      'Define qué grupos ve cada agente y qué puede hacer en ellos.',
      f"""
+<p>El acceso a grupos se edita en la ficha del usuario (<span class="path">Usuarios</span>) o en <span class="path">Configuración</span> → <b>Agentes y accesos</b>; ambos guardan lo mismo.</p>
 {fig('admin-access', '<b>Agentes y accesos.</b> Un grupo por fila con sus niveles de acceso.')}
 <ol class="steps">
 <li>Abre <span class="path">Configuración</span> → <b>Agentes y accesos</b> y elige al agente.</li>
@@ -751,11 +778,7 @@ administrador = [
 <h3>Tokens de API</h3>
 <p>Crea tokens para integraciones con nombre, permisos y vigencia. El token se muestra una sola vez; revócalo con <span class="ui">Eliminar</span> cuando ya no se use.</p>
 <h3>Lo que hoy no se hace desde pantalla</h3>
-<ul>
-<li>Crear o renombrar categorías de la base de conocimiento.</li>
-<li>Editar o desactivar usuarios existentes, y dar a un cliente acceso a los tickets de su organización.</li>
-</ul>
-<p>Para estos cambios, solicita apoyo al equipo técnico de Neitek.</p>"""),
+<p>Crear o renombrar categorías de la base de conocimiento. Para eso, solicita apoyo al equipo técnico de Neitek.</p>"""),
 ]
 
 ARTIFACT = '--artifact' in sys.argv

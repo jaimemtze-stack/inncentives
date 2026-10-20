@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { cfgEn, cfgEs } from './locales/configForms';
+import { usersEn, usersEs } from './locales/users';
 import { ticketsEn, ticketsEs } from './locales/tickets';
 
 const es = {
@@ -259,8 +260,8 @@ const saved = (() => {
 
 void i18n.use(initReactI18next).init({
   resources: {
-    es: { translation: { ...es, ...ticketsEs, ...cfgEs } },
-    en: { translation: { ...en, ...ticketsEn, ...cfgEn } },
+    es: { translation: { ...es, ...ticketsEs, ...cfgEs, ...usersEs } },
+    en: { translation: { ...en, ...ticketsEn, ...cfgEn, ...usersEn } },
   },
   lng: saved ?? (navigator.language.toLowerCase().startsWith('en') ? 'en' : 'es'),
   fallbackLng: 'es',

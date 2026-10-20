@@ -12,6 +12,7 @@ import { ReportPage } from './pages/Report';
 import { ChatPage } from './pages/Chat';
 import { KbAnswerPage, KbNewPage, KbPage } from './pages/Kb';
 import { TimeSummaryPage } from './pages/TimeSummary';
+import { UsersPage } from './pages/Users';
 import { TicketNewPage } from './pages/TicketNew';
 import { TicketsPage } from './pages/Tickets';
 import { TicketZoomPage } from './pages/TicketZoom';
@@ -89,6 +90,11 @@ const routes = [
     component: protectedPage(AccountPage),
   }),
   createRoute({ getParentRoute: () => root, path: '/admin', component: protectedPage(AdminPage) }),
+  createRoute({
+    getParentRoute: () => root,
+    path: '/admin/usuarios',
+    component: protectedPage(UsersPage),
+  }),
   createRoute({
     getParentRoute: () => root,
     path: '/admin/bitacora',

@@ -13,10 +13,13 @@ import { AppError } from '../common/errors';
 import { ZodPipe } from '../common/zod-validation.pipe';
 import { AdminService } from './admin.service';
 import { ImportService } from './import.service';
-import { Area, RequirePermissions } from '../policy/decorators';
+import { Area, RequirePermissions, RequireReauth } from '../policy/decorators';
 
 const UserListQuery = PaginationSchema.extend({
   organizationId: z.string().uuid().optional(),
+  q: z.string().trim().max(120).optional(),
+  role: z.enum(['ADMIN', 'AGENT', 'CUSTOMER']).optional(),
+  status: z.enum(['ACTIVE', 'DISABLED']).optional(),
 }).strict();
 const ImportSchema = z
   .object({ csv: z.string().min(1).max(900_000), dryRun: z.boolean().default(true) })
@@ -93,6 +96,23 @@ export class AdminController {
     return this.admin.createInvitation(req, body);
   }
 
+  /** Pending invitations the actor may manage (not accepted, not revoked). */
+  @Get('invitations')
+  @RequirePermissions(Permission.UsersInviteCustomer)
+  invitations(@Req() req: FastifyRequest) {
+    return this.admin.listPendingInvitations(req.auth!.user);
+  }
+
+  /** Sends a new link; the previous one stops working. */
+  @Post('invitations/:id/resend')
+  @RequirePermissions(Permission.UsersInviteCustomer)
+  resendInvitation(
+    @Req() req: FastifyRequest,
+    @Param(new ZodPipe(UuidParamSchema)) p: { id: string },
+  ) {
+    return this.admin.resendInvitation(req, p.id);
+  }
+
   @Delete('invitations/:id')
   @RequirePermissions(Permission.UsersInviteCustomer)
   @HttpCode(204)
@@ -110,6 +130,21 @@ export class AdminController {
     @Param(new ZodPipe(UuidParamSchema)) p: { id: string },
   ) {
     return { revoked: await this.admin.revokeUserSessions(req, p.id) };
+  }
+
+  /**
+   * Removes the user's second factors (app, passkeys, recovery codes) and signs them out.
+   * Staff must set up a new factor at their next sign-in.
+   */
+  @Post('users/:id/mfa/reset')
+  @RequirePermissions(Permission.UsersManageSessions)
+  @RequireReauth()
+  @HttpCode(204)
+  async resetMfa(
+    @Req() req: FastifyRequest,
+    @Param(new ZodPipe(UuidParamSchema)) p: { id: string },
+  ) {
+    await this.admin.resetMfa(req, p.id);
   }
 
   @Get('audit-logs')

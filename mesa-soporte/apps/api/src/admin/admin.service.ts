@@ -3,6 +3,7 @@ import {
   areaForRole,
   type InvitationCreateInput,
   type OrganizationCreateInput,
+  type Role,
 } from '@mesa/shared';
 import { Prisma } from '@prisma/client';
 import type { FastifyRequest } from 'fastify';
@@ -89,12 +90,26 @@ export class AdminService {
     };
   }
 
-  async listUsers(actor: AuthenticatedUser, q: Page & { organizationId?: string }) {
+  async listUsers(
+    actor: AuthenticatedUser,
+    q: Page & { organizationId?: string; q?: string; role?: Role; status?: 'ACTIVE' | 'DISABLED' },
+  ) {
     if (q.cursor && !/^[0-9a-f-]{36}$/.test(q.cursor)) throw new AppError('validation_failed');
+    const text = q.q?.trim();
     const where: Prisma.UserWhereInput = {
       AND: [
         this.policy.userScope(actor),
         q.organizationId ? { organizationId: q.organizationId } : {},
+        q.role ? { role: q.role } : {},
+        q.status ? { status: q.status } : {},
+        text
+          ? {
+              OR: [
+                { name: { contains: text, mode: 'insensitive' } },
+                { email: { contains: text, mode: 'insensitive' } },
+              ],
+            }
+          : {},
       ],
     };
     const rows = await this.prisma.user.findMany({
@@ -108,18 +123,20 @@ export class AdminService {
         role: true,
         status: true,
         organizationId: true,
+        organization: { select: { id: true, name: true } },
         totpEnabledAt: true,
         lastLoginAt: true,
         createdAt: true,
+        _count: { select: { webauthnCredentials: true } },
       },
       ...pageArgs(q),
     });
     const page = toPage(rows, q.limit);
     return {
       nextCursor: page.nextCursor,
-      items: page.items.map(({ totpEnabledAt, ...u }) => ({
+      items: page.items.map(({ totpEnabledAt, _count, ...u }) => ({
         ...u,
-        mfaEnabled: totpEnabledAt !== null,
+        mfaEnabled: totpEnabledAt !== null || _count.webauthnCredentials > 0,
       })),
     };
   }
@@ -188,6 +205,88 @@ export class AdminService {
       organizationId: inv.organizationId,
       expiresAt: inv.expiresAt,
     };
+  }
+
+  async listPendingInvitations(actor: AuthenticatedUser) {
+    const rows = await this.prisma.invitation.findMany({
+      where: {
+        acceptedAt: null,
+        revokedAt: null,
+        organization: this.policy.organizationScope(actor),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        expiresAt: true,
+        createdAt: true,
+        organization: { select: { id: true, name: true, isInternal: true } },
+      },
+    });
+    return rows
+      .filter((r) => this.policy.canInvite(actor, r.role, r.organization))
+      .map(({ organization: { isInternal: _i, ...organization }, ...r }) => ({
+        ...r,
+        organization,
+        expired: r.expiresAt.getTime() < Date.now(),
+      }));
+  }
+
+  /** Re-issues a pending invitation with a new link (the old one is revoked). */
+  async resendInvitation(req: FastifyRequest, id: string) {
+    const inv = await this.prisma.invitation.findFirst({
+      where: {
+        id,
+        acceptedAt: null,
+        revokedAt: null,
+        organization: this.policy.organizationScope(req.auth!.user),
+      },
+    });
+    if (!inv) throw new AppError('not_found');
+    return this.createInvitation(req, {
+      email: inv.email,
+      name: inv.name,
+      role: inv.role,
+      organizationId: inv.organizationId,
+    } as InvitationCreateInput);
+  }
+
+  /** Clears every second factor of a user and ends their sessions. */
+  async resetMfa(req: FastifyRequest, userId: string) {
+    const actor = req.auth!.user;
+    if (userId === actor.id)
+      throw new AppError('forbidden', 'Use your own account page to change your second factor.');
+    const target = await this.prisma.user.findFirst({
+      where: { AND: [{ id: userId }, this.policy.userScope(actor)] },
+    });
+    if (!target) throw new AppError('not_found');
+    await this.prisma.$transaction(async (tx) => {
+      const passkeys = await tx.webAuthnCredential.deleteMany({ where: { userId } });
+      const codes = await tx.recoveryCode.deleteMany({ where: { userId } });
+      await tx.user.update({
+        where: { id: userId },
+        data: { totpSecretEnc: null, totpEnabledAt: null },
+      });
+      await this.audit.record(
+        {
+          ...AuditService.fromRequest(req),
+          action: 'admin.user.mfa_reset',
+          targetType: 'user',
+          targetId: userId,
+          organizationId: target.organizationId,
+          data: {
+            hadTotp: target.totpEnabledAt !== null,
+            passkeys: passkeys.count,
+            recoveryCodes: codes.count,
+          },
+        },
+        tx,
+      );
+    });
+    await this.sessions.destroyAll(userId);
   }
 
   async revokeInvitation(req: FastifyRequest, id: string) {

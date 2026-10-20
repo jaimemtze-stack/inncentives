@@ -175,6 +175,9 @@ export function Layout() {
               onNavigate={close}
             />
           )}
+          {agent && can('admin.users.read') && (
+            <NavLink to="/admin/usuarios" icon="user" label={t('users.title')} onNavigate={close} />
+          )}
           {agent && (
             <NavLink to="/configuracion" icon="cog" label={t('nav.config')} onNavigate={close} />
           )}

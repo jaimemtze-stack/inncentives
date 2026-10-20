@@ -116,6 +116,9 @@ const UserUpdateSchema = z
     mobile: z.string().max(30).nullable().optional(),
     status: z.enum(['ACTIVE', 'DISABLED']).optional(),
     orgTicketAccess: z.boolean().optional(),
+    /** Staff live in the internal organization; customers in a client organization. */
+    role: z.enum(['ADMIN', 'AGENT', 'CUSTOMER']).optional(),
+    organizationId: z.string().uuid().optional(),
     secondaryOrganizationIds: z.array(z.string().uuid()).max(20).optional(),
     customRoleIds: z.array(z.string().uuid()).max(20).optional(),
   })
@@ -250,6 +253,7 @@ export class ConfigAdminController {
         groupAccess: true,
         customRoles: { select: { roleId: true } },
         secondaryOrganizations: { select: { organizationId: true } },
+        _count: { select: { webauthnCredentials: true, recoveryCodes: true } },
       },
     });
     if (!u) throw new AppError('not_found');
@@ -263,7 +267,12 @@ export class ConfigAdminController {
       phone: u.phone,
       mobile: u.mobile,
       orgTicketAccess: u.orgTicketAccess,
-      mfaEnabled: u.totpEnabledAt !== null,
+      mfaEnabled: u.totpEnabledAt !== null || u._count.webauthnCredentials > 0,
+      mfa: {
+        totp: u.totpEnabledAt !== null,
+        passkeys: u._count.webauthnCredentials,
+        recoveryCodes: u._count.recoveryCodes,
+      },
       lastLoginAt: u.lastLoginAt,
       groupAccess: u.groupAccess.map((g) => ({ groupId: g.groupId, levels: g.levels })),
       customRoleIds: u.customRoles.map((c) => c.roleId),
@@ -281,8 +290,12 @@ export class ConfigAdminController {
   ) {
     const target = await this.prisma.user.findUnique({ where: { id: p.id } });
     if (!target) throw new AppError('not_found');
-    if (target.id === req.auth!.user.id && (body.status || body.customRoleIds)) {
-      throw new AppError('forbidden', 'You cannot change your own status or roles.');
+    const self = target.id === req.auth!.user.id;
+    if (self && (body.status || body.customRoleIds || body.role || body.organizationId)) {
+      throw new AppError(
+        'forbidden',
+        'You cannot change your own status, role, organization or custom roles.',
+      );
     }
     const phone = (v: string | null | undefined) => {
       if (v === undefined || v === null || v === '') return v === '' ? null : v;
@@ -293,8 +306,45 @@ export class ConfigAdminController {
         ]);
       return n;
     };
-    if (body.customRoleIds?.length && target.role === 'CUSTOMER')
+    const role = body.role ?? target.role;
+    const organizationId = body.organizationId ?? target.organizationId;
+    const roleChanged = role !== target.role;
+    const orgChanged = organizationId !== target.organizationId;
+    const toCustomer = role === 'CUSTOMER';
+    if (roleChanged || orgChanged) {
+      const org = await this.prisma.organization.findUnique({ where: { id: organizationId } });
+      if (!org || !org.active)
+        throw new AppError('validation_failed', 'Unknown organization.', [
+          { path: 'organizationId', code: 'invalid' },
+        ]);
+      // Same rule as invitations: staff belong to the internal organization, customers never do.
+      if (org.isInternal === toCustomer)
+        throw new AppError(
+          'validation_failed',
+          toCustomer
+            ? 'Customers must belong to a client organization.'
+            : 'Agents and administrators must belong to the internal organization.',
+          [{ path: 'organizationId', code: 'invalid' }],
+        );
+    }
+    // Never leave the desk without an active administrator.
+    const losesAdmin =
+      target.role === 'ADMIN' &&
+      target.status === 'ACTIVE' &&
+      (role !== 'ADMIN' || body.status === 'DISABLED');
+    if (losesAdmin) {
+      const others = await this.prisma.user.count({
+        where: { role: 'ADMIN', status: 'ACTIVE', id: { not: target.id } },
+      });
+      if (!others)
+        throw new AppError('conflict', 'This is the only active administrator.', [
+          { path: 'role', code: 'last_admin' },
+        ]);
+    }
+    if (body.customRoleIds?.length && toCustomer)
       throw new AppError('validation_failed', 'Customers cannot have roles.');
+    if (body.secondaryOrganizationIds?.length && !toCustomer)
+      throw new AppError('validation_failed', 'Only customers have secondary organizations.');
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: p.id },
@@ -303,14 +353,30 @@ export class ConfigAdminController {
           phone: phone(body.phone),
           mobile: phone(body.mobile),
           status: body.status,
-          orgTicketAccess: body.orgTicketAccess,
+          role: roleChanged ? role : undefined,
+          organizationId: orgChanged ? organizationId : undefined,
+          // Organization-wide ticket access only makes sense for customers.
+          orgTicketAccess: toCustomer ? body.orgTicketAccess : roleChanged ? false : undefined,
         },
       });
+      if (roleChanged) {
+        // Permissions of the old role must not survive the change.
+        if (toCustomer) {
+          await tx.groupAccess.deleteMany({ where: { userId: p.id } });
+          await tx.userCustomRole.deleteMany({ where: { userId: p.id } });
+          await tx.apiToken.updateMany({
+            where: { userId: p.id, revokedAt: null },
+            data: { revokedAt: new Date() },
+          });
+        } else {
+          await tx.userSecondaryOrganization.deleteMany({ where: { userId: p.id } });
+        }
+      }
       if (body.secondaryOrganizationIds) {
         await tx.userSecondaryOrganization.deleteMany({ where: { userId: p.id } });
         await tx.userSecondaryOrganization.createMany({
           data: body.secondaryOrganizationIds
-            .filter((o) => o !== target.organizationId)
+            .filter((o) => o !== organizationId)
             .map((organizationId) => ({ userId: p.id, organizationId })),
         });
       }
@@ -323,16 +389,26 @@ export class ConfigAdminController {
       await this.audit.record(
         {
           ...AuditService.fromRequest(req),
-          action: body.customRoleIds ? 'admin.user.roles_changed' : 'admin.user.updated',
+          action: roleChanged
+            ? 'admin.user.role_changed'
+            : body.customRoleIds
+              ? 'admin.user.roles_changed'
+              : 'admin.user.updated',
           targetType: 'user',
           targetId: p.id,
-          organizationId: target.organizationId,
-          data: { changes: body },
+          organizationId,
+          data: {
+            changes: body,
+            ...(roleChanged ? { roleBefore: target.role, roleAfter: role } : {}),
+            ...(orgChanged ? { organizationBefore: target.organizationId } : {}),
+          },
         },
         tx,
       );
     });
-    if (body.status === 'DISABLED') await this.sessions.destroyAll(p.id);
+    // A new role or organization starts with a fresh sign-in (staff must have MFA).
+    if (body.status === 'DISABLED' || roleChanged || orgChanged)
+      await this.sessions.destroyAll(p.id);
     return this.user({ id: p.id });
   }
 
