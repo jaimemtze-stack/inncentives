@@ -145,3 +145,15 @@ variable "mail_from" {
   description = "Sender of system e-mails, e.g. 'Soporte Inncentives <soporte@inncentives.com>'."
   type        = string
 }
+
+variable "service_user_email" {
+  description = "Primary e-mail of the pgBackRest service user (identity domains require one). Empty = first of alert_emails."
+  type        = string
+  default     = ""
+}
+
+variable "admin_ssh_public_keys" {
+  description = "SSH public keys of the operators, installed for the default user at first boot. Used with OCI Bastion port-forwarding sessions (no dependency on the Bastion agent plugin)."
+  type        = list(string)
+  default     = []
+}

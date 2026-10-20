@@ -54,7 +54,11 @@ resource "oci_core_instance" "app" {
   }
 
   launch_options {
-    is_pv_encryption_in_transit_enabled = true
+    # The API requires network_type whenever launch_options is present.
+    network_type = "PARAVIRTUALIZED"
+    # is_pv_encryption_in_transit_enabled is left unset: Ampere A1 does not
+    # support it and the API rejects overriding it. Volumes stay encrypted at
+    # rest with the vault key.
   }
 
   agent_config {
@@ -77,9 +81,16 @@ resource "oci_core_instance" "app" {
       name          = "Compute Instance Monitoring"
       desired_state = "ENABLED"
     }
+    # Emergency diagnostics when SSH is unavailable (runs as the unprivileged
+    # ocarun user; output only visible to tenancy operators).
+    plugins_config {
+      name          = "Compute Instance Run Command"
+      desired_state = "ENABLED"
+    }
   }
 
   metadata = {
+    ssh_authorized_keys = join("\n", var.admin_ssh_public_keys)
     user_data = base64gzip(templatefile("${path.module}/../cloud-init/user-data.yaml.tftpl", {
       bundle            = local.bundle
       github_repository = var.github_repository
@@ -97,7 +108,7 @@ resource "oci_core_instance" "app" {
 
   lifecycle {
     # A new image does not replace the running server; rebuilds are deliberate.
-    ignore_changes = [source_details[0].source_id, metadata]
+    ignore_changes = [source_details[0].source_id, metadata, launch_options[0].is_pv_encryption_in_transit_enabled]
   }
 }
 
@@ -117,11 +128,13 @@ resource "oci_core_volume" "data" {
 }
 
 resource "oci_core_volume_attachment" "data" {
-  attachment_type                     = "paravirtualized"
-  instance_id                         = oci_core_instance.app.id
-  volume_id                           = oci_core_volume.data.id
-  device                              = "/dev/oracleoci/oraclevdb"
-  is_pv_encryption_in_transit_enabled = true
+  attachment_type = "paravirtualized"
+  instance_id     = oci_core_instance.app.id
+  volume_id       = oci_core_volume.data.id
+  device          = "/dev/oracleoci/oraclevdb"
+  # Ampere A1 instances reject in-transit encryption for paravirtualized
+  # attachments. The volume stays encrypted at rest with the vault key.
+  is_pv_encryption_in_transit_enabled = false
 }
 
 # No Oracle volume-backup policy: it would exceed the 5 free volume backups.

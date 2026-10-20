@@ -78,7 +78,9 @@ La llave privada **nunca** se copia al servidor ni a OCI. Sin ella, los volcados
    - **WhatsApp Business (Meta Cloud API):** en Meta Business crea una app con el producto WhatsApp, un usuario de sistema con permiso `whatsapp_business_messaging` y su token permanente (`whatsapp_access_token`); copia el *App secret* (`whatsapp_app_secret`). En *Webhooks* suscribe el campo `messages` con URL `https://soporte.inncentives.com/hooks/whatsapp` y como *Verify token* el valor que genera el script del paso 6 (`whatsapp_verify_token`). Anota el *Phone number ID*.
    - **API de Inncentives:** token de solo lectura (`inncentives_api_token`) cuando la API exista (contrato en `integraciones/api-inncentives.md`). El widget usa `inncentives_widget_secret`, que genera el script; entrégalo por un canal seguro al equipo de Inncentives (`integraciones/widget.md`).
    - **IA (solo si Neitek la aprueba, ADR-0022):** llave de API de una organización de Anthropic con retención cero (`anthropic_api_key`).
-6. **GitHub:** crea un *fine-grained token* de solo lectura del repositorio (Contents: read) y Packages: read, con caducidad de 90 días.
+6. **GitHub** (dos tokens, ambos con caducidad de 90 días):
+   - `github_read_token`: *fine-grained token* limitado a este repositorio con **Contents: read** (lee los releases y su `manifest.json`).
+   - `ghcr_read_token`: *token clásico* solo con **`read:packages`**. GHCR no acepta tokens *fine-grained*; este token no da acceso al código.
 
 ## 6. Secretos en OCI Vault
 

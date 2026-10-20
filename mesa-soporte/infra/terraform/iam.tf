@@ -28,6 +28,8 @@ resource "oci_identity_policy" "vm" {
     "Allow dynamic-group ${oci_identity_dynamic_group.vm.name} to use log-content in ${local.comp}",
     "Allow dynamic-group ${oci_identity_dynamic_group.vm.name} to use metrics in ${local.comp} where target.metrics.namespace = 'mesa'",
     "Allow dynamic-group ${oci_identity_dynamic_group.vm.name} to use ons-topics in ${local.comp} where target.topic.id = '${oci_ons_notification_topic.alerts.id}'",
+    # Run Command: the agent may fetch and answer commands for itself only.
+    "Allow dynamic-group ${oci_identity_dynamic_group.vm.name} to use instance-agent-command-execution-family in ${local.comp} where request.instance.id = target.instance.id",
   ]
   freeform_tags = local.tags
 }
@@ -52,8 +54,9 @@ resource "oci_identity_user" "pgbackrest" {
   compartment_id = var.tenancy_ocid
   name           = "svc-${local.name}-pgbackrest"
   description    = "pgBackRest S3-compatible access to respaldos-pitr only"
-  email          = null
-  freeform_tags  = local.tags
+  # Identity domains require a primary e-mail, even for service users.
+  email         = var.service_user_email != "" ? var.service_user_email : var.alert_emails[0]
+  freeform_tags = local.tags
 }
 
 resource "oci_identity_user_capabilities_management" "pgbackrest" {

@@ -18,6 +18,8 @@ require() {
 
 compose() {
   local envs=()
+  # Services under a profile (clamav) only start when the profile is active.
+  export COMPOSE_PROFILES="${COMPOSE_PROFILES:-default}"
   # Static settings (hosts, region) written by cloud-init, then pinned images.
   [[ -f "$MESA_HOME/stack.env" ]] && envs+=(--env-file "$MESA_HOME/stack.env")
   envs+=(--env-file "$COMPOSE_ENV_FILE")

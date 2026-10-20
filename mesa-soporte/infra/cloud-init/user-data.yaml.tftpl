@@ -14,7 +14,6 @@ packages:
   - age
   - jq
   - curl
-  - ufw
   - auditd
   - unattended-upgrades
   - apparmor
@@ -105,7 +104,8 @@ runcmd:
   - |
     set -eu
     dev=/dev/oracleoci/oraclevdb
-    for i in $(seq 1 60); do [ -e "$dev" ] && break; sleep 5; done
+    # Terraform attaches the volume after the instance exists; wait up to 30 min.
+    for i in $(seq 1 360); do [ -e "$dev" ] && break; sleep 5; done
     blkid "$dev" >/dev/null 2>&1 || mkfs.xfs -L mesa-data "$dev"
     mkdir -p /srv/mesa
     grep -q mesa-data /etc/fstab || echo "LABEL=mesa-data /srv/mesa xfs defaults,nofail,noatime,nodev,nosuid 0 2" >> /etc/fstab
@@ -116,14 +116,22 @@ runcmd:
   # Secrets live on a RAM-backed filesystem only.
   - grep -q /run/mesa /etc/fstab || echo "tmpfs /run/mesa tmpfs nodev,nosuid,noexec,size=16m,mode=0711 0 0" >> /etc/fstab
   - mkdir -p /run/mesa && mount /run/mesa || true
-  # Firewall: nothing inbound except SSH from the subnet (OCI Bastion).
-  - ufw default deny incoming
-  - ufw default allow outgoing
-  - ufw allow from 10.40.1.0/24 to any port 22 proto tcp
-  - ufw --force enable
+  # Inbound filtering is done by the NSG (only SSH from the subnet) plus the
+  # iptables rules of the Oracle Ubuntu image. UFW is not used: Oracle does not
+  # support it on its images and it can cut off SSH and the instance agent.
   - sysctl --system
   - augenrules --load || true
-  - systemctl restart ssh || systemctl restart sshd
+  # Apply the SSH hardening only if sshd accepts it; never leave SSH broken.
+  - |
+    install -d -m 0755 /run/sshd   # sshd -t needs it; socket activation creates it late
+    if sshd -t; then
+      systemctl daemon-reload
+      systemctl is-enabled --quiet ssh.socket && systemctl restart ssh.socket
+      systemctl try-restart ssh.service
+    else
+      echo "mesa-diag: sshd rejected 10-mesa.conf, removed" >&2
+      rm -f /etc/ssh/sshd_config.d/10-mesa.conf
+    fi
   - systemctl enable --now docker auditd unattended-upgrades
   # OCI CLI (instance principal auth) in an isolated virtualenv.
   - python3 -m venv /opt/oci-cli
@@ -144,5 +152,11 @@ runcmd:
   - systemctl daemon-reload
   - systemctl enable mesa-secrets-sync.service mesa-stack.service
   - systemctl enable --now mesa-deployer.timer mesa-backup-full.timer mesa-backup-diff.timer mesa-backup-check.timer mesa-dump.timer mesa-report.timer
+
+  # Boot diagnostics in the serial console (readable with console history).
+  - |
+    echo "mesa-diag: ssh=$(systemctl is-active ssh) ssh.socket=$(systemctl is-active ssh.socket) docker=$(systemctl is-active docker)"
+    ss -ltn | grep -E ':22\b' | sed 's/^/mesa-diag: listen /' || echo "mesa-diag: nothing listening on 22"
+    iptables -S INPUT | sed 's/^/mesa-diag: iptables /'
 
 final_message: "mesa-soporte VM ready after $UPTIME s. Load secrets into OCI Vault and run: systemctl start mesa-secrets-sync mesa-deployer"

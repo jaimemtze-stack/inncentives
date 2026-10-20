@@ -56,7 +56,7 @@ chmod +x "$T/bin/"*
 export PATH="$T/bin:$PATH" STUB_DIR="$T"
 export MESA_HOME="$T/home" MESA_STATE_DIR="$T/state" GITHUB_REPO="neitek/mesa"
 export COMPOSE_FILE="$T/home/docker-compose.prod.yml" COMPOSE_ENV_FILE="$T/home/images.env"
-export GITHUB_TOKEN_FILE="$T/none" HEALTH_TIMEOUT=10
+export GITHUB_TOKEN_FILE="$T/none" GHCR_TOKEN_FILE="$T/none" HEALTH_TIMEOUT=10
 run() { "$here/../scripts/deployer.sh" 2>"$T/stderr.log"; }
 
 # 1. First deployment.

@@ -20,6 +20,18 @@ resource "oci_core_default_security_list" "default" {
   manage_default_resource_id = oci_core_vcn.main.default_security_list_id
   display_name               = "${local.name}-default-deny"
   freeform_tags              = local.tags
+
+  # The OCI Bastion endpoint lives in this subnet but cannot use NSGs: its
+  # outbound SSH to the VM is governed by this list. Nothing else is allowed.
+  egress_security_rules {
+    destination = var.private_subnet_cidr
+    protocol    = "6"
+    description = "OCI Bastion endpoint to SSH on the VM"
+    tcp_options {
+      min = 22
+      max = 22
+    }
+  }
 }
 
 resource "oci_core_nat_gateway" "nat" {
@@ -98,6 +110,7 @@ resource "oci_core_network_security_group_security_rule" "ssh_from_bastion" {
 locals {
   egress_rules = {
     https           = { protocol = "6", port = 443, description = "HTTPS (Cloudflare, Microsoft Graph, GitHub, sigstore, package mirrors)" }
+    apt_http        = { protocol = "6", port = 80, description = "Ubuntu package mirrors (plain HTTP; packages are GPG-signed)" }
     cloudflared_tcp = { protocol = "6", port = 7844, description = "Cloudflare Tunnel (TCP)" }
     cloudflared_udp = { protocol = "17", port = 7844, description = "Cloudflare Tunnel (QUIC)" }
     smtp_submission = { protocol = "6", port = 587, description = "SMTP submission with STARTTLS (Microsoft 365)" }

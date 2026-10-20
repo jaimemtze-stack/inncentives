@@ -26,7 +26,10 @@ create() { # name owner value
         --arg b "$(printf '%s' "$value" | base64 -w0)" \
     '{compartmentId:$c, vaultId:$v, keyId:$k, secretName:$n, secretContentContent:$b, secretContentName:"v1", secretContentStage:"CURRENT"}' \
     > "$work/s.json"
-  ocid="$(oci vault secret create-base64 --from-json "file://$work/s.json" --query 'data.id' --raw-output)"
+  # Git Bash on Windows: the native OCI CLI needs a Windows path and prints CRLF.
+  local json="$work/s.json"
+  command -v cygpath >/dev/null && json="$(cygpath -m "$json")"
+  ocid="$(oci vault secret create-base64 --from-json "file://$json" --query 'data.id' --raw-output | tr -d '\r')"
   rm -f "$work/s.json"
   map_lines+=("$name $ocid $owner")
   echo "created $prefix-$name" >&2
@@ -57,10 +60,10 @@ echo "Values that come from other systems (input is hidden):" >&2
 create pgbackrest_s3_key "$PG_UID" "$(ask 'pgBackRest Customer Secret Key - access key')"
 create pgbackrest_s3_key_secret "$PG_UID" "$(ask 'pgBackRest Customer Secret Key - secret')"
 create cloudflared_token "$APP_UID" "$(ask 'Cloudflare Tunnel token')"
-create smtp_username "$APP_UID" "$(ask 'SMTP user (soporte@...)')"
-create smtp_password "$APP_UID" "$(ask 'SMTP password / app credential')"
-create graph_client_secret "$APP_UID" "$(ask 'Microsoft Graph client secret of the support mailbox app')"
 orunused() { local v; v="$(ask "$1 (Enter = not used yet)")"; printf '%s' "${v:-unused}"; }
+create smtp_username "$APP_UID" "$(orunused 'SMTP user (soporte@...)')"
+create smtp_password "$APP_UID" "$(orunused 'SMTP password / app credential')"
+create graph_client_secret "$APP_UID" "$(orunused 'Microsoft Graph client secret of the support mailbox app')"
 create azure_devops_pat "$APP_UID" "$(orunused 'Azure DevOps PAT (Work Items: read & write)')"
 create sso_entra_client_secret "$APP_UID" "$(orunused 'Entra ID client secret of the agents SSO app')"
 create inncentives_api_token "$APP_UID" "$(orunused 'Inncentives API token (read-only)')"
@@ -68,7 +71,8 @@ create twilio_auth_token "$APP_UID" "$(orunused 'Twilio Auth Token (voice and SM
 create whatsapp_access_token "$APP_UID" "$(orunused 'WhatsApp Cloud API system user token')"
 create whatsapp_app_secret "$APP_UID" "$(orunused 'Meta app secret (webhook signatures)')"
 create anthropic_api_key "$APP_UID" "$(orunused 'Anthropic API key (zero data retention org; only if AI is approved)')"
-create github_read_token "$ROOT_UID" "$(ask 'GitHub fine-grained token (contents:read, packages:read)')"
+create github_read_token "$ROOT_UID" "$(ask 'GitHub fine-grained token (this repository only, Contents: read)')"
+create ghcr_read_token "$ROOT_UID" "$(ask 'GitHub classic token for GHCR (read:packages only)')"
 
 echo "# name ocid owner-uid   (copy to /opt/mesa/secrets.map on the VM)"
 printf '%s\n' "${map_lines[@]}"

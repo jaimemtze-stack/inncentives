@@ -1,0 +1,9 @@
+# Everything is checked out with LF, also on Windows: the deploy scripts,
+# systemd units and compose file are embedded by Terraform in the VM's
+# cloud-init and must reach Linux unchanged.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
