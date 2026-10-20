@@ -1,112 +1,14 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
 import { ArticleView } from '../components/ArticleView';
+import { type Rec } from '../components/config/fields';
+import { GroupAccessForm, ResourceForm, SettingsForm } from '../components/config/forms';
+import { TEMPLATES } from '../components/config/templates';
 import { Alert, useErrorText } from '../components/ui';
 import { formatDate, type Article } from '../lib/tickets';
 import { useMe } from '../session';
-
-const EMPTY_COND = { op: 'and', conditions: [] };
-
-/** Starting point for "new" records; the server validates everything. */
-const TEMPLATES: Record<string, unknown> = {
-  groups: { name: '', emailAddress: null, followUp: 'reopen', autoAssign: false },
-  priorities: { name: '', rank: 5 },
-  'custom-roles': { name: '', description: '', permissions: ['admin.config'] },
-  'support-plans': { name: '', includedMinutesPerMonth: 600 },
-  signatures: { name: '', body: '{{agent.name}}\nSoporte Inncentives' },
-  calendars: {
-    name: '',
-    timezone: 'America/Mexico_City',
-    hours: {
-      '1': [['09:00', '18:30']],
-      '2': [['09:00', '18:30']],
-      '3': [['09:00', '18:30']],
-      '4': [['09:00', '18:30']],
-      '5': [['09:00', '18:30']],
-    },
-    holidays: [],
-    mexicoStatutory: true,
-  },
-  slas: {
-    name: '',
-    conditions: EMPTY_COND,
-    calendarId: '00000000-0000-4000-8000-000000000201',
-    targets: [],
-  },
-  triggers: {
-    name: '',
-    event: 'create',
-    conditions: {
-      op: 'and',
-      conditions: [{ field: 'ticket.channel', operator: 'is', value: 'email' }],
-    },
-    actions: [{ type: 'add_tags', tags: ['correo'] }],
-  },
-  schedulers: {
-    name: '',
-    intervalMinutes: 60,
-    conditions: {
-      op: 'and',
-      conditions: [{ field: 'ticket.state', operator: 'is', value: 'resolved' }],
-    },
-    actions: [{ type: 'set', field: 'state', value: 'closed' }],
-  },
-  'core-workflows': {
-    name: '',
-    screens: ['create_customer'],
-    conditions: EMPTY_COND,
-    actions: { 'custom.inncentives_module': { mandatory: true } },
-  },
-  macros: { name: '', actions: [{ type: 'set', field: 'state', value: 'resolved' }], groupIds: [] },
-  'text-modules': { keyword: '', name: '', content: '', locale: 'es-MX' },
-  'ticket-templates': { name: '', fields: { title: '', body: '' } },
-  overviews: {
-    name: '',
-    slug: '',
-    conditions: EMPTY_COND,
-    columns: ['number', 'title', 'state'],
-    roles: ['AGENT', 'ADMIN'],
-  },
-  'object-attributes': {
-    object: 'ticket',
-    name: '',
-    label: '',
-    dataType: 'text',
-    visibleToCustomer: true,
-    editableByCustomer: true,
-  },
-  'activity-types': { name: '' },
-  'email-channels': {
-    name: '',
-    address: 'soporte@inncentives.com',
-    adapter: 'graph',
-    groupId: '00000000-0000-4000-8000-000000000301',
-    config: { tenantId: '', clientId: '', mailbox: 'soporte@inncentives.com', folder: 'inbox' },
-    secretName: 'graph_client_secret',
-    trustedAuthServ: 'mx.microsoft.com',
-  },
-  'postmaster-filters': {
-    name: '',
-    match: [{ header: 'from', operator: 'ends_with', value: '@ejemplo.mx' }],
-    set: { tags: ['ejemplo'] },
-  },
-  webhooks: { name: '', url: 'https://', secret: '' },
-  'teams-channels': {
-    groupId: '00000000-0000-4000-8000-000000000301',
-    name: '',
-    url: 'https://<tenant>.webhook.office.com/…',
-    events: ['ticket_created', 'customer_reply', 'sla_breach'],
-  },
-  'messaging-channels': {
-    kind: 'whatsapp',
-    name: 'WhatsApp soporte',
-    providerId: '<phone_number_id>',
-    displayNumber: '+52…',
-    groupId: '00000000-0000-4000-8000-000000000301',
-  },
-};
 
 const READ_ONLY = new Set([
   'id',
@@ -150,32 +52,25 @@ function ResourceEditor({ resource }: { resource: string }) {
     queryKey: ['config', resource],
     queryFn: () => api<Array<Record<string, unknown>>>('GET', `/admin/config/${resource}`),
   });
-  const [editing, setEditing] = useState<{ id: string | null; json: string } | null>(null);
+  const [editing, setEditing] = useState<{ id: string | null; data: Rec } | null>(null);
   const [msg, setMsg] = useState<{ kind: 'error' | 'success' | 'info'; text: string } | null>(null);
   const [log, setLog] = useState<string | null>(null);
 
-  function edit(row: Record<string, unknown> | null) {
-    const data = row
-      ? Object.fromEntries(Object.entries(row).filter(([k]) => !READ_ONLY.has(k)))
-      : (TEMPLATES[resource] ?? {});
+  function edit(row: Rec | null) {
+    const data: Rec = row ? { ...row } : structuredClone(TEMPLATES[resource] ?? {});
     if (row && resource === 'slas' && Array.isArray(row.targets)) {
-      (data as Record<string, unknown>).targets = (
-        row.targets as Array<Record<string, unknown>>
-      ).map(({ slaId: _s, ...x }) => x);
+      data.targets = (row.targets as Rec[]).map(({ slaId: _s, ...x }) => x);
     }
-    setEditing({ id: row ? String(row.id) : null, json: JSON.stringify(data, null, 2) });
+    setEditing({ id: row ? String(row.id) : null, data });
     setMsg(null);
   }
 
   async function save() {
     if (!editing) return;
-    let body: unknown;
-    try {
-      body = JSON.parse(editing.json);
-    } catch {
-      setMsg({ kind: 'error', text: t('config.invalidJson') });
-      return;
-    }
+    // Read-only fields stay in the form state for display only.
+    const body = Object.fromEntries(
+      Object.entries(editing.data).filter(([k]) => !READ_ONLY.has(k)),
+    );
     try {
       const res = editing.id
         ? await api<{ warnings?: string[] }>(
@@ -191,6 +86,7 @@ function ResourceEditor({ resource }: { resource: string }) {
           : { kind: 'success', text: t('tickets.saved') },
       );
       await qc.invalidateQueries({ queryKey: ['config', resource] });
+      await qc.invalidateQueries({ queryKey: ['config-ref'] });
       await qc.invalidateQueries({ queryKey: ['form-meta'] });
     } catch (err) {
       setMsg({ kind: 'error', text: errorText(err) });
@@ -216,26 +112,38 @@ function ResourceEditor({ resource }: { resource: string }) {
       )}
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
       {editing && (
-        <div className="space-y-2">
-          <label htmlFor="json" className="label">
-            {t('config.json')}
-          </label>
-          <textarea
-            id="json"
-            className="input min-h-64 font-mono text-xs"
-            value={editing.json}
-            onChange={(e) => setEditing({ ...editing, json: e.target.value })}
-            spellCheck={false}
+        <form
+          className="space-y-3 rounded border border-blue-200 p-4 dark:border-blue-900"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void save();
+          }}
+        >
+          <h2 className="font-semibold">
+            {editing.id
+              ? t('cfg.editing', {
+                  name: String(
+                    editing.data.name ?? editing.data.keyword ?? editing.data.target ?? '',
+                  ),
+                })
+              : t('config.new')}
+          </h2>
+          <ResourceForm
+            key={editing.id ?? 'new'}
+            resource={resource}
+            value={editing.data}
+            onChange={(data) => setEditing({ ...editing, data })}
+            isNew={!editing.id}
           />
           <div className="flex gap-2">
-            <button type="button" className="btn-primary" onClick={() => void save()}>
+            <button type="submit" className="btn-primary">
               {t('common.save')}
             </button>
             <button type="button" className="btn-secondary" onClick={() => setEditing(null)}>
               {t('common.cancel')}
             </button>
           </div>
-        </div>
+        </form>
       )}
       <table className="table">
         <tbody>
@@ -325,45 +233,46 @@ function Deliveries({ targetId }: { targetId: string }) {
   );
 }
 
-function JsonPanel(props: {
-  load: () => Promise<unknown>;
-  save: (body: unknown) => Promise<unknown>;
+/** Loads a value, edits it with a form and saves it (asks for the password when required). */
+function FormPanel<T>(props: {
+  load: () => Promise<T>;
+  save: (body: T) => Promise<unknown>;
   queryKey: string[];
+  render: (value: T, onChange: (v: T) => void) => ReactNode;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const reauth = useReauthCall();
   const data = useQuery({ queryKey: props.queryKey, queryFn: props.load });
-  const [json, setJson] = useState<string | null>(null);
+  const [draft, setDraft] = useState<T | null>(null);
   const [msg, setMsg] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
-  const text = json ?? JSON.stringify(data.data ?? {}, null, 2);
+  const value = draft ?? data.data;
   async function save() {
+    if (value === undefined) return;
     try {
-      await reauth(() => props.save(JSON.parse(text)));
+      await reauth(() => props.save(value));
       setMsg({ kind: 'success', text: t('tickets.saved') });
-      setJson(null);
+      setDraft(null);
       await data.refetch();
     } catch (err) {
-      setMsg({
-        kind: 'error',
-        text: err instanceof SyntaxError ? t('config.invalidJson') : errorText(err),
-      });
+      setMsg({ kind: 'error', text: errorText(err) });
     }
   }
+  if (value === undefined) return <p className="text-sm">{t('common.loading')}</p>;
   return (
-    <div className="space-y-2">
-      <textarea
-        aria-label={t('config.json')}
-        className="input min-h-64 font-mono text-xs"
-        value={text}
-        onChange={(e) => setJson(e.target.value)}
-        spellCheck={false}
-      />
-      <button type="button" className="btn-primary" onClick={() => void save()}>
+    <form
+      className="space-y-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save();
+      }}
+    >
+      {props.render(value, setDraft)}
+      <button type="submit" className="btn-primary">
         {t('common.save')}
       </button>
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
-    </div>
+    </form>
   );
 }
 
@@ -394,16 +303,14 @@ function UsersPanel() {
       {selected && (
         <div>
           <h3 className="font-semibold">{t('config.groupAccess')}</h3>
-          <p className="mb-2 text-xs text-slate-500">
-            [{'{'} "groupId": "…", "levels": ["full"] {'}'}] — read, create, change, overview, full
-          </p>
-          <JsonPanel
+          <FormPanel<Rec[]>
             key={selected}
             queryKey={['admin-user', selected]}
             load={async () =>
-              (await api<{ groupAccess: unknown }>('GET', `/admin/users/${selected}`)).groupAccess
+              (await api<{ groupAccess: Rec[] }>('GET', `/admin/users/${selected}`)).groupAccess
             }
             save={(body) => api('PUT', `/admin/users/${selected}/group-access`, body)}
+            render={(value, onChange) => <GroupAccessForm value={value} onChange={onChange} />}
           />
         </div>
       )}
@@ -740,10 +647,11 @@ export function ConfigAdminPage() {
         </h1>
         {RESOURCE_KEYS.includes(tab) && <ResourceEditor key={tab} resource={tab} />}
         {tab === 'settings' && (
-          <JsonPanel
+          <FormPanel<Rec>
             queryKey={['settings']}
-            load={() => api('GET', '/admin/settings')}
+            load={() => api<Rec>('GET', '/admin/settings')}
             save={(b) => api('PUT', '/admin/settings', b)}
+            render={(value, onChange) => <SettingsForm value={value} onChange={onChange} />}
           />
         )}
         {tab === 'users' && <UsersPanel />}
