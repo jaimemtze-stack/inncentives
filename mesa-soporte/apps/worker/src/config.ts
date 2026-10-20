@@ -2,15 +2,19 @@ import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 
+/** docker compose passes unset optional variables as "" (`${VAR:-}`). */
+const optional = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((v) => (v === '' ? undefined : v), schema.optional());
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   SECRETS_DIR: z.string().default('/run/secrets'),
   MAIL_TRANSPORT: z.enum(['smtp', 'graph', 'log']).default('smtp'),
   /** Microsoft Graph transport (system mail without SMTP AUTH). */
-  GRAPH_TENANT_ID: z.string().optional(),
-  GRAPH_CLIENT_ID: z.string().optional(),
-  GRAPH_SENDER: z.string().email().optional(),
+  GRAPH_TENANT_ID: optional(z.string()),
+  GRAPH_CLIENT_ID: optional(z.string()),
+  GRAPH_SENDER: optional(z.string().email()),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().int().default(587),
   /** "starttls" is required in production; "none" only for local Mailpit. */
