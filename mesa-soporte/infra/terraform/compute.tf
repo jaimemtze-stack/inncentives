@@ -90,6 +90,7 @@ resource "oci_core_instance" "app" {
   }
 
   metadata = {
+    ssh_authorized_keys = join("\n", var.admin_ssh_public_keys)
     user_data = base64gzip(templatefile("${path.module}/../cloud-init/user-data.yaml.tftpl", {
       bundle            = local.bundle
       github_repository = var.github_repository

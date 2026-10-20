@@ -5,6 +5,7 @@ region                  = "mx-queretaro-1"
 environment             = "prod"
 
 bastion_allowed_cidrs = ["203.0.113.10/32"] # office / VPN egress IPs
+admin_ssh_public_keys = ["ssh-ed25519 AAAA... operador"] # contents of the .pub file
 alert_emails          = ["xxxxxxxx.neitek.onmicrosoft.com@amer.teams.ms"]
 # service_user_email  = "infra+pgbackrest@neitek.com" # optional; defaults to alert_emails[0]
 budget_monthly_usd    = 20

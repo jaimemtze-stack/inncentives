@@ -151,3 +151,9 @@ variable "service_user_email" {
   type        = string
   default     = ""
 }
+
+variable "admin_ssh_public_keys" {
+  description = "SSH public keys of the operators, installed for the default user at first boot. Used with OCI Bastion port-forwarding sessions (no dependency on the Bastion agent plugin)."
+  type        = list(string)
+  default     = []
+}
