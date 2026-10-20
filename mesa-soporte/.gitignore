@@ -16,3 +16,4 @@ secrets/
 !deploy/secrets.map.example
 .tmp/
 .tmp-semgrep.json
+__pycache__/

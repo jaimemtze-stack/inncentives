@@ -154,6 +154,13 @@ footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 1
 @media print {
   .side { display: none; } .shell { display: block; } main { padding: 0; }
   .chapter { break-before: page; } figure, .callout, .tbl { break-inside: avoid; }
+  h2, h3, h4, .lead, .callout b.t { break-after: avoid; break-inside: avoid; }
+  p, li { orphans: 3; widows: 3; }
+  .tile, ol.steps > li { break-inside: avoid; }
+  figure .frame { width: fit-content; max-width: 100%; margin-inline: auto; }
+  figure img { width: auto; max-width: 100%; max-height: 190mm; }
+  figcaption { text-align: center; }
+  td:first-child { white-space: normal; }
   body { font-size: 11pt; }
 }
 </style>
