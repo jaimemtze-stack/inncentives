@@ -66,7 +66,7 @@ La llave privada **nunca** se copia al servidor ni a OCI. Sin ella, los volcados
      GRAPH_SENDER=soporte@neitek.net
      ```
 
-     El worker usa `graph_client_secret`. Sin estas variables sigue saliendo por SMTP con STARTTLS (`smtp_username`/`smtp_password`), que Microsoft está retirando para Exchange Online.
+     El worker usa `graph_client_secret`. Después de guardar el secreto en Vault y editar `stack.env`, ejecuta `sudo systemctl restart mesa-secrets-sync` (con `start` no se vuelve a ejecutar si ya corrió) y `sudo systemctl restart mesa-stack`. Sin estas variables sigue saliendo por SMTP con STARTTLS (`smtp_username`/`smtp_password`), que Microsoft está retirando para Exchange Online.
    - Alternativa sin Graph: adaptador `imap` (IMAPS 993 + SMTP 587 con TLS); usa el mismo secreto como contraseña.
    - Publica SPF, DKIM y DMARC (`p=quarantine`) del dominio.
 4. **Integraciones de la fase 2** (todas opcionales; sin ellas la función queda desactivada):
