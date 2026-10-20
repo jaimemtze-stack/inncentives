@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manual del administrador Inncentives</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the app's own shell — navy sidebar with the logo and the table of
+   contents, cream canvas, white cards, golden-yellow highlights. */
+:root {
+  --canvas: #fbfaf6; --surface: #ffffff; --line: #e7e4d8; --ink: #2a2a12; --muted: #6b6758;
+  --nav: #2d2e82; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold: #fbc52a; --gold-soft: #fffbeb; --gold-line: #fde68a; --gold-ink: #8a5d0a;
+  --orange: #ee7d11; --note: #fef3c7; --note-line: #f2d27a;
+  --ok-bg: #dcfce7; --ok-ink: #166534; --warn-bg: #fef3c7; --warn-ink: #78350f;
+  --new-bg: #e6e7f5; --new-ink: #25266d; --gray-bg: #e7e4d8; --gray-ink: #3d3a2c;
+  --red-bg: #fee2e2; --red-ink: #991b1b;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --canvas: #171610; --surface: #232118; --line: #3d3a2c; --ink: #f4f2ea; --muted: #a7a290;
+  --nav: #22236a; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold-soft: #2c2410; --gold-line: #5c3d06; --gold-ink: #fcd34d;
+  --note: #2f2712; --note-line: #5c3d06;
+  --ok-bg: #14321f; --ok-ink: #86efac; --warn-bg: #3a2a0c; --warn-ink: #fcd34d;
+  --new-bg: #25266d; --new-ink: #e6e7f5; --gray-bg: #3d3a2c; --gray-ink: #e7e4d8;
+  --red-bg: #3b1414; --red-ink: #fca5a5; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --canvas: #171610; --surface: #232118; --line: #3d3a2c; --ink: #f4f2ea; --muted: #a7a290;
+  --nav: #22236a; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold-soft: #2c2410; --gold-line: #5c3d06; --gold-ink: #fcd34d;
+  --note: #2f2712; --note-line: #5c3d06;
+  --ok-bg: #14321f; --ok-ink: #86efac; --warn-bg: #3a2a0c; --warn-ink: #fcd34d;
+  --new-bg: #25266d; --new-ink: #e6e7f5; --gray-bg: #3d3a2c; --gray-ink: #e7e4d8;
+  --red-bg: #3b1414; --red-ink: #fca5a5; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font); font-size: 15.5px; line-height: 1.6; }
+.shell { display: grid; grid-template-columns: 288px minmax(0, 1fr); min-height: 100vh; }
+
+/* Sidebar */
+.side { background: var(--nav); color: var(--nav-text); position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 20px 14px 28px max(14px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 6px; }
+.logo { background: #fff; border-radius: 8px; padding: 12px 14px; display: block; }
+.logo img { display: block; width: 100%; height: auto; }
+.side .area { font-size: 12.5px; padding: 6px 10px 0; color: var(--nav-text); }
+.side .manual-name { color: #fff; font-weight: 600; font-size: 15px; padding: 0 10px 8px; }
+.side h2 { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--nav-text); margin: 14px 10px 4px; font-weight: 600; }
+.side nav a { display: flex; gap: 10px; align-items: baseline; color: var(--nav-text); text-decoration: none; font-size: 14px;
+  padding: 7px 10px; border-radius: 6px; }
+.side nav a:hover, .side nav a:focus-visible { background: var(--nav-hover); color: #fff; outline: none; }
+.side nav a .n { font-size: 11.5px; color: #8f92c4; min-width: 1.6em; font-variant-numeric: tabular-nums; }
+.side .others { margin-top: auto; border-top: 1px solid var(--nav-hover); padding-top: 12px; display: grid; gap: 2px; }
+.side .others a { color: var(--nav-text); font-size: 13.5px; padding: 6px 10px; border-radius: 6px; text-decoration: none; }
+.side .others a:hover { background: var(--nav-hover); color: #fff; }
+.side .others a[aria-current="page"] { background: var(--nav-hover); color: var(--gold); box-shadow: inset 3px 0 0 var(--gold); }
+
+/* Main column */
+main { overflow-wrap: anywhere; padding-block: 40px 64px; padding-left: max(16px, min(5vw, 56px)); padding-right: max(16px, env(safe-area-inset-right, 0px), min(5vw, 56px)); }
+.wrap { max-width: 860px; }
+.cover { border-top: 8px solid var(--gold); background: linear-gradient(180deg, var(--gold-soft), var(--surface)); border-radius: 10px;
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 32px 32px 28px; margin-bottom: 36px; }
+.cover .eyebrow { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-ink); font-weight: 600; }
+.cover h1 { font-size: clamp(30px, 4.4vw, 42px); line-height: 1.12; margin: 8px 0 12px; letter-spacing: -0.02em; text-wrap: balance; }
+.cover h1 em { font-style: normal; color: var(--gold-ink); }
+.cover p { margin: 0; max-width: 62ch; color: var(--muted); font-size: 16.5px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 18px; font-size: 13px; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 600; }
+
+section.chapter { padding-top: 12px; margin-bottom: 44px; }
+.chapter > h2 { font-size: 25px; letter-spacing: -0.01em; margin: 0 0 6px; display: flex; gap: 12px; align-items: baseline; text-wrap: balance; }
+.chapter > h2 .num { color: var(--gold-ink); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chapter > .lead { color: var(--muted); margin: 0 0 18px; max-width: 66ch; }
+h3 { font-size: 18px; margin: 28px 0 8px; }
+h4 { font-size: 15px; margin: 18px 0 6px; }
+p, li { max-width: 68ch; }
+a { color: var(--gold-ink); }
+ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 12px 0 18px; display: grid; gap: 10px; }
+ol.steps > li { counter-increment: step; position: relative; padding-left: 42px; }
+ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 1px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--gold); color: #2a2a12; font-weight: 700; font-size: 13.5px; display: grid; place-items: center; }
+ul { padding-left: 1.2em; }
+ul li { margin: 4px 0; }
+
+/* UI vocabulary */
+.ui { font-weight: 600; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; font-size: .94em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.btn { font-weight: 600; background: var(--gold); color: #2a2a12; border-radius: 5px; padding: 1px 8px; font-size: .92em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.path { font-weight: 600; }
+.path::before { content: "▸ "; color: var(--gold-ink); }
+kbd { font-family: var(--mono); font-size: .85em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+code { font-family: var(--mono); font-size: .86em; background: var(--gray-bg); color: var(--gray-ink); border-radius: 4px; padding: 1px 5px; }
+.chip { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+.chip.new { background: var(--new-bg); color: var(--new-ink); }
+.chip.open { background: var(--warn-bg); color: var(--warn-ink); }
+.chip.pend { background: var(--gray-bg); color: var(--gray-ink); }
+.chip.done { background: var(--ok-bg); color: var(--ok-ink); }
+.chip.merged { background: var(--gray-bg); color: var(--muted); }
+.chip.sla-warn { background: #f59e0b; color: #000; border-radius: 4px; font-weight: 600; }
+.chip.sla-bad { background: #b91c1c; color: #fff; border-radius: 4px; font-weight: 600; }
+.chip.internal { background: var(--note); color: var(--warn-ink); border-radius: 4px; }
+
+/* Callouts */
+.callout { border: 1px solid var(--line); border-left: 4px solid var(--gold); background: var(--surface); border-radius: 8px; padding: 12px 16px; margin: 16px 0; max-width: 72ch; }
+.callout b.t { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-ink); margin-bottom: 2px; }
+.callout.warn { border-left-color: var(--orange); background: var(--gold-soft); }
+.callout.warn b.t { color: var(--orange); }
+.callout p { margin: 4px 0; }
+
+/* Figures */
+figure { margin: 18px 0 24px; }
+figure .frame { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px; box-shadow: 0 1px 2px rgba(42,42,18,.06); }
+figure img { display: block; width: 100%; height: auto; border-radius: 6px; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+figcaption b { color: var(--ink); }
+
+/* Tables */
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); margin: 14px 0 22px; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th { text-align: left; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600;
+  padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--canvas); }
+td { padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.yes { color: var(--ok-ink); font-weight: 600; } .no { color: var(--muted); }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0 20px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.tile h4 { margin: 0 0 4px; font-size: 15px; }
+.tile p { margin: 0; font-size: 14px; color: var(--muted); }
+footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 16px; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side, main { min-width: 0; }
+  .side { position: static; height: auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+  .side nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .logo { max-width: 260px; }
+  .cover { padding: 24px 20px; }
+}
+@media print {
+  .side { display: none; } .shell { display: block; } main { padding: 0; }
+  .chapter { break-before: page; } figure, .callout, .tbl { break-inside: avoid; }
+  body { font-size: 11pt; }
+}
+</style>
+
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="logo" href="#inicio"><img src="img/logo.png" alt="Inncentives"></a>
+    <div class="area">Mesa de soporte — Agentes</div>
+    <div class="manual-name">Manual del administrador</div>
+    <h2>Contenido</h2>
+    <nav aria-label="Contenido"><a href="#rol"><span class="n">01</span><span>Tu rol</span></a><a href="#organizaciones"><span class="n">02</span><span>Organizaciones y usuarios</span></a><a href="#accesos"><span class="n">03</span><span>Agentes y accesos a grupos</span></a><a href="#configuracion"><span class="n">04</span><span>Configuración de la mesa</span></a><a href="#reglas"><span class="n">05</span><span>Reglas: condiciones y acciones</span></a><a href="#ajustes"><span class="n">06</span><span>Ajustes generales</span></a><a href="#kb"><span class="n">07</span><span>Base de conocimiento: edición</span></a><a href="#cumplimiento"><span class="n">08</span><span>Seguridad y cumplimiento</span></a></nav>
+    <div class="others"><h2 style="margin-top:0">Manuales</h2><a href="manual-cliente.html">Manual del cliente</a><a href="manual-agente.html">Manual del agente</a><a href="manual-administrador.html" aria-current="page">Manual del administrador</a></div>
+  </aside>
+  <main id="inicio">
+    <div class="wrap">
+      <header class="cover">
+        <div class="eyebrow">Soporte Inncentives · Guía de uso</div>
+        <h1>Manual del <em>administrador</em></h1>
+        <p>Cómo administrar la mesa de soporte: organizaciones, usuarios y accesos, catálogos y reglas, ajustes generales, base de conocimiento y cumplimiento.</p>
+        <div class="meta"><span><b>Para:</b> administradores de la mesa de soporte</span><span><b>Versión:</b> 1.0 · octubre 2026</span><span><b>Idioma de las pantallas:</b> español (México)</span></div>
+      </header>
+      <section class="chapter" id="rol"><h2><span class="num">01</span>Tu rol</h2><p class="lead">El administrador hace todo lo que hace un agente y, además, configura la mesa de soporte.</p>
+<p>Para el trabajo diario con tickets, chat, teléfono y reportes, consulta el <b>Manual del agente</b>. Este manual cubre lo exclusivo del administrador.</p>
+<figure><div class="frame"><img src="img/admin-tickets.jpg" alt="Menú del administrador. Además de lo del agente, tiene Configuración completa y Bitácora de auditoría." loading="lazy"></div><figcaption><b>Menú del administrador.</b> Además de lo del agente, tiene Configuración completa y Bitácora de auditoría.</figcaption></figure>
+<div class="tbl"><table><thead><tr><th>Función</th><th>Administrador</th><th>Agente</th><th>Cliente</th></tr></thead><tbody>
+<tr><td>Tickets</td><td class="yes">Todos sus grupos</td><td class="yes">Sus grupos</td><td>Propios (y de su organización si se le permite)</td></tr>
+<tr><td>Reportes y Tiempo</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="no">No</td></tr>
+<tr><td>Editar la base de conocimiento</td><td class="yes">Sí</td><td class="no">No*</td><td class="no">No</td></tr>
+<tr><td>Crear organizaciones</td><td class="yes">Sí</td><td class="no">No</td><td class="no">No</td></tr>
+<tr><td>Invitar usuarios</td><td class="yes">Cualquier rol</td><td>Solo clientes</td><td class="no">No</td></tr>
+<tr><td>Configuración</td><td class="yes">Completa</td><td>Solo Tokens de API*</td><td class="no">No</td></tr>
+<tr><td>Bitácora de auditoría</td><td class="yes">Sí</td><td class="no">No*</td><td class="no">No</td></tr>
+<tr><td>Privacidad (ARCO) y Ver como cliente</td><td class="yes">Sí</td><td class="no">No*</td><td class="no">No</td></tr>
+</tbody></table></div>
+<p>* Se puede conceder a un agente con un <b>rol personalizado</b> (Configuración → Roles).</p>
+<div class="callout warn"><b class="t">Seguridad</b><p>La verificación en dos pasos es obligatoria para administradores. Las acciones delicadas (ajustes generales, privacidad, ver como cliente, tokens) pueden pedirte confirmar tu contraseña.</p></div></section><section class="chapter" id="organizaciones"><h2><span class="num">02</span>Organizaciones y usuarios</h2><p class="lead">Cada cliente pertenece a una organización; los correos de sus dominios se asocian a ella.</p>
+<figure><div class="frame"><img src="img/admin-orgs.jpg" alt="Organizaciones. Invitaciones, alta de organizaciones con sus dominios, clave de Inncentives y casilla de IA." loading="lazy"></div><figcaption><b>Organizaciones.</b> Invitaciones, alta de organizaciones con sus dominios, clave de Inncentives y casilla de IA.</figcaption></figure>
+<h3>Crear una organización</h3>
+<ol class="steps">
+<li>Abre <span class="path">Organizaciones</span>.</li>
+<li>Escribe el <span class="ui">Nombre</span> y los <span class="ui">Dominios (separados por coma)</span>, por ejemplo <code>acme.com.mx, acme.mx</code>.</li>
+<li>Pulsa <span class="btn">Crear</span>.</li>
+<li>Si el cliente usa Inncentives, captura su <b>clave de Inncentives</b> en la columna Integraciones y pulsa <span class="ui">Guardar</span>. Marca <span class="ui">IA</span> solo si la organización autorizó el asistente de IA.</li>
+</ol>
+<h3>Invitar usuarios</h3>
+<p>En <b>Invitar usuario</b> elige el <span class="ui">Rol</span> (Cliente, Agente o Administrador) y la organización. El personal de Neitek debe pertenecer a la organización interna.</p>
+<h3>Importación masiva por CSV</h3>
+<ul>
+<li><b>Organizaciones</b>: columnas nombre, dominios (separados por <code>|</code>), plan y mfa.</li>
+<li><b>Usuarios</b>: correo, nombre, organizacion y rol. Cada uno recibe su invitación.</li>
+</ul>
+<p>Primero pulsa <span class="ui">Validar (sin guardar)</span>; el botón <span class="btn">Importar</span> se habilita solo cuando no hay errores. Si hay errores, no se guarda nada.</p></section><section class="chapter" id="accesos"><h2><span class="num">03</span>Agentes y accesos a grupos</h2><p class="lead">Define qué grupos ve cada agente y qué puede hacer en ellos.</p>
+<figure><div class="frame"><img src="img/admin-access.jpg" alt="Agentes y accesos. Un grupo por fila con sus niveles de acceso." loading="lazy"></div><figcaption><b>Agentes y accesos.</b> Un grupo por fila con sus niveles de acceso.</figcaption></figure>
+<ol class="steps">
+<li>Abre <span class="path">Configuración</span> → <b>Agentes y accesos</b> y elige al agente.</li>
+<li>Pulsa <span class="ui">Agregar grupo</span>, elige el <span class="ui">Grupo</span> y marca los niveles.</li>
+<li>Pulsa <span class="btn">Guardar</span>.</li>
+</ol>
+<div class="tbl"><table><thead><tr><th>Nivel</th><th>Permite</th></tr></thead><tbody>
+<tr><td>Leer</td><td>Abrir y consultar los tickets del grupo.</td></tr>
+<tr><td>Crear</td><td>Crear tickets en el grupo.</td></tr>
+<tr><td>Modificar</td><td>Responder y cambiar datos de los tickets.</td></tr>
+<tr><td>Ver en vistas</td><td>Que los tickets del grupo aparezcan en sus vistas.</td></tr>
+<tr><td>Completo</td><td>Todo lo anterior.</td></tr>
+</tbody></table></div></section><section class="chapter" id="configuracion"><h2><span class="num">04</span>Configuración de la mesa</h2><p class="lead">Cada pestaña administra un catálogo con los botones Nuevo, Editar y Eliminar.</p>
+<figure><div class="frame"><img src="img/admin-config.jpg" alt="Configuración. Pestañas de catálogos a la izquierda; lista y formulario a la derecha." loading="lazy"></div><figcaption><b>Configuración.</b> Pestañas de catálogos a la izquierda; lista y formulario a la derecha.</figcaption></figure>
+<h3>Cómo se usa cada pestaña</h3>
+<ol class="steps">
+<li>Elige la pestaña. Verás la lista de registros; los inactivos se marcan con ✕.</li>
+<li>Pulsa <span class="btn">Nuevo</span> o <span class="ui">Editar</span>. Se abre un formulario con los campos del registro.</li>
+<li>Pulsa <span class="btn">Guardar</span>. Si algo puede causar un efecto no deseado (por ejemplo, una regla que se dispara a sí misma), verás «Advertencias: …».</li>
+</ol>
+<h3>Orden recomendado para la puesta en marcha</h3>
+<ol class="steps">
+<li><b>Calendarios</b> → <b>Grupos</b> → <b>Prioridades</b>.</li>
+<li><b>Campos personalizados</b> y <b>Core Workflows</b> (qué se pide al crear un ticket).</li>
+<li><b>SLAs</b> y <b>Planes de soporte</b>.</li>
+<li><b>Vistas</b>, <b>Triggers</b> y <b>Planificadores</b>.</li>
+<li><b>Macros</b>, <b>Módulos de texto</b>, <b>Plantillas</b> y <b>Firmas</b>.</li>
+<li>Canales: <b>Canales de correo</b>, <b>Filtros postmaster</b>, <b>WhatsApp y SMS</b>, <b>Canales de Teams</b> y <b>Webhooks</b>.</li>
+<li><b>Tipos de actividad</b> y <b>Retención</b>.</li>
+</ol>
+<h3>Pestañas</h3>
+
+<div class="tbl"><table><thead><tr><th>Pestaña</th><th>Qué configuras</th></tr></thead><tbody>
+<tr><td>Grupos</td><td>Colas de trabajo: correo del grupo, firma, qué pasa con una respuesta a un ticket cerrado (reabrir o crear uno nuevo) y asignación automática.</td></tr>
+<tr><td>Prioridades</td><td>Nombre, orden (1 = más alta) y cuál es la predeterminada.</td></tr>
+<tr><td>Roles</td><td>Roles personalizados que suman permisos al personal (nunca a clientes).</td></tr>
+<tr><td>Planes de soporte</td><td>Minutos incluidos al mes y tarifa por hora en MXN.</td></tr>
+<tr><td>Firmas</td><td>Texto de firma de los correos, con variables como <code>{{agent.name}}</code>.</td></tr>
+<tr><td>Calendarios</td><td>Zona horaria, horario laboral por día, días inhábiles propios y descansos obligatorios de la LFT.</td></tr>
+<tr><td>SLAs</td><td>A qué tickets aplica, calendario, pausa en pendiente, aviso al llegar a cierto % y tiempos de primera respuesta, actualización y solución por prioridad.</td></tr>
+<tr><td>Triggers</td><td>Reglas que se ejecutan al crear o actualizar un ticket.</td></tr>
+<tr><td>Planificadores</td><td>Reglas que se ejecutan cada cierto tiempo (mínimo 10 minutos) sobre los tickets que cumplen las condiciones.</td></tr>
+<tr><td>Core Workflows</td><td>Por pantalla (alta o edición, agente o cliente): qué campos se ven, son obligatorios o de solo lectura, sus valores permitidos y su valor inicial.</td></tr>
+<tr><td>Macros</td><td>Conjuntos de acciones de un clic, limitados a ciertos grupos.</td></tr>
+<tr><td>Módulos de texto</td><td>Textos que los agentes insertan con <code>::atajo</code>.</td></tr>
+<tr><td>Plantillas</td><td>Valores precargados para tickets nuevos.</td></tr>
+<tr><td>Vistas</td><td>Pestañas de la lista de tickets: condiciones, columnas, orden y para qué roles.</td></tr>
+<tr><td>Campos personalizados</td><td>Campos de ticket, usuario u organización: tipo, opciones, obligatoriedad y si el cliente los ve o edita.</td></tr>
+<tr><td>Tipos de actividad</td><td>Catálogo para el registro de tiempo.</td></tr>
+<tr><td>Canales de correo</td><td>Buzones de Microsoft 365 (Graph) o IMAP/SMTP que se convierten en tickets.</td></tr>
+<tr><td>Filtros postmaster</td><td>Reglas por encabezado del correo: ignorar, marcar como spam o asignar grupo, prioridad y etiquetas.</td></tr>
+<tr><td>Webhooks</td><td>Llamadas a sistemas externos; incluye el registro de <b>Entregas</b>.</td></tr>
+<tr><td>Canales de Teams</td><td>Avisos a canales de Microsoft Teams por evento; incluye <b>Entregas</b>.</td></tr>
+<tr><td>WhatsApp y SMS</td><td>Números de WhatsApp Business o Twilio y el grupo que los atiende.</td></tr>
+<tr><td>Retención</td><td>Cuántos días se conserva cada tipo de dato (solo se editan; no se crean ni eliminan).</td></tr>
+</tbody></table></div></section><section class="chapter" id="reglas"><h2><span class="num">05</span>Reglas: condiciones y acciones</h2><p class="lead">Triggers, planificadores, SLAs, vistas y Core Workflows comparten el mismo editor de condiciones.</p>
+<figure><div class="frame"><img src="img/admin-trigger.jpg" alt="Nuevo trigger. Nombre, evento, condiciones y acciones." loading="lazy"></div><figcaption><b>Nuevo trigger.</b> Nombre, evento, condiciones y acciones.</figcaption></figure>
+<h3>Condiciones</h3>
+<ul>
+<li>Elige <b>Se cumplen todas</b> o <b>Se cumple alguna</b>.</li>
+<li><span class="ui">Agregar condición</span> crea una fila con <b>Campo</b>, <b>Operador</b> y <b>Valor</b>. El valor se adapta al campo: lista de estados, grupos o agentes por nombre, etiquetas, fecha o minutos relativos («-60» = hace una hora).</li>
+<li><span class="ui">Agregar grupo</span> anida condiciones (por ejemplo, «canal es correo» Y («prioridad es Alta» O «organización es ACME»)).</li>
+<li>Sin condiciones, la regla aplica a todos los tickets.</li>
+</ul>
+<p>Cada tipo de regla solo ofrece los campos y operadores que puede usar. Por ejemplo, «cambió» y «cambió a» solo existen en triggers.</p>
+<h3>Acciones</h3>
+<div class="tbl"><table><thead><tr><th>Acción</th><th>Uso típico</th></tr></thead><tbody>
+<tr><td>Cambiar un campo</td><td>Estado, prioridad, grupo, propietario o «pendiente por (minutos)».</td></tr>
+<tr><td>Cambiar un campo personalizado</td><td>Por ejemplo, fijar el módulo.</td></tr>
+<tr><td>Agregar / Quitar etiquetas</td><td>Clasificar automáticamente.</td></tr>
+<tr><td>Enviar notificación</td><td>Al propietario, al grupo, a los suscriptores, al cliente o a agentes específicos.</td></tr>
+<tr><td>Agregar nota interna</td><td>Dejar contexto en el ticket.</td></tr>
+<tr><td>Llamar un webhook</td><td>Avisar a otro sistema.</td></tr>
+<tr><td>Responder al cliente</td><td>Acuse de recibo o recordatorio.</td></tr>
+</tbody></table></div>
+<p>En notificaciones y respuestas puedes usar variables como <code>{{ticket.number}}</code>, <code>{{customer.name}}</code> u <code>{{agent.name}}</code>.</p>
+<div class="callout "><b class="t">Ejemplo</b><p>Trigger «Etiquetar correos entrantes»: se ejecuta al <b>Crear un ticket</b>, con la condición <b>Canal es Correo</b> y la acción <b>Agregar etiquetas: correo</b>.</p></div></section><section class="chapter" id="ajustes"><h2><span class="num">06</span>Ajustes generales</h2><p class="lead">Parámetros globales de la mesa de soporte.</p>
+<figure><div class="frame"><img src="img/admin-settings.jpg" alt="Ajustes generales, agrupados por sección." loading="lazy"></div><figcaption><b>Ajustes generales</b>, agrupados por sección.</figcaption></figure>
+<div class="tbl"><table><thead><tr><th>Sección</th><th>Ajustes</th></tr></thead><tbody>
+<tr><td>General</td><td>Nombre del producto, color principal, idioma predeterminado y prefijo del ticket en el asunto.</td></tr>
+<tr><td>Tickets</td><td>Grupo para tickets del portal, máximo de respuestas automáticas por hora, si el cliente puede cerrar sus tickets y el registro de tiempo (y si es obligatorio).</td></tr>
+<tr><td>Aviso de privacidad</td><td>Texto en español e inglés que se muestra al crear un ticket en el portal.</td></tr>
+<tr><td>Chat en vivo</td><td>Activado, grupo que atiende y minutos de inactividad para cerrar (2 a 240).</td></tr>
+<tr><td>WhatsApp y SMS</td><td>Versión de la API de WhatsApp, Account SID de Twilio y días para continuar en el mismo ticket.</td></tr>
+<tr><td>Azure DevOps</td><td>Organización, proyecto, tipo de work item y nombre del secreto.</td></tr>
+<tr><td>Inncentives</td><td>Modo (Desactivado, Demostración o Conectado), URL base y datos del widget.</td></tr>
+<tr><td>Inteligencia artificial</td><td>Activado y modelo. Además, cada organización debe tener su casilla IA marcada.</td></tr>
+<tr><td>Inicio de sesión único (SSO)</td><td>Hasta 5 proveedores (por ejemplo, Microsoft Entra ID): identificador, área, issuer, client ID, secreto, scopes y si se confía en su MFA.</td></tr>
+</tbody></table></div>
+<div class="callout warn"><b class="t">Secretos</b><p>Los campos «Nombre del secreto» guardan el <b>nombre</b> de un secreto en el resguardo de OCI Vault, nunca la contraseña o el token. Los valores reales los carga el equipo de infraestructura.</p></div></section><section class="chapter" id="kb"><h2><span class="num">07</span>Base de conocimiento: edición</h2><p class="lead">Crea artículos en borrador, tradúcelos y publícalos.</p>
+<ol class="steps">
+<li>En <span class="path">Base de conocimiento</span> pulsa <span class="btn">Nueva respuesta</span>.</li>
+<li>Elige la <span class="ui">Categoría</span>, escribe el <span class="ui">Título</span> y el <span class="ui">Mensaje</span>. Marca <span class="ui">Solo para agentes (interna)</span> si no debe verla el cliente.</li>
+<li>Pulsa <span class="btn">Guardar como borrador</span>. Se crea en el idioma que tengas seleccionado.</li>
+<li>Abre el artículo. Con <span class="ui">Agregar traducción</span> escribe la versión en el otro idioma.</li>
+<li>Pulsa <span class="btn">Publicar</span>. Si quieres programarlo, usa <span class="ui">Publicar a partir de</span>.</li>
+</ol>
+<p>También puedes <span class="ui">Archivar</span> un artículo, cambiarlo con <span class="ui">Hacer interna</span> / <span class="ui">Hacer visible a clientes</span> y consultar las <b>Versiones anteriores</b>.</p></section><section class="chapter" id="cumplimiento"><h2><span class="num">08</span>Seguridad y cumplimiento</h2><p class="lead">Herramientas para auditoría, derechos ARCO y soporte asistido.</p>
+<h3>Bitácora de auditoría</h3>
+<figure><div class="frame"><img src="img/admin-audit.jpg" alt="Bitácora de auditoría con la verificación de integridad." loading="lazy"></div><figcaption><b>Bitácora de auditoría</b> con la verificación de integridad.</figcaption></figure>
+<p>Muestra los últimos registros con fecha, acción, usuario e IP (inicios de sesión, cambios de configuración, accesos a datos). Pulsa <span class="ui">Verificar integridad</span> para comprobar que ningún registro fue alterado; el resultado es «Integridad verificada: N registros sin alteraciones».</p>
+<h3>Privacidad (ARCO)</h3>
+<ol class="steps">
+<li>En <span class="path">Configuración</span> → <b>Privacidad (ARCO)</b> captura el <span class="ui">ID de usuario</span>, la <span class="ui">Acción</span> (export = exportar sus datos, anonymize = anonimizar, delete = eliminar) y el <span class="ui">Motivo</span>.</li>
+<li>Pulsa <span class="btn">Iniciar</span> y confirma tu contraseña.</li>
+<li>Cuando una exportación termine, usa <span class="ui">Descargar</span> para entregarla al titular.</li>
+</ol>
+<h3>Ver como cliente</h3>
+<p>Para revisar exactamente lo que ve un cliente, en <b>Ver como cliente</b> captura su ID de usuario y un motivo y pulsa <span class="btn">Iniciar</span>. La sesión es de solo lectura, vence sola y queda registrada en la bitácora.</p>
+<h3>Tokens de API</h3>
+<p>Crea tokens para integraciones con nombre, permisos y vigencia. El token se muestra una sola vez; revócalo con <span class="ui">Eliminar</span> cuando ya no se use.</p>
+<h3>Lo que hoy no se hace desde pantalla</h3>
+<ul>
+<li>Crear o renombrar categorías de la base de conocimiento.</li>
+<li>Editar o desactivar usuarios existentes, y dar a un cliente acceso a los tickets de su organización.</li>
+</ul>
+<p>Para estos cambios, solicita apoyo al equipo técnico de Neitek.</p></section>
+      <footer class="end">Soporte Inncentives · Neitek. Las pantallas de este manual usan datos de ejemplo; los nombres de vistas, grupos y campos pueden variar según la configuración de tu mesa de soporte.</footer>
+    </div>
+  </main>
+</div>
+</body>
+</html>

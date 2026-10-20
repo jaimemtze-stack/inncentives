@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manual del agente Inncentives</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the app's own shell — navy sidebar with the logo and the table of
+   contents, cream canvas, white cards, golden-yellow highlights. */
+:root {
+  --canvas: #fbfaf6; --surface: #ffffff; --line: #e7e4d8; --ink: #2a2a12; --muted: #6b6758;
+  --nav: #2d2e82; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold: #fbc52a; --gold-soft: #fffbeb; --gold-line: #fde68a; --gold-ink: #8a5d0a;
+  --orange: #ee7d11; --note: #fef3c7; --note-line: #f2d27a;
+  --ok-bg: #dcfce7; --ok-ink: #166534; --warn-bg: #fef3c7; --warn-ink: #78350f;
+  --new-bg: #e6e7f5; --new-ink: #25266d; --gray-bg: #e7e4d8; --gray-ink: #3d3a2c;
+  --red-bg: #fee2e2; --red-ink: #991b1b;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --canvas: #171610; --surface: #232118; --line: #3d3a2c; --ink: #f4f2ea; --muted: #a7a290;
+  --nav: #22236a; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold-soft: #2c2410; --gold-line: #5c3d06; --gold-ink: #fcd34d;
+  --note: #2f2712; --note-line: #5c3d06;
+  --ok-bg: #14321f; --ok-ink: #86efac; --warn-bg: #3a2a0c; --warn-ink: #fcd34d;
+  --new-bg: #25266d; --new-ink: #e6e7f5; --gray-bg: #3d3a2c; --gray-ink: #e7e4d8;
+  --red-bg: #3b1414; --red-ink: #fca5a5; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --canvas: #171610; --surface: #232118; --line: #3d3a2c; --ink: #f4f2ea; --muted: #a7a290;
+  --nav: #22236a; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold-soft: #2c2410; --gold-line: #5c3d06; --gold-ink: #fcd34d;
+  --note: #2f2712; --note-line: #5c3d06;
+  --ok-bg: #14321f; --ok-ink: #86efac; --warn-bg: #3a2a0c; --warn-ink: #fcd34d;
+  --new-bg: #25266d; --new-ink: #e6e7f5; --gray-bg: #3d3a2c; --gray-ink: #e7e4d8;
+  --red-bg: #3b1414; --red-ink: #fca5a5; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font); font-size: 15.5px; line-height: 1.6; }
+.shell { display: grid; grid-template-columns: 288px minmax(0, 1fr); min-height: 100vh; }
+
+/* Sidebar */
+.side { background: var(--nav); color: var(--nav-text); position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 20px 14px 28px max(14px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 6px; }
+.logo { background: #fff; border-radius: 8px; padding: 12px 14px; display: block; }
+.logo img { display: block; width: 100%; height: auto; }
+.side .area { font-size: 12.5px; padding: 6px 10px 0; color: var(--nav-text); }
+.side .manual-name { color: #fff; font-weight: 600; font-size: 15px; padding: 0 10px 8px; }
+.side h2 { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--nav-text); margin: 14px 10px 4px; font-weight: 600; }
+.side nav a { display: flex; gap: 10px; align-items: baseline; color: var(--nav-text); text-decoration: none; font-size: 14px;
+  padding: 7px 10px; border-radius: 6px; }
+.side nav a:hover, .side nav a:focus-visible { background: var(--nav-hover); color: #fff; outline: none; }
+.side nav a .n { font-size: 11.5px; color: #8f92c4; min-width: 1.6em; font-variant-numeric: tabular-nums; }
+.side .others { margin-top: auto; border-top: 1px solid var(--nav-hover); padding-top: 12px; display: grid; gap: 2px; }
+.side .others a { color: var(--nav-text); font-size: 13.5px; padding: 6px 10px; border-radius: 6px; text-decoration: none; }
+.side .others a:hover { background: var(--nav-hover); color: #fff; }
+.side .others a[aria-current="page"] { background: var(--nav-hover); color: var(--gold); box-shadow: inset 3px 0 0 var(--gold); }
+
+/* Main column */
+main { overflow-wrap: anywhere; padding-block: 40px 64px; padding-left: max(16px, min(5vw, 56px)); padding-right: max(16px, env(safe-area-inset-right, 0px), min(5vw, 56px)); }
+.wrap { max-width: 860px; }
+.cover { border-top: 8px solid var(--gold); background: linear-gradient(180deg, var(--gold-soft), var(--surface)); border-radius: 10px;
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 32px 32px 28px; margin-bottom: 36px; }
+.cover .eyebrow { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-ink); font-weight: 600; }
+.cover h1 { font-size: clamp(30px, 4.4vw, 42px); line-height: 1.12; margin: 8px 0 12px; letter-spacing: -0.02em; text-wrap: balance; }
+.cover h1 em { font-style: normal; color: var(--gold-ink); }
+.cover p { margin: 0; max-width: 62ch; color: var(--muted); font-size: 16.5px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 18px; font-size: 13px; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 600; }
+
+section.chapter { padding-top: 12px; margin-bottom: 44px; }
+.chapter > h2 { font-size: 25px; letter-spacing: -0.01em; margin: 0 0 6px; display: flex; gap: 12px; align-items: baseline; text-wrap: balance; }
+.chapter > h2 .num { color: var(--gold-ink); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chapter > .lead { color: var(--muted); margin: 0 0 18px; max-width: 66ch; }
+h3 { font-size: 18px; margin: 28px 0 8px; }
+h4 { font-size: 15px; margin: 18px 0 6px; }
+p, li { max-width: 68ch; }
+a { color: var(--gold-ink); }
+ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 12px 0 18px; display: grid; gap: 10px; }
+ol.steps > li { counter-increment: step; position: relative; padding-left: 42px; }
+ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 1px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--gold); color: #2a2a12; font-weight: 700; font-size: 13.5px; display: grid; place-items: center; }
+ul { padding-left: 1.2em; }
+ul li { margin: 4px 0; }
+
+/* UI vocabulary */
+.ui { font-weight: 600; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; font-size: .94em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.btn { font-weight: 600; background: var(--gold); color: #2a2a12; border-radius: 5px; padding: 1px 8px; font-size: .92em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.path { font-weight: 600; }
+.path::before { content: "▸ "; color: var(--gold-ink); }
+kbd { font-family: var(--mono); font-size: .85em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+code { font-family: var(--mono); font-size: .86em; background: var(--gray-bg); color: var(--gray-ink); border-radius: 4px; padding: 1px 5px; }
+.chip { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+.chip.new { background: var(--new-bg); color: var(--new-ink); }
+.chip.open { background: var(--warn-bg); color: var(--warn-ink); }
+.chip.pend { background: var(--gray-bg); color: var(--gray-ink); }
+.chip.done { background: var(--ok-bg); color: var(--ok-ink); }
+.chip.merged { background: var(--gray-bg); color: var(--muted); }
+.chip.sla-warn { background: #f59e0b; color: #000; border-radius: 4px; font-weight: 600; }
+.chip.sla-bad { background: #b91c1c; color: #fff; border-radius: 4px; font-weight: 600; }
+.chip.internal { background: var(--note); color: var(--warn-ink); border-radius: 4px; }
+
+/* Callouts */
+.callout { border: 1px solid var(--line); border-left: 4px solid var(--gold); background: var(--surface); border-radius: 8px; padding: 12px 16px; margin: 16px 0; max-width: 72ch; }
+.callout b.t { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-ink); margin-bottom: 2px; }
+.callout.warn { border-left-color: var(--orange); background: var(--gold-soft); }
+.callout.warn b.t { color: var(--orange); }
+.callout p { margin: 4px 0; }
+
+/* Figures */
+figure { margin: 18px 0 24px; }
+figure .frame { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px; box-shadow: 0 1px 2px rgba(42,42,18,.06); }
+figure img { display: block; width: 100%; height: auto; border-radius: 6px; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+figcaption b { color: var(--ink); }
+
+/* Tables */
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); margin: 14px 0 22px; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th { text-align: left; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600;
+  padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--canvas); }
+td { padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.yes { color: var(--ok-ink); font-weight: 600; } .no { color: var(--muted); }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0 20px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.tile h4 { margin: 0 0 4px; font-size: 15px; }
+.tile p { margin: 0; font-size: 14px; color: var(--muted); }
+footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 16px; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side, main { min-width: 0; }
+  .side { position: static; height: auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+  .side nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .logo { max-width: 260px; }
+  .cover { padding: 24px 20px; }
+}
+@media print {
+  .side { display: none; } .shell { display: block; } main { padding: 0; }
+  .chapter { break-before: page; } figure, .callout, .tbl { break-inside: avoid; }
+  body { font-size: 11pt; }
+}
+</style>
+
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="logo" href="#inicio"><img src="img/logo.png" alt="Inncentives"></a>
+    <div class="area">Mesa de soporte — Agentes</div>
+    <div class="manual-name">Manual del agente</div>
+    <h2>Contenido</h2>
+    <nav aria-label="Contenido"><a href="#acceso"><span class="n">01</span><span>Acceso y seguridad</span></a><a href="#interfaz"><span class="n">02</span><span>La pantalla de trabajo</span></a><a href="#lista"><span class="n">03</span><span>La lista de tickets</span></a><a href="#crear"><span class="n">04</span><span>Registrar un ticket</span></a><a href="#trabajar"><span class="n">05</span><span>Trabajar un ticket</span></a><a href="#chat"><span class="n">06</span><span>Chat en vivo</span></a><a href="#telefono"><span class="n">07</span><span>Teléfono</span></a><a href="#kb"><span class="n">08</span><span>Base de conocimiento</span></a><a href="#analizar"><span class="n">09</span><span>Reportes y tiempo</span></a><a href="#clientes"><span class="n">10</span><span>Organizaciones e invitaciones</span></a><a href="#cuenta"><span class="n">11</span><span>Mi cuenta</span></a></nav>
+    <div class="others"><h2 style="margin-top:0">Manuales</h2><a href="manual-cliente.html">Manual del cliente</a><a href="manual-agente.html" aria-current="page">Manual del agente</a><a href="manual-administrador.html">Manual del administrador</a></div>
+  </aside>
+  <main id="inicio">
+    <div class="wrap">
+      <header class="cover">
+        <div class="eyebrow">Soporte Inncentives · Guía de uso</div>
+        <h1>Manual del <em>agente</em></h1>
+        <p>Cómo atender tickets en la mesa de soporte: vistas, búsqueda, respuestas, notas internas, chat, teléfono, reportes y registro de tiempo.</p>
+        <div class="meta"><span><b>Para:</b> agentes de soporte de Neitek</span><span><b>Versión:</b> 1.0 · octubre 2026</span><span><b>Idioma de las pantallas:</b> español (México)</span></div>
+      </header>
+      <section class="chapter" id="acceso"><h2><span class="num">01</span>Acceso y seguridad</h2><p class="lead">Las cuentas del equipo de soporte siempre usan verificación en dos pasos.</p>
+<h3>Activar tu cuenta</h3>
+<p>Recibirás una invitación por correo. Abre el enlace, escribe tu nombre y una contraseña de al menos 12 caracteres y pulsa <span class="btn">Crear cuenta</span>.</p>
+<h3>Iniciar sesión</h3>
+<figure><div class="frame"><img src="img/login.jpg" alt="Iniciar sesión en el área de agentes." loading="lazy"></div><figcaption><b>Iniciar sesión</b> en el área de agentes.</figcaption></figure>
+
+<ol class="steps">
+<li>Abre la dirección de tu mesa de soporte en el navegador.</li>
+<li>Escribe tu <span class="ui">Correo electrónico</span> y tu <span class="ui">Contraseña</span> y pulsa <span class="btn">Entrar</span>.</li>
+<li>Si tienes activada la verificación en dos pasos, escribe el <span class="ui">Código de 6 dígitos</span> que muestra tu app de autenticación y pulsa <span class="btn">Verificar</span>. También puedes usar tu llave o passkey, o un código de recuperación (<span class="ui">Usar un código de recuperación</span>).</li>
+</ol>
+
+<h3>Configurar la verificación en dos pasos</h3>
+<ol class="steps">
+<li>Instala una app de autenticación en tu teléfono (Microsoft Authenticator, Google Authenticator, 1Password u otra).</li>
+<li>En la pantalla <b>Configura la verificación en dos pasos</b>, escanea el código QR con la app. Si no puedes escanearlo, captura la clave que aparece debajo.</li>
+<li>Escribe el código de 6 dígitos que muestra la app y pulsa <span class="btn">Activar</span>. Si prefieres, usa <span class="ui">Usar una llave de seguridad o passkey en su lugar</span>.</li>
+<li>Aparecerán tus <b>códigos de recuperación</b>. Guárdalos en un lugar seguro (por ejemplo, tu gestor de contraseñas): no se volverán a mostrar. Pulsa <span class="btn">Ya los guardé</span>.</li>
+</ol>
+<div class="callout warn"><b class="t">Obligatorio para agentes</b><p>La verificación en dos pasos es obligatoria para agentes y administradores. La primera vez que entres, la aplicación te llevará directamente a configurarla.</p></div>
+
+<h3>Si olvidaste tu contraseña</h3>
+<ol class="steps">
+<li>En la pantalla de inicio pulsa <span class="ui">¿Olvidaste tu contraseña?</span>.</li>
+<li>Escribe tu correo y pulsa <span class="btn">Enviar enlace</span>. Por seguridad siempre verás el mismo mensaje, exista o no la cuenta.</li>
+<li>Abre el enlace del correo, escribe tu <span class="ui">Nueva contraseña</span>, confírmala y pulsa <span class="btn">Cambiar contraseña</span>.</li>
+</ol></section><section class="chapter" id="interfaz"><h2><span class="num">02</span>La pantalla de trabajo</h2><p class="lead">El menú de la izquierda agrupa las funciones en Soporte, Analizar y Administrar.</p>
+<figure><div class="frame"><img src="img/agent-tickets.jpg" alt="Inicio del agente. Menú, buscador con el botón de nuevo ticket, vistas y lista agrupada por día." loading="lazy"></div><figcaption><b>Inicio del agente.</b> Menú, buscador con el botón de nuevo ticket, vistas y lista agrupada por día.</figcaption></figure>
+<div class="tbl"><table><thead><tr><th>Sección</th><th>Opciones</th></tr></thead><tbody>
+<tr><td>Soporte</td><td>Tickets, Chat, Teléfono, Base de conocimiento.</td></tr>
+<tr><td>Analizar</td><td>Reportes y Tiempo.</td></tr>
+<tr><td>Administrar</td><td>Organizaciones y Configuración (para un agente, solo la pestaña de Tokens de API).</td></tr>
+<tr><td>Abajo</td><td>Notificaciones, Mi cuenta, idioma y Cerrar sesión.</td></tr>
+</tbody></table></div>
+<h3>Notificaciones</h3>
+<p>La campana muestra un contador con lo que no has leído (tickets nuevos en tus grupos, asignaciones, respuestas de clientes, menciones, recordatorios y avisos de SLA). Pulsa un aviso para abrir el ticket o <span class="ui">Marcar todas como leídas</span>.</p>
+<h3>Atajos de teclado</h3>
+
+<div class="tbl"><table><thead><tr><th>Tecla</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><kbd>/</kbd></td><td>Lleva el cursor al buscador de tickets.</td></tr>
+<tr><td><kbd>n</kbd></td><td>Abre un ticket nuevo.</td></tr>
+<tr><td><kbd>r</kbd></td><td>Lleva el cursor al cuadro <b>Mensaje</b> para responder el ticket abierto.</td></tr>
+</tbody></table></div>
+<p>Los atajos no funcionan mientras escribes en un campo ni si tienes presionada <kbd>Ctrl</kbd>, <kbd>Alt</kbd> o <kbd>Cmd</kbd>.</p></section><section class="chapter" id="lista"><h2><span class="num">03</span>La lista de tickets</h2><p class="lead">Las vistas reúnen los tickets según su situación; la búsqueda encuentra cualquier ticket.</p>
+<h3>Vistas</h3>
+<p>Las pestañas sobre la lista son las <b>vistas</b>. Las más comunes son <b>Mis tickets</b>, <b>Mis pendientes alcanzados</b>, <b>Sin asignar</b>, <b>Escalados</b>, <b>Todos los abiertos</b>, <b>Por verificar</b> y <b>Mis menciones</b>. Cada una muestra su contador; el administrador puede cambiarlas.</p>
+<p>La lista agrupa por día de última actualización y muestra, por ticket: título, número y grupo (con su punto de color), estado, cliente, propietario, prioridad y hora.</p>
+<h3>Avisos de SLA</h3>
+<p>Junto al título pueden aparecer <span class="chip sla-warn">SLA en riesgo</span> (queda poco tiempo para cumplir el compromiso) o <span class="chip sla-bad">SLA vencido</span> (ya se pasó). El símbolo ⚠ indica que el ticket contiene posibles datos personales.</p>
+<h3>Estados</h3>
+
+<div class="tbl"><table>
+<thead><tr><th>Estado</th><th>Qué significa</th></tr></thead><tbody>
+<tr><td><span class="chip new">Nuevo</span></td><td>El ticket se acaba de crear y nadie lo ha trabajado todavía.</td></tr>
+<tr><td><span class="chip open">Abierto</span></td><td>El equipo de soporte está trabajando en él.</td></tr>
+<tr><td><span class="chip pend">Pendiente (recordatorio)</span></td><td>En espera de algo (por ejemplo, información del cliente) hasta una fecha; ese día vuelve a la bandeja del agente.</td></tr>
+<tr><td><span class="chip pend">Pendiente de cierre</span></td><td>Se cerrará solo en la fecha indicada si nadie responde.</td></tr>
+<tr><td><span class="chip done">Resuelto</span></td><td>Se dio una solución; si respondes, el ticket se reactiva.</td></tr>
+<tr><td><span class="chip done">Cerrado</span></td><td>El caso terminó.</td></tr>
+<tr><td><span class="chip merged">Fusionado</span></td><td>Se unió con otro ticket del mismo caso; la conversación sigue en el otro.</td></tr>
+</tbody></table></div>
+<h3>Buscar</h3>
+
+<div class="tbl"><table><thead><tr><th>Escribe</th><th>Encuentra</th></tr></thead><tbody>
+<tr><td><code>recibos bonos</code></td><td>Tickets que contienen esas palabras.</td></tr>
+<tr><td><code>#20261001</code></td><td>El ticket con ese número.</td></tr>
+<tr><td><code>state:open</code> · <code>estado:open</code></td><td>Por estado (new, open, pending_reminder, pending_close, resolved, closed).</td></tr>
+<tr><td><code>owner:me</code> · <code>propietario:yo</code></td><td>Tickets asignados a ti.</td></tr>
+<tr><td><code>org:"ACME"</code> · <code>organizacion:"ACME"</code></td><td>Por organización del cliente.</td></tr>
+<tr><td><code>grupo:Nómina</code> · <code>group:Nómina</code></td><td>Por grupo.</td></tr>
+<tr><td><code>tag:calculo</code> · <code>etiqueta:calculo</code></td><td>Por etiqueta.</td></tr>
+</tbody></table></div>
+<p>Puedes combinarlos: <code>recibos org:"ACME" state:open</code>. Además de tickets, la búsqueda muestra artículos de la base de conocimiento, personas y organizaciones.</p>
+<h3>Cambios en varios tickets a la vez</h3>
+<ol class="steps">
+<li>Marca las casillas de los tickets (o la casilla del encabezado para seleccionar todos).</li>
+<li>En la barra «3 seleccionados» (con tu número de tickets) elige un <span class="ui">Estado…</span>, escribe en <span class="ui">Añadir etiqueta</span> o elige una <span class="ui">Macro…</span>.</li>
+<li>Pulsa <span class="btn">Aplicar</span>. Verás cuántos se actualizaron, por ejemplo «3 de 3 actualizados». Cada ticket se valida por separado según tus permisos.</li>
+</ol></section><section class="chapter" id="crear"><h2><span class="num">04</span>Registrar un ticket</h2><p class="lead">Usa esta pantalla para llamadas, correos que llegaron por otra vía o notas internas.</p>
+<figure><div class="frame"><img src="img/agent-new.jpg" alt="Nuevo ticket (agente): plantilla, cliente, grupo, prioridad, tipo y datos del caso." loading="lazy"></div><figcaption><b>Nuevo ticket</b> (agente): plantilla, cliente, grupo, prioridad, tipo y datos del caso.</figcaption></figure>
+<ol class="steps">
+<li>Pulsa el botón <span class="btn">+</span> (o la tecla <kbd>n</kbd>).</li>
+<li>Si hay <span class="ui">Plantilla</span>, elige una para precargar los datos.</li>
+<li>En <span class="ui">Buscar cliente (nombre, correo o teléfono)</span> escribe al menos 2 caracteres y elige al cliente. Es obligatorio.</li>
+<li>Escribe el <span class="ui">Título</span>, revisa <span class="ui">Grupo</span> y <span class="ui">Prioridad</span> y elige el <span class="ui">Tipo</span>: Llamada (predeterminado), Correo o Nota.</li>
+<li>Escribe el <span class="ui">Mensaje</span>, llena <b>Datos del caso</b> y agrega adjuntos si hacen falta.</li>
+<li>Pulsa <span class="btn">Crear ticket</span>.</li>
+</ol>
+<div class="callout "><b class="t">Adjuntos</b><p>Puedes adjuntar archivos de hasta <b>25 MB</b> cada uno. Todos pasan por un antivirus: mientras se analizan verás <span class="ui">Analizando…</span>, y solo se pueden descargar cuando están limpios. Un archivo con virus queda <span class="ui">En cuarentena</span>.</p></div></section><section class="chapter" id="trabajar"><h2><span class="num">05</span>Trabajar un ticket</h2><p class="lead">En el detalle del ticket ves la conversación, respondes y actualizas sus datos.</p>
+<figure><div class="frame"><img src="img/agent-zoom.jpg" alt="Detalle del ticket. Conversación y respuesta a la izquierda; estado, asignación, etiquetas, lista de verificación, macros y vínculos a la derecha." loading="lazy"></div><figcaption><b>Detalle del ticket.</b> Conversación y respuesta a la izquierda; estado, asignación, etiquetas, lista de verificación, macros y vínculos a la derecha.</figcaption></figure>
+<h3>Encabezado</h3>
+<p>Muestra número, título, estado, prioridad, cliente, organización, fecha y el compromiso «Primera respuesta antes de». Si otro agente tiene abierto el mismo ticket verás «También viendo: …» y, si está escribiendo, «… está escribiendo…».</p>
+<div class="callout warn"><b class="t">Remitente sin verificar</b><p>Si el correo llegó de una dirección que no corresponde a un cliente registrado, aparece «Remitente sin verificar». Busca y asocia el cliente correcto antes de responder.</p></div>
+<h3>Mensajes</h3>
+<p>Cada mensaje indica autor, canal (Correo, Llamada, Nota, Portal, Chat, WhatsApp, SMS) y, si aplica, <span class="chip internal">Nota interna (no visible para el cliente)</span>. En los correos verás el estado de entrega (Enviado, Entregado, Leído, Falló el envío…). Botones disponibles: <span class="ui">Responder</span> y <span class="ui">Responder a todos</span> (correos), <span class="ui">Reenviar</span>, <span class="ui">Citar</span> y <span class="ui">Dividir en ticket nuevo</span>. Si un mensaje contiene datos personales, usa <span class="ui">Redactar datos personales</span>.</p>
+<h3>Responder</h3>
+<ol class="steps">
+<li>Elige el <span class="ui">Tipo</span>: <b>Nota</b> (predeterminado, con la casilla «Nota interna» marcada), <b>Correo</b> (con Para y CC), <b>Llamada</b> (dirección y número) o WhatsApp/SMS si el cliente escribió por ese canal.</li>
+<li>Si se registra tiempo, captura <span class="ui">Tiempo (minutos)</span> y la <span class="ui">Actividad</span>.</li>
+<li>Escribe en <span class="ui">Mensaje</span>. Para insertar un texto predefinido escribe <code>::</code> seguido del atajo (por ejemplo <code>::saludo</code>) y un espacio.</li>
+<li>Opcional: <span class="ui">Insertar de la base de conocimiento</span> (como enlace o contenido) y <span class="ui">Mencionar agentes</span> para avisar a un compañero.</li>
+<li>Pulsa <span class="btn">Enviar</span>.</li>
+</ol>
+<div class="callout "><b class="t">Notas internas</b><p>Una nota con la casilla <b>Nota interna</b> marcada nunca la ve el cliente. Úsala para dejar contexto al equipo. Para contestarle al cliente, desmárcala o usa el tipo Correo.</p></div>
+<ul>
+<li>Tu borrador se guarda solo en tu navegador. Para compartirlo con un compañero usa <span class="ui">Guardar borrador compartido</span>; él lo recupera con <span class="ui">Cargar borrador compartido</span>.</li>
+<li>Si alguien actualiza el ticket mientras escribes, verás un aviso para revisar los cambios antes de enviar.</li>
+<li>WhatsApp admite respuestas hasta 24 horas después del último mensaje del cliente; SMS hasta 1600 caracteres. En ambos solo se envía texto.</li>
+</ul>
+<h3>Panel lateral</h3>
+<div class="tbl"><table><thead><tr><th>Bloque</th><th>Para qué sirve</th></tr></thead><tbody>
+<tr><td>Estado, Prioridad, Grupo, Propietario</td><td>Cambia los datos y pulsa <span class="btn">Guardar cambios</span>. En estados pendientes aparece «Pendiente hasta».</td></tr>
+<tr><td>Campos personalizados</td><td>Datos del caso, como el módulo de Inncentives.</td></tr>
+<tr><td>Etiquetas</td><td>Escribe en «Añadir etiqueta» y pulsa Enter; pulsa × para quitar una.</td></tr>
+<tr><td>Lista de verificación</td><td>Pasos pendientes del caso; márcalos al terminar o agrega nuevos con <span class="ui">Añadir</span>.</td></tr>
+<tr><td>Tiempo contabilizado</td><td>Total de minutos registrados en el ticket.</td></tr>
+<tr><td>Seguir / Dejar de seguir</td><td>Recibe avisos de los cambios del ticket.</td></tr>
+<tr><td>Macros</td><td>Aplican varias acciones de un clic (por ejemplo, responder y cerrar).</td></tr>
+<tr><td>Fusionar en…</td><td>Une este ticket con otro del mismo caso: escribe el ID del ticket destino y pulsa Aplicar.</td></tr>
+<tr><td>Tickets relacionados</td><td>Vincula tickets como relacionado (related), padre (parent) o hijo (child).</td></tr>
+<tr><td>Azure DevOps</td><td>Crea un work item o vincula uno existente para escalar a desarrollo.</td></tr>
+<tr><td>Inncentives</td><td>Consulta procesos con error y bitácora reciente del cliente en Inncentives.</td></tr>
+<tr><td>Asistente de IA</td><td>Si está habilitado: resumir, sugerir respuesta y clasificar. Nada se envía sin tu revisión.</td></tr>
+<tr><td>Historial</td><td>Todos los cambios del ticket, con quién y cuándo.</td></tr>
+</tbody></table></div></section><section class="chapter" id="chat"><h2><span class="num">06</span>Chat en vivo</h2><p class="lead">Atiende a los clientes que inician un chat desde el portal o desde Inncentives.</p>
+<figure><div class="frame"><img src="img/agent-chat.jpg" alt="Chat en vivo del agente: disponibilidad y cola de chats." loading="lazy"></div><figcaption><b>Chat en vivo</b> del agente: disponibilidad y cola de chats.</figcaption></figure>
+<ol class="steps">
+<li>Marca <span class="ui">Disponible para chat</span>. Tu disponibilidad se mantiene mientras tengas la aplicación abierta en cualquier página.</li>
+<li>En la lista <b>Chats</b> aparecen los que están <b>En espera</b>. Pulsa <span class="btn">Atender</span>.</li>
+<li>Conversa con el cliente; cada chat es también un ticket, así que puedes agregar notas, etiquetas o tiempo.</li>
+</ol>
+<p>Si cierras la aplicación, en unos 90 segundos dejas de aparecer como disponible.</p></section><section class="chapter" id="telefono"><h2><span class="num">07</span>Teléfono</h2><p class="lead">Encuentra al cliente que llama y registra la llamada.</p>
+<ol class="steps">
+<li>Abre <span class="path">Teléfono</span>. Escribe el número en <span class="ui">Buscar por número</span> y pulsa <span class="ui">Buscar tickets</span>.</li>
+<li>Verás los clientes con ese número y sus tickets abiertos. Abre el ticket si la llamada es sobre un caso existente.</li>
+<li>Si es un caso nuevo, pulsa <span class="ui">Registrar llamada</span> y completa el ticket nuevo (elige al cliente).</li>
+</ol>
+<p>Cuando hay telefonía conectada, una llamada entrante muestra un aviso «Llamada entrante de …» con acceso directo a la búsqueda. La lista <b>Llamadas recientes</b> se actualiza cada 30 segundos.</p></section><section class="chapter" id="kb"><h2><span class="num">08</span>Base de conocimiento</h2><p class="lead">Consulta artículos para responder más rápido o compártelos con el cliente.</p>
+<figure><div class="frame"><img src="img/agent-kb.jpg" alt="Base de conocimiento. Los editores ven además el botón Nueva respuesta y las insignias Borrador e Interna." loading="lazy"></div><figcaption><b>Base de conocimiento.</b> Los editores ven además el botón Nueva respuesta y las insignias Borrador e Interna.</figcaption></figure>
+<ul>
+<li>Filtra por categoría o busca con al menos 3 letras.</li>
+<li>Los artículos marcados <span class="chip pend">Interna</span> solo los ve el equipo de soporte.</li>
+<li>Desde la respuesta de un ticket, usa <span class="ui">Insertar de la base de conocimiento</span> para pegar el enlace o el contenido de un artículo.</li>
+</ul>
+<p>Para crear o editar artículos necesitas el permiso de edición de la base de conocimiento; el proceso está en el manual del administrador.</p></section><section class="chapter" id="analizar"><h2><span class="num">09</span>Reportes y tiempo</h2><p class="lead">Mide la operación del equipo y el consumo de horas por cliente.</p>
+<figure><div class="frame"><img src="img/agent-reports.jpg" alt="Reportes. Filtros, indicadores, gráfica diaria y tablas; exportable a CSV y XLSX." loading="lazy"></div><figcaption><b>Reportes.</b> Filtros, indicadores, gráfica diaria y tablas; exportable a CSV y XLSX.</figcaption></figure>
+<h3>Reportes</h3>
+<ul>
+<li>Filtra por <span class="ui">Desde</span>, <span class="ui">Hasta</span>, <span class="ui">Grupo</span> y <span class="ui">Organización</span>.</li>
+<li>Indicadores: tickets <b>Creados</b>, <b>Cerrados</b> (con reabiertos), <b>Primera respuesta (mediana)</b> y <b>Cumplimiento de SLA</b>.</li>
+<li>La gráfica <b>Tickets por día</b> compara creados y cerrados; pasa el cursor para ver cada día o usa <span class="ui">Ver como tabla</span>.</li>
+<li>Tablas: carga por agente y por grupo, módulos más reportados, categorías, tiempo de solución y tiempo por organización.</li>
+<li>Descarga los datos con <span class="ui">CSV</span> o <span class="ui">XLSX</span>.</li>
+</ul>
+<h3>Tiempo por organización</h3>
+<figure><div class="frame"><img src="img/agent-time.jpg" alt="Tiempo por organización. La barra muestra el consumo frente a los minutos incluidos en el plan; en rojo cuando se excede." loading="lazy"></div><figcaption><b>Tiempo por organización.</b> La barra muestra el consumo frente a los minutos incluidos en el plan; en rojo cuando se excede.</figcaption></figure>
+<p>Elige el <span class="ui">Mes</span>. Verás los totales del mes y, por organización, el tiempo registrado, el facturable y lo incluido en su plan de soporte (formato horas:minutos).</p></section><section class="chapter" id="clientes"><h2><span class="num">10</span>Organizaciones e invitaciones</h2><p class="lead">Da de alta a los usuarios de tus clientes.</p>
+<figure><div class="frame"><img src="img/admin-orgs.jpg" alt="Organizaciones. Invitar usuario, lista de organizaciones e importación por CSV." loading="lazy"></div><figcaption><b>Organizaciones.</b> Invitar usuario, lista de organizaciones e importación por CSV.</figcaption></figure>
+<h3>Invitar a un cliente</h3>
+<ol class="steps">
+<li>Abre <span class="path">Organizaciones</span>.</li>
+<li>En <b>Invitar usuario</b> escribe el <span class="ui">Correo electrónico</span> y el <span class="ui">Nombre</span>, deja el <span class="ui">Rol</span> en Cliente y elige la <span class="ui">Organización</span>.</li>
+<li>Pulsa <span class="btn">Enviar invitación</span>. El cliente recibe un correo para activar su cuenta.</li>
+</ol>
+<h3>Importar usuarios desde CSV</h3>
+<ol class="steps">
+<li>En <b>Importar desde CSV</b> elige el <span class="ui">Tipo</span> <b>Usuarios</b> y el archivo. Columnas: correo, nombre, organizacion y rol; separador coma o punto y coma.</li>
+<li>Pulsa <span class="ui">Validar (sin guardar)</span>. Si hay errores se listan por fila y campo; corrígelos en el archivo.</li>
+<li>Cuando la validación quede sin errores, pulsa <span class="btn">Importar</span>. Cada usuario recibe su invitación.</li>
+</ol></section><section class="chapter" id="cuenta"><h2><span class="num">11</span>Mi cuenta</h2><p class="lead">Seguridad, avisos por correo y ausencias.</p>
+<figure><div class="frame"><img src="img/agent-account.jpg" alt="Mi cuenta del agente, con la sección Notificaciones y ausencia." loading="lazy"></div><figcaption><b>Mi cuenta</b> del agente, con la sección Notificaciones y ausencia.</figcaption></figure>
+<h3>Notificaciones por correo</h3>
+<p>En <b>Notificaciones y ausencia</b> marca qué avisos quieres recibir por correo: ticket nuevo en mis grupos, ticket asignado a mí, respuesta del cliente, cambios en tickets que sigo, menciones, recordatorios pendientes, SLA en riesgo y SLA vencido. Pulsa <span class="btn">Guardar</span>.</p>
+<h3>Ausencia</h3>
+<p>Marca <span class="ui">Estoy fuera de la oficina</span>, indica <span class="ui">Hasta</span> qué fecha y el <span class="ui">ID del agente sustituto</span>, y pulsa <span class="btn">Guardar</span>.</p>
+<h3>Tokens de API</h3>
+<p>Si necesitas conectar otra herramienta, en <span class="path">Configuración</span> → <b>Tokens de API</b> crea un token con nombre, permisos y vigencia (1 a 365 días). Cópialo en ese momento: no se vuelve a mostrar. Usa <span class="ui">Eliminar</span> para revocarlo.</p>
+
+<h3>Cambiar tu contraseña</h3>
+<ol class="steps">
+<li>Abre <span class="path">Mi cuenta</span> en la parte de abajo del menú.</li>
+<li>En <b>Cambiar contraseña</b> escribe tu <span class="ui">Contraseña actual</span> y la <span class="ui">Nueva contraseña</span> (mínimo 12 caracteres; una frase fácil de recordar funciona bien).</li>
+<li>Pulsa <span class="btn">Cambiar contraseña</span>. Por seguridad se cierran tus otras sesiones abiertas.</li>
+</ol>
+<h3>Sesiones activas</h3>
+<p>La tabla <b>Sesiones activas</b> muestra desde qué navegador e IP has entrado. La fila marcada <span class="ui">Esta sesión</span> es la actual. Si ves una sesión que no reconoces, pulsa <span class="ui">Cerrar</span> en esa fila o <span class="ui">Cerrar las demás sesiones</span> y cambia tu contraseña.</p>
+<h3>Llaves de seguridad y passkeys</h3>
+<p>Puedes entrar con la huella, el rostro o una llave física en lugar del código de 6 dígitos. Escribe un nombre (por ejemplo «Laptop») y pulsa <span class="ui">Agregar llave</span>; tu navegador te guiará. Para quitar una llave, pulsa <span class="ui">Cerrar</span> junto a ella.</p>
+<h3>Códigos de recuperación</h3>
+<p>Si perdiste los códigos que guardaste al activar la verificación en dos pasos, pulsa <span class="ui">Generar nuevos códigos de recuperación</span>. Los anteriores dejan de servir. Cada código funciona una sola vez.</p>
+<div class="callout "><b class="t">Confirmar tu contraseña</b><p>Algunas acciones sensibles muestran <b>«Confirma tu contraseña para continuar»</b>. Escríbela y pulsa <span class="ui">Confirmar</span>; es una protección por si alguien más usa tu computadora.</p></div>
+</section>
+      <footer class="end">Soporte Inncentives · Neitek. Las pantallas de este manual usan datos de ejemplo; los nombres de vistas, grupos y campos pueden variar según la configuración de tu mesa de soporte.</footer>
+    </div>
+  </main>
+</div>
+</body>
+</html>
