@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manual técnico de la mesa de soporte</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the app's own shell — navy sidebar with the logo and the table of
+   contents, cream canvas, white cards, golden-yellow highlights. */
+:root {
+  --canvas: #fbfaf6; --surface: #ffffff; --line: #e7e4d8; --ink: #2a2a12; --muted: #6b6758;
+  --nav: #2d2e82; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold: #fbc52a; --gold-soft: #fffbeb; --gold-line: #fde68a; --gold-ink: #8a5d0a;
+  --orange: #ee7d11; --note: #fef3c7; --note-line: #f2d27a;
+  --ok-bg: #dcfce7; --ok-ink: #166534; --warn-bg: #fef3c7; --warn-ink: #78350f;
+  --new-bg: #e6e7f5; --new-ink: #25266d; --gray-bg: #e7e4d8; --gray-ink: #3d3a2c;
+  --red-bg: #fee2e2; --red-ink: #991b1b;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --canvas: #171610; --surface: #232118; --line: #3d3a2c; --ink: #f4f2ea; --muted: #a7a290;
+  --nav: #22236a; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold-soft: #2c2410; --gold-line: #5c3d06; --gold-ink: #fcd34d;
+  --note: #2f2712; --note-line: #5c3d06;
+  --ok-bg: #14321f; --ok-ink: #86efac; --warn-bg: #3a2a0c; --warn-ink: #fcd34d;
+  --new-bg: #25266d; --new-ink: #e6e7f5; --gray-bg: #3d3a2c; --gray-ink: #e7e4d8;
+  --red-bg: #3b1414; --red-ink: #fca5a5; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --canvas: #171610; --surface: #232118; --line: #3d3a2c; --ink: #f4f2ea; --muted: #a7a290;
+  --nav: #22236a; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold-soft: #2c2410; --gold-line: #5c3d06; --gold-ink: #fcd34d;
+  --note: #2f2712; --note-line: #5c3d06;
+  --ok-bg: #14321f; --ok-ink: #86efac; --warn-bg: #3a2a0c; --warn-ink: #fcd34d;
+  --new-bg: #25266d; --new-ink: #e6e7f5; --gray-bg: #3d3a2c; --gray-ink: #e7e4d8;
+  --red-bg: #3b1414; --red-ink: #fca5a5; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font); font-size: 15.5px; line-height: 1.6; }
+.shell { display: grid; grid-template-columns: 288px minmax(0, 1fr); min-height: 100vh; }
+
+/* Sidebar */
+.side { background: var(--nav); color: var(--nav-text); position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 20px 14px 28px max(14px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 6px; }
+.logo { background: #fff; border-radius: 8px; padding: 12px 14px; display: block; }
+.logo img { display: block; width: 100%; height: auto; }
+.side .area { font-size: 12.5px; padding: 6px 10px 0; color: var(--nav-text); }
+.side .manual-name { color: #fff; font-weight: 600; font-size: 15px; padding: 0 10px 8px; }
+.side h2 { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--nav-text); margin: 14px 10px 4px; font-weight: 600; }
+.side nav a { display: flex; gap: 10px; align-items: baseline; color: var(--nav-text); text-decoration: none; font-size: 14px;
+  padding: 7px 10px; border-radius: 6px; }
+.side nav a:hover, .side nav a:focus-visible { background: var(--nav-hover); color: #fff; outline: none; }
+.side nav a .n { font-size: 11.5px; color: #8f92c4; min-width: 1.6em; font-variant-numeric: tabular-nums; }
+.side .others { margin-top: auto; border-top: 1px solid var(--nav-hover); padding-top: 12px; display: grid; gap: 2px; }
+.side .others a { color: var(--nav-text); font-size: 13.5px; padding: 6px 10px; border-radius: 6px; text-decoration: none; }
+.side .others a:hover { background: var(--nav-hover); color: #fff; }
+.side .others a[aria-current="page"] { background: var(--nav-hover); color: var(--gold); box-shadow: inset 3px 0 0 var(--gold); }
+
+/* Main column */
+main { overflow-wrap: anywhere; padding-block: 40px 64px; padding-left: max(16px, min(5vw, 56px)); padding-right: max(16px, env(safe-area-inset-right, 0px), min(5vw, 56px)); }
+.wrap { max-width: 860px; }
+.cover { border-top: 8px solid var(--gold); background: linear-gradient(180deg, var(--gold-soft), var(--surface)); border-radius: 10px;
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 32px 32px 28px; margin-bottom: 36px; }
+.cover .eyebrow { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-ink); font-weight: 600; }
+.cover h1 { font-size: clamp(30px, 4.4vw, 42px); line-height: 1.12; margin: 8px 0 12px; letter-spacing: -0.02em; text-wrap: balance; }
+.cover h1 em { font-style: normal; color: var(--gold-ink); }
+.cover p { margin: 0; max-width: 62ch; color: var(--muted); font-size: 16.5px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 18px; font-size: 13px; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 600; }
+
+section.chapter { padding-top: 12px; margin-bottom: 44px; }
+.chapter > h2 { font-size: 25px; letter-spacing: -0.01em; margin: 0 0 6px; display: flex; gap: 12px; align-items: baseline; text-wrap: balance; }
+.chapter > h2 .num { color: var(--gold-ink); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chapter > .lead { color: var(--muted); margin: 0 0 18px; max-width: 66ch; }
+h3 { font-size: 18px; margin: 28px 0 8px; }
+h4 { font-size: 15px; margin: 18px 0 6px; }
+p, li { max-width: 68ch; }
+a { color: var(--gold-ink); }
+ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 12px 0 18px; display: grid; gap: 10px; }
+ol.steps > li { counter-increment: step; position: relative; padding-left: 42px; }
+ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 1px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--gold); color: #2a2a12; font-weight: 700; font-size: 13.5px; display: grid; place-items: center; }
+ul { padding-left: 1.2em; }
+ul li { margin: 4px 0; }
+
+/* UI vocabulary */
+.ui { font-weight: 600; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; font-size: .94em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.btn { font-weight: 600; background: var(--gold); color: #2a2a12; border-radius: 5px; padding: 1px 8px; font-size: .92em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.path { font-weight: 600; }
+.path::before { content: "▸ "; color: var(--gold-ink); }
+kbd { font-family: var(--mono); font-size: .85em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+code { font-family: var(--mono); font-size: .86em; background: var(--gray-bg); color: var(--gray-ink); border-radius: 4px; padding: 1px 5px; }
+.chip { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+.chip.new { background: var(--new-bg); color: var(--new-ink); }
+.chip.open { background: var(--warn-bg); color: var(--warn-ink); }
+.chip.pend { background: var(--gray-bg); color: var(--gray-ink); }
+.chip.done { background: var(--ok-bg); color: var(--ok-ink); }
+.chip.merged { background: var(--gray-bg); color: var(--muted); }
+.chip.sla-warn { background: #f59e0b; color: #000; border-radius: 4px; font-weight: 600; }
+.chip.sla-bad { background: #b91c1c; color: #fff; border-radius: 4px; font-weight: 600; }
+.chip.internal { background: var(--note); color: var(--warn-ink); border-radius: 4px; }
+
+/* Callouts */
+.callout { border: 1px solid var(--line); border-left: 4px solid var(--gold); background: var(--surface); border-radius: 8px; padding: 12px 16px; margin: 16px 0; max-width: 72ch; }
+.callout b.t { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-ink); margin-bottom: 2px; }
+.callout.warn { border-left-color: var(--orange); background: var(--gold-soft); }
+.callout.warn b.t { color: var(--orange); }
+.callout p { margin: 4px 0; }
+
+/* Figures */
+figure { margin: 18px 0 24px; }
+figure .frame { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px; box-shadow: 0 1px 2px rgba(42,42,18,.06); }
+figure img { display: block; width: 100%; height: auto; border-radius: 6px; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+figcaption b { color: var(--ink); }
+
+/* Tables */
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); margin: 14px 0 22px; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th { text-align: left; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600;
+  padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--canvas); }
+td { padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.yes { color: var(--ok-ink); font-weight: 600; } .no { color: var(--muted); }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0 20px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.tile h4 { margin: 0 0 4px; font-size: 15px; }
+.tile p { margin: 0; font-size: 14px; color: var(--muted); }
+footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 16px; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side, main { min-width: 0; }
+  .side { position: static; height: auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+  .side nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .logo { max-width: 260px; }
+  .cover { padding: 24px 20px; }
+}
+@media print {
+  .side { display: none; } .shell { display: block; } main { padding: 0; }
+  .chapter { break-before: page; } figure, .callout, .tbl { break-inside: avoid; }
+  body { font-size: 11pt; }
+}
+
+/* Diagrams */
+.dg-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.dg { display: block; width: 100%; min-width: 720px; height: auto; color: var(--ink); font-family: var(--font); }
+.dg .box { fill: var(--surface); stroke: var(--muted); stroke-width: 1.3; }
+.dg .soft { fill: var(--canvas); stroke: var(--line); stroke-width: 1.3; }
+.dg .key { fill: var(--gold-soft); stroke: var(--gold); stroke-width: 2; }
+.dg .navy { fill: var(--nav); stroke: none; }
+.dg .zone { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 5; }
+.dg text { fill: currentColor; font-size: 12.5px; }
+.dg .b { font-weight: 600; font-size: 13px; }
+.dg .m { fill: var(--muted); font-size: 11px; }
+.dg .w { fill: #ffffff; }
+.dg .zl { fill: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; font-weight: 600; }
+.dg .e { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.dg .d { stroke-dasharray: 5 4; }
+.dg .el { fill: var(--gold-ink); font-size: 11px; font-weight: 600; }
+.dg .ah { fill: currentColor; }
+.cols { columns: 2 280px; column-gap: 28px; }
+.cols li { break-inside: avoid; }
+@media print { .dg { min-width: 0; } .dg-wrap { overflow: visible; } }
+</style>
+
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="logo" href="#inicio"><img src="img/logo.png" alt="Inncentives"></a>
+    <div class="area">Uso interno · Neitek</div>
+    <div class="manual-name">Manual técnico</div>
+    <h2>Contenido</h2>
+    <nav aria-label="Contenido"><a href="#resumen"><span class="n">01</span><span>Resumen</span></a><a href="#topologia"><span class="n">02</span><span>Topología y red</span></a><a href="#contenedores"><span class="n">03</span><span>Contenedores</span></a><a href="#aplicacion"><span class="n">04</span><span>La aplicación</span></a><a href="#procesos"><span class="n">05</span><span>Procesos en segundo plano</span></a><a href="#datos"><span class="n">06</span><span>Datos</span></a><a href="#infraestructura"><span class="n">07</span><span>Infraestructura en OCI</span></a><a href="#despliegue"><span class="n">08</span><span>Integración y despliegue</span></a><a href="#respaldos"><span class="n">09</span><span>Respaldos y recuperación</span></a><a href="#seguridad"><span class="n">10</span><span>Seguridad</span></a><a href="#operacion"><span class="n">11</span><span>Operación</span></a><a href="#estado"><span class="n">12</span><span>Estado de producción</span></a></nav>
+    <div class="others"><h2 style="margin-top:0">Manuales</h2><a href="#inicio" aria-current="page">Manual técnico</a></div>
+  </aside>
+  <main id="inicio">
+    <div class="wrap">
+      <header class="cover">
+        <div class="eyebrow">Soporte Inncentives · Documentación interna</div>
+        <h1>Manual <em>técnico</em></h1>
+        <p>Arquitectura, infraestructura, despliegue, seguridad y operación de la mesa de soporte de Inncentives, para el equipo técnico de Neitek.</p>
+        <div class="meta"><span><b>Para:</b> equipo técnico de Neitek</span><span><b>Versión:</b> 1.0 · octubre 2026</span><span><b>Clasificación:</b> uso interno</span></div>
+      </header>
+      <section class="chapter" id="resumen"><h2><span class="num">01</span>Resumen</h2><p class="lead">Qué es la mesa de soporte, cómo está construida y dónde vive cada parte.</p>
+<p>La mesa de soporte de Inncentives es un help desk inspirado en Zammad para los clientes de Inncentives. Tiene dos áreas que se distinguen por el host: el <b>Portal de clientes</b> y el <b>área de agentes</b>; cada host tiene su propia cookie de sesión y las rutas de administración solo responden en el host de agentes.</p>
+<div class="tbl"><table><thead><tr><th>Área</th><th>Host en producción</th><th>Notas</th></tr></thead><tbody><tr><td>Portal de clientes</td><td><code>supportinncentives.neitek.net</code></td><td>También publica <code>/hooks/*</code> (proveedores) y <code>/widget.js</code>.</td></tr><tr><td>Agentes</td><td><code>agents-supportinncentives.neitek.net</code></td><td>Rutas de administración y tokens de API solo aquí.</td></tr></tbody></table></div>
+<div class="callout warn"><b class="t">Nombres de dominio en la documentación</b><p>La guía de despliegue y algunas integraciones todavía usan los nombres <code>soporte.inncentives.com</code> y <code>agentes.soporte.inncentives.com</code>. Producción usa los hosts de <code>neitek.net</code> de la tabla, configurados en <code>public_hosts</code> de Terraform.</p></div>
+<h3>Tecnología</h3>
+<div class="tbl"><table><thead><tr><th>Capa</th><th>Tecnología</th></tr></thead><tbody><tr><td>Lenguaje</td><td>TypeScript 5.9 sobre Node.js 22 (pnpm 10, monorepo)</td></tr><tr><td>API</td><td>NestJS 11 sobre Fastify 5, validación con Zod, Prisma 6</td></tr><tr><td>Datos</td><td>PostgreSQL 16 (imagen propia con pgBackRest y age), Redis 7.4</td></tr><tr><td>Procesos en segundo plano</td><td>BullMQ 5 (colas en Redis)</td></tr><tr><td>Tiempo real</td><td>Socket.IO 4.8 solo por WebSocket</td></tr><tr><td>Web</td><td>React 18, Vite 7, Tailwind 3, TanStack Query y Router, i18next (es/en)</td></tr><tr><td>Servidor web</td><td>nginx-unprivileged 1.30 (sustituyó a Caddy, ADR-0001)</td></tr><tr><td>Imágenes</td><td>Distroless Node 22 (nonroot) fijada por digest; multi-arquitectura amd64/arm64</td></tr><tr><td>Pruebas</td><td>Vitest, Playwright, OWASP ZAP (DAST), pruebas de respaldo y desplegador en shell</td></tr></tbody></table></div>
+<h3>Estructura del repositorio</h3>
+<div class="tbl"><table><thead><tr><th>Ruta</th><th>Contenido</th></tr></thead><tbody><tr><td><code>packages/shared</code></td><td>Esquemas Zod, permisos por rol, catálogo de condiciones de reglas, nombres de colas, tipos de la API.</td></tr><tr><td><code>apps/api</code></td><td>API NestJS; el mismo código genera el proceso <code>jobs</code>. Esquema y migraciones de Prisma.</td></tr><tr><td><code>apps/worker</code></td><td>Worker BullMQ del correo del sistema.</td></tr><tr><td><code>apps/web</code></td><td>SPA de agentes y portal.</td></tr><tr><td><code>docker/</code></td><td><code>app.Dockerfile</code> multi-target (api, migrator, worker, web), imagen de PostgreSQL, configuración de nginx.</td></tr><tr><td><code>deploy/</code></td><td>Compose de producción, scripts del servidor (desplegador, respaldos, secretos, métricas) y unidades systemd.</td></tr><tr><td><code>infra/</code></td><td>Terraform de OCI, cloud-init y <code>bootstrap-secrets.sh</code>.</td></tr><tr><td><code>docs/</code></td><td>Guía de despliegue, ADRs, seguridad, integraciones, runbooks y manuales.</td></tr></tbody></table></div></section><section class="chapter" id="topologia"><h2><span class="num">02</span>Topología y red</h2><p class="lead">Cómo llega una petición desde el navegador hasta el contenedor que la atiende.</p>
+<figure><div class="dg-wrap"><svg class="dg" viewBox="0 0 1040 560" role="img" aria-label="Los usuarios llegan por HTTPS a Cloudflare; Cloudflare entrega las peticiones por un túnel que la VM abre hacia afuera; la VM vive en una subred privada sin IP pública y solo se administra por OCI Bastion."><defs><marker id="a-topo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="box" x="16" y="120" width="232" height="64" rx="7"/><text class="b" x="132.0" y="142" text-anchor="middle">Clientes (portal)</text><text class="m" x="132.0" y="159" text-anchor="middle">supportinncentives.neitek.net</text><rect class="box" x="16" y="228" width="232" height="64" rx="7"/><text class="b" x="132.0" y="250" text-anchor="middle">Agentes</text><text class="m" x="132.0" y="267" text-anchor="middle">agents-supportinncentives.neitek.net</text><rect class="box" x="16" y="400" width="232" height="64" rx="7"/><text class="b" x="132.0" y="422" text-anchor="middle">Operadores</text><text class="m" x="132.0" y="439" text-anchor="middle">llave SSH + sesión de Bastion</text><rect class="soft" x="300" y="20" width="200" height="52" rx="7"/><text class="b" x="400.0" y="42" text-anchor="middle">DNS neitek.net</text><text class="m" x="400.0" y="59" text-anchor="middle">DigitalOcean (registrar Namecheap)</text><rect class="key" x="300" y="120" width="200" height="172" rx="7"/><text class="b" x="400.0" y="142" text-anchor="middle">Cloudflare</text><text class="m" x="400.0" y="159" text-anchor="middle">Custom hostnames (for SaaS)</text><text class="m" x="400.0" y="174" text-anchor="middle">neiteksupport.com → origen</text><text class="m" x="400.0" y="189" text-anchor="middle">TLS · WAF · HSTS</text><text class="m" x="400.0" y="204" text-anchor="middle">Túnel mesa-prod</text><polyline class="e d" points="400,72 400,120" marker-end="url(#a-topo)"/><text class="el" x="408" y="102" text-anchor="start">CNAME</text><polyline class="e" points="248,152 300,168" marker-end="url(#a-topo)"/><text class="el" x="274" y="150" text-anchor="middle">HTTPS</text><polyline class="e" points="248,260 300,246" marker-end="url(#a-topo)"/><text class="el" x="274" y="266" text-anchor="middle">HTTPS</text><rect class="zone" x="540" y="20" width="484" height="520" rx="10"/><text class="zl" x="552" y="38">OCI · mx-queretaro-1 · mesa-soporte-prod</text><rect class="zone" x="560" y="64" width="296" height="340" rx="10"/><text class="zl" x="572" y="82">Subred privada 10.40.1.0/24</text><rect class="soft" x="576" y="96" width="264" height="296" rx="8"/><text class="m" x="708" y="116" text-anchor="middle">VM A1 Flex · 2 OCPU · 12 GB · Ubuntu 24.04</text><rect class="box" x="596" y="128" width="224" height="38" rx="7"/><text class="b" x="708.0" y="151.5" text-anchor="middle">cloudflared</text><rect class="box" x="596" y="178" width="224" height="38" rx="7"/><text class="b" x="708.0" y="201.5" text-anchor="middle">web · nginx :8080</text><rect class="box" x="596" y="228" width="224" height="38" rx="7"/><text class="b" x="708.0" y="251.5" text-anchor="middle">api :3000</text><rect class="box" x="596" y="278" width="224" height="38" rx="7"/><text class="b" x="708.0" y="301.5" text-anchor="middle">jobs · worker</text><rect class="box" x="596" y="328" width="224" height="50" rx="7"/><text class="b" x="708.0" y="350" text-anchor="middle">postgres · redis · clamav</text><text class="m" x="708.0" y="367" text-anchor="middle">/srv/mesa (volumen 100 GB)</text><polyline class="e" points="708,166 708,178" marker-end="url(#a-topo)"/><polyline class="e" points="708,216 708,228" marker-end="url(#a-topo)"/><polyline class="e" points="708,266 708,278" marker-end="url(#a-topo)"/><polyline class="e" points="500,200 548,200 548,147 596,147" marker-end="url(#a-topo)"/><text class="el" x="400" y="312" text-anchor="middle">peticiones por el túnel →</text><text class="m" x="400" y="327" text-anchor="middle">(la VM abre la conexión, salida 7844)</text><rect class="box" x="574" y="440" width="160" height="64" rx="7"/><text class="b" x="654.0" y="462" text-anchor="middle">OCI Bastion</text><text class="m" x="654.0" y="479" text-anchor="middle">sesión ≤ 3 h · CIDR permitido</text><polyline class="e" points="248,432 574,472" marker-end="url(#a-topo)"/><text class="el" x="410" y="440" text-anchor="middle">SSH (port forwarding)</text><polyline class="e" points="654,440 654,392" marker-end="url(#a-topo)"/><text class="el" x="662" y="420" text-anchor="start">:22</text><rect class="box" x="874" y="92" width="140" height="96" rx="7"/><text class="b" x="944.0" y="114" text-anchor="middle">Object Storage</text><text class="m" x="944.0" y="131" text-anchor="middle">adjuntos</text><text class="m" x="944.0" y="146" text-anchor="middle">respaldos-pitr</text><text class="m" x="944.0" y="161" text-anchor="middle">respaldos-inmutables</text><rect class="box" x="874" y="206" width="140" height="56" rx="7"/><text class="b" x="944.0" y="228" text-anchor="middle">Vault + KMS</text><text class="m" x="944.0" y="245" text-anchor="middle">secretos · llave HSM</text><rect class="soft" x="874" y="290" width="140" height="96" rx="7"/><text class="b" x="944.0" y="312" text-anchor="middle">Internet (NAT)</text><text class="m" x="944.0" y="329" text-anchor="middle">Microsoft 365</text><text class="m" x="944.0" y="344" text-anchor="middle">GitHub · GHCR</text><text class="m" x="944.0" y="359" text-anchor="middle">Twilio · Meta · Teams</text><polyline class="e" points="840,140 874,140" marker-end="url(#a-topo)"/><text class="el" x="857" y="133" text-anchor="middle">SGW</text><polyline class="e" points="840,234 874,234" marker-end="url(#a-topo)"/><text class="el" x="857" y="227" text-anchor="middle">SGW</text><polyline class="e" points="840,338 874,338" marker-end="url(#a-topo)"/><text class="el" x="857" y="331" text-anchor="middle">NAT</text></svg></div><figcaption><b>Topología.</b> No hay puertos abiertos hacia la VM: el túnel lo inicia <code>cloudflared</code> desde adentro. Object Storage y Vault se alcanzan por el Service Gateway; el resto de la salida (Microsoft 365, GitHub, proveedores) por NAT.</figcaption></figure>
+<h3>Borde: Cloudflare</h3>
+<ul>
+<li><b>DNS.</b> La zona <code>neitek.net</code> sigue en DigitalOcean (registrar Namecheap). Los dos hosts públicos son CNAME hacia Cloudflare for SaaS, configurado sobre el dominio técnico <code>neiteksupport.com</code> con origen de respaldo <code>origen.neiteksupport.com</code>. Los registros TXT de validación también viven en DigitalOcean.</li>
+<li><b>Túnel</b> <code>mesa-prod</code>: entrega ambos hosts a <code>http://web:8080</code>. TLS termina en Cloudflare; dentro del túnel el tráfico llega en HTTP a nginx.</li>
+<li><b>IP del cliente.</b> La API solo confía en <code>CF-Connecting-IP</code> cuando la petición viene de nginx (<code>172.30.15.10</code>).</li>
+<li><b>Controles previstos</b> (guía de despliegue §8): reglas administradas del WAF, Bot Fight Mode en el portal, regla <i>Skip</i> para <code>/hooks/</code>, límite de 20 peticiones por minuto a <code>/api/v1/auth/*</code>, Always HTTPS, TLS mínimo 1.2 y HSTS, y Cloudflare Access para el host de agentes (grupos de Entra con MFA, <i>Bypass</i> en <code>/hooks/*</code>).</li>
+</ul>
+<h3>Red en OCI</h3>
+<div class="tbl"><table><thead><tr><th>Elemento</th><th>Configuración</th></tr></thead><tbody><tr><td>VCN</td><td><code>10.40.0.0/16</code>; subred privada <code>10.40.1.0/24</code> sin IP pública ni entrada desde internet.</td></tr><tr><td>Salida</td><td>NAT Gateway para internet; Service Gateway para los servicios de Oracle (Object Storage, Vault).</td></tr><tr><td>Security list</td><td>Se reemplaza la predeterminada por <code>mesa-prod-default-deny</code>. Su única regla es la salida TCP 22 hacia la subred, necesaria para que el endpoint de Bastion alcance la VM.</td></tr><tr><td>NSG <code>mesa-prod-app-nsg</code></td><td>Entrada: solo TCP 22 desde la subred (Bastion). Salida: 443, 80 (apt), 7844 TCP/UDP (túnel), 587, 993, 53/udp, 123/udp y servicios de Oracle.</td></tr><tr><td>Bastion</td><td><code>mesa-prod-bastion</code>, lista blanca de CIDR (nunca <code>0.0.0.0/0</code>), sesiones de hasta 3 h.</td></tr></tbody></table></div>
+<div class="callout "><b class="t">Acceso de operadores</b><p>Se entra con una sesión de <b>port forwarding</b> de Bastion hacia el puerto 22 de la VM (por ejemplo <code>ssh -N -L 2222:&lt;ip&gt;:22 &lt;sesión&gt;@host.bastion.mx-queretaro-1.oci.oraclecloud.com</code>) y luego <code>ssh -p 2222 ubuntu@localhost</code>. Las llaves públicas autorizadas se instalan desde <code>admin_ssh_public_keys</code> de Terraform.</p></div></section><section class="chapter" id="contenedores"><h2><span class="num">03</span>Contenedores</h2><p class="lead">La aplicación corre como una pila de Docker Compose, proyecto <code>mesa</code>.</p>
+<figure><div class="dg-wrap"><svg class="dg" viewBox="0 0 1010 470" role="img" aria-label="cloudflared entrega a nginx y nginx a la API; la API usa PostgreSQL y Redis; jobs y worker consumen las colas de Redis; jobs envía archivos a ClamAV; los adjuntos van a Object Storage y los mensajes salen a Microsoft 365 y proveedores."><defs><marker id="a-cont" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text class="m" x="24" y="26">Redes Docker: edge (cloudflared↔web) · app (web↔api) · data (datos) · egress (única con salida a internet)</text><rect class="box" x="24" y="50" width="150" height="64" rx="7"/><text class="b" x="99.0" y="72" text-anchor="middle">cloudflared</text><text class="m" x="99.0" y="89" text-anchor="middle">túnel saliente</text><rect class="box" x="214" y="50" width="170" height="64" rx="7"/><text class="b" x="299.0" y="72" text-anchor="middle">web · nginx</text><text class="m" x="299.0" y="89" text-anchor="middle">SPA + proxy :8080</text><rect class="key" x="424" y="50" width="180" height="64" rx="7"/><text class="b" x="514.0" y="72" text-anchor="middle">api · NestJS</text><text class="m" x="514.0" y="89" text-anchor="middle">/api/v1 · /hooks · /socket.io</text><rect class="box" x="780" y="50" width="190" height="64" rx="7"/><text class="b" x="875.0" y="72" text-anchor="middle">jobs</text><text class="m" x="875.0" y="89" text-anchor="middle">misma imagen que la API</text><rect class="box" x="640" y="160" width="330" height="36" rx="7"/><text class="b" x="805.0" y="182.5" text-anchor="middle">Redis 7.4 · sesiones · colas BullMQ · eventos</text><rect class="box" x="424" y="250" width="180" height="64" rx="7"/><text class="b" x="514.0" y="272" text-anchor="middle">PostgreSQL 16</text><text class="m" x="514.0" y="289" text-anchor="middle">roles app_rw / app_migrator</text><rect class="soft" x="214" y="250" width="140" height="64" rx="7"/><text class="b" x="284.0" y="272" text-anchor="middle">migrator</text><text class="m" x="284.0" y="289" text-anchor="middle">en cada despliegue</text><rect class="box" x="780" y="250" width="190" height="64" rx="7"/><text class="b" x="875.0" y="272" text-anchor="middle">worker</text><text class="m" x="875.0" y="289" text-anchor="middle">correo del sistema</text><rect class="box" x="780" y="340" width="190" height="54" rx="7"/><text class="b" x="875.0" y="362" text-anchor="middle">clamav</text><text class="m" x="875.0" y="379" text-anchor="middle">INSTREAM :3310</text><rect class="soft" x="214" y="410" width="230" height="46" rx="7"/><text class="b" x="329.0" y="437.5" text-anchor="middle">Object Storage · adjuntos</text><rect class="soft" x="560" y="410" width="300" height="46" rx="7"/><text class="b" x="710.0" y="437.5" text-anchor="middle">Microsoft 365 · Twilio · Meta · Teams</text><polyline class="e" points="174,82 214,82" marker-end="url(#a-cont)"/><polyline class="e" points="384,82 424,82" marker-end="url(#a-cont)"/><polyline class="e" points="500,114 500,250" marker-end="url(#a-cont)"/><text class="el" x="508" y="190" text-anchor="start">SQL (TLS)</text><polyline class="e" points="590,114 680,160" marker-end="url(#a-cont)"/><polyline class="e" points="860,114 860,160" marker-end="url(#a-cont)"/><text class="el" x="868" y="142" text-anchor="start">consume</text><polyline class="e" points="875,196 875,250" marker-end="url(#a-cont)"/><text class="el" x="883" y="228" text-anchor="start">cola mail</text><polyline class="e" points="970,82 992,82 992,367 970,367" marker-end="url(#a-cont)"/><text class="el" x="986" y="220" text-anchor="end">escaneo</text><polyline class="e" points="354,282 424,282" marker-end="url(#a-cont)"/><text class="el" x="389" y="274" text-anchor="middle">migra</text><polyline class="e" points="436,114 330,410" marker-end="url(#a-cont)"/><text class="el" x="362" y="372" text-anchor="end">URLs firmadas</text><polyline class="e" points="780,290 720,290 720,410" marker-end="url(#a-cont)"/><text class="el" x="728" y="380" text-anchor="start">envío</text></svg></div><figcaption><b>Contenedores.</b> Una misma imagen corre dos procesos: <code>api</code> (HTTP) y <code>jobs</code> (colas y tareas periódicas); ambos leen y escriben en PostgreSQL. Redis es el punto de encuentro: sesiones, colas BullMQ y el canal de eventos en tiempo real.</figcaption></figure>
+<div class="tbl"><table><thead><tr><th>Servicio</th><th>Imagen</th><th>Función</th><th>Límites</th></tr></thead><tbody><tr><td>cloudflared</td><td><code>cloudflare/cloudflared:2025.10.0</code></td><td>Túnel saliente; token desde archivo.</td><td>256 MB</td></tr><tr><td>web</td><td>mesa-web (nginx)</td><td>Sirve la SPA y hace proxy de <code>/api</code>, <code>/hooks</code> y <code>/socket.io</code>.</td><td>256 MB</td></tr><tr><td>api</td><td>mesa-api</td><td>API HTTP en :3000; healthcheck a <code>/health</code>.</td><td>1 GB</td></tr><tr><td>jobs</td><td>mesa-api (<code>dist/jobs-main.js</code>)</td><td>Colas y tareas periódicas, sin HTTP.</td><td>1 GB</td></tr><tr><td>worker</td><td>mesa-worker</td><td>Correo del sistema por SMTP (Office 365) o Graph.</td><td>512 MB</td></tr><tr><td>migrator</td><td>mesa-migrator</td><td><code>prisma migrate deploy</code>; perfil <code>migrate</code>, solo lo invoca el desplegador.</td><td>—</td></tr><tr><td>postgres</td><td>mesa-postgres</td><td>PostgreSQL 16 con pgBackRest; datos en <code>/srv/mesa/pgdata</code>.</td><td>3 GB</td></tr><tr><td>redis</td><td><code>redis:7.4-alpine</code></td><td>Sesiones, colas, limitadores, pub/sub; AOF; <code>maxmemory 384mb noeviction</code>.</td><td>512 MB</td></tr><tr><td>clamav</td><td><code>clamav/clamav-debian:1.4</code></td><td>Antivirus INSTREAM en :3310; perfil <code>default</code>.</td><td>3 GB</td></tr></tbody></table></div>
+<h3>Redes Docker</h3>
+<div class="tbl"><table><thead><tr><th>Red</th><th>Subred</th><th>Uso</th></tr></thead><tbody><tr><td>edge</td><td>172.30.10.0/24 (interna)</td><td>cloudflared ↔ web</td></tr><tr><td>app</td><td>172.30.15.0/24 (interna)</td><td>web ↔ api; nginx tiene la IP fija 172.30.15.10</td></tr><tr><td>data</td><td>172.30.20.0/24 (interna)</td><td>Servicios de datos</td></tr><tr><td>egress</td><td>172.30.30.0/24</td><td>Única red con salida: Vault, Object Storage, Microsoft 365, Cloudflare, firmas de ClamAV</td></tr></tbody></table></div>
+<h3>Endurecimiento común</h3>
+<ul>
+<li>Sistema de archivos de solo lectura, <code>no-new-privileges</code>, <code>cap_drop: ALL</code>, usuarios no root y límites de memoria y procesos.</li>
+<li>Logs JSON rotados (20 MB × 5).</li>
+<li>Secretos como archivos: el tmpfs del host <code>/run/mesa/secrets</code> se monta en cada contenedor como <code>/run/secrets</code>. En producción la aplicación rechaza secretos por variable de entorno.</li>
+<li>Imágenes propias fijadas por digest en <code>/opt/mesa/images.env</code>; las de terceros (cloudflared, redis, clamav) por tag.</li>
+</ul></section><section class="chapter" id="aplicacion"><h2><span class="num">04</span>La aplicación</h2><p class="lead">Cómo está organizada la API y qué mecanismos protegen cada petición.</p>
+<h3>Arranque</h3>
+<p>Fastify con límite de cuerpo de 1 MB, <code>trustProxy</code> y helmet. Prefijo global <code>/api/v1</code>, salvo <code>/health</code>, <code>/ready</code> y los webhooks de proveedores (<code>/hooks/cti</code>, <code>/hooks/azure-devops</code>, <code>/hooks/twilio/*</code>, <code>/hooks/whatsapp</code>). Respuestas con <code>Cache-Control: no-store</code>. La especificación OpenAPI está en <code>/api/v1/openapi.json</code> (requiere sesión de agente).</p>
+<h3>Módulos de la API</h3>
+<ul class="cols">
+<li><b>auth</b>: login, MFA TOTP, WebAuthn, SSO OIDC.</li>
+<li><b>policy</b>: guardia global de autorización.</li>
+<li><b>security</b>: contraseñas, sesiones, tokens, cifrado de campos, rate limit.</li>
+<li><b>tickets</b>: tickets, artículos, macros, numeración.</li>
+<li><b>attachments</b> y <b>storage</b>: adjuntos en OCI u S3.</li>
+<li><b>automation</b>, <b>rules</b>, <b>sla</b>: triggers, SLA, Core Workflows.</li>
+<li><b>overviews</b> y <b>search</b>: vistas y búsqueda.</li>
+<li><b>channels</b>: correo, teléfono, WhatsApp/SMS, Twilio.</li>
+<li><b>chat</b>: chat en vivo.</li>
+<li><b>kb</b>: base de conocimiento bilingüe.</li>
+<li><b>notifications</b> y <b>mail</b>: avisos in-app y correo.</li>
+<li><b>realtime</b> y <b>events</b>: Socket.IO y bus de eventos.</li>
+<li><b>reports</b>: métricas y exportación.</li>
+<li><b>integrations</b>: Inncentives, Azure DevOps, Teams.</li>
+<li><b>ai</b>: asistente para agentes.</li>
+<li><b>privacy</b>: ARCO, retención, datos sensibles.</li>
+<li><b>audit</b>: bitácora encadenada.</li>
+<li><b>admin</b> y <b>config-admin</b>: usuarios, organizaciones, configuración, tokens, ver como cliente.</li>
+<li><b>jobs</b> y <b>queue</b>: procesos en segundo plano.</li>
+<li><b>health</b>, <b>settings</b>, <b>openapi</b>, <b>common</b>.</li>
+</ul>
+<h3>Sesiones y autenticación</h3>
+<div class="tbl"><table><thead><tr><th>Mecanismo</th><th>Detalle</th></tr></thead><tbody><tr><td>Cookie</td><td><code>__Host-sid</code> de 256 bits, Secure, HttpOnly, SameSite=Lax, una por host. Redis guarda solo el SHA-256.</td></tr><tr><td>Expiración</td><td>30 min de inactividad, 12 h absoluta; el identificador rota al completar MFA y al cambiar la contraseña.</td></tr><tr><td>CSRF</td><td>Origin/Referer exacto + <code>Sec-Fetch-Site</code>, y token <code>X-CSRF-Token</code> por sesión.</td></tr><tr><td>Contraseñas</td><td>Argon2id (19 MiB, t=2), mínimo 12 caracteres, verificación de filtraciones (HIBP, k-anonymity).</td></tr><tr><td>MFA</td><td>Obligatorio para ADMIN y AGENT. TOTP con anti-replay y semilla cifrada; WebAuthn/passkeys; códigos de recuperación.</td></tr><tr><td>SSO OIDC</td><td>Code + PKCE; solo identidades vinculadas por el propio usuario; Entra ID para agentes.</td></tr><tr><td>Reautenticación</td><td>Acciones sensibles piden contraseña de nuevo (<code>@RequireReauth</code>).</td></tr><tr><td>Tokens de API</td><td>Personales, solo personal y host de agentes; se guarda el hash; vigencia ≤ 365 días.</td></tr></tbody></table></div>
+<h3>Autorización</h3>
+<p>Denegar por defecto: cada ruta declara <code>@Public()</code> o <code>@RequirePermissions()</code>. Los permisos salen del rol (ADMIN, AGENT, CUSTOMER) más roles personalizados. El alcance por objeto lo da el acceso a grupos del agente o la organización del cliente; lo que queda fuera de alcance responde 404.</p>
+<h3>Otros mecanismos</h3>
+<ul>
+<li><b>Límites de frecuencia</b> en Redis: por ejemplo 5 intentos de login por cuenta cada 15 min, 30 por IP, y límites de subida, descarga y IA.</li>
+<li><b>Bitácora</b>: cada registro guarda el hash del anterior (SHA-256); un trigger de la base impide modificar o borrar, y el rol de la aplicación no tiene esos permisos.</li>
+<li><b>Tiempo real</b>: Socket.IO autenticado con la misma cookie; los eventos son mínimos (<code>{type, ticketId}</code>) y viajan por el canal Redis <code>mesa:events</code>.</li>
+<li><b>Búsqueda</b>: texto completo de PostgreSQL (columna generada con índice GIN, español, inglés y sin acentos).</li>
+<li><b>Reglas como datos</b>: condiciones JSON validadas contra un catálogo cerrado (máx. 60 nodos, 4 niveles); control de bucles en triggers.</li>
+<li><b>Adjuntos</b>: lista blanca de tipos con verificación de bytes reales, 25 MB, escaneo con ClamAV antes de permitir descarga, URL firmada de 60 s, vistas previas recodificadas sin EXIF.</li>
+<li><b>Datos sensibles</b>: detector de RFC, CURP, NSS, CLABE, tarjetas y sueldos en texto y archivos; aviso al cliente y redacción por el agente.</li>
+</ul>
+<h3>Canales e integraciones</h3>
+<div class="tbl"><table><thead><tr><th>Integración</th><th>Cómo funciona</th></tr></thead><tbody><tr><td>Correo entrante</td><td>Microsoft Graph o IMAP cada minuto. Solo se confía en <code>Authentication-Results</code> del servidor configurado; sin <i>pass</i> el ticket va a «Por verificar». Hilos por cabeceras y por <code>[Ticket#…]</code>.</td></tr><tr><td>Correo saliente</td><td>Respuestas de tickets: cola <code>outbound</code> en <code>jobs</code>. Correo del sistema: cola <code>mail</code> en <code>worker</code> (SMTP STARTTLS u Graph).</td></tr><tr><td>Teléfono, WhatsApp, SMS</td><td>Webhooks firmados (Twilio, Meta, CTI con HMAC y anti-replay); deduplicación por id externo.</td></tr><tr><td>Chat en vivo</td><td>Cada chat es un ticket del canal chat; latido de disponibilidad de 90 s; cierre por inactividad.</td></tr><tr><td>Inncentives</td><td>Barra lateral (modo off/mock/http, caché 60 s) y widget <code>/widget.js</code> con JWT de un solo uso.</td></tr><tr><td>Azure DevOps, Teams, webhooks</td><td>Work items sincronizados cada 15 min; avisos a Teams; webhooks con protección SSRF y registro de entregas.</td></tr><tr><td>IA</td><td>Desactivada por defecto en dos niveles; redacción previa de datos; nunca envía adjuntos; solo sugiere.</td></tr></tbody></table></div></section><section class="chapter" id="procesos"><h2><span class="num">05</span>Procesos en segundo plano</h2><p class="lead">Lo que no ocurre dentro de una petición HTTP corre en <code>jobs</code> o en <code>worker</code>.</p>
+<div class="tbl"><table><thead><tr><th>Cola</th><th>Proceso</th><th>Qué hace</th></tr></thead><tbody><tr><td><code>outbound</code></td><td>jobs</td><td>Envía cada respuesta por correo, WhatsApp o SMS.</td></tr><tr><td><code>webhooks</code></td><td>jobs</td><td>Webhooks de triggers y avisos a Teams (5 intentos).</td></tr><tr><td><code>scan</code></td><td>jobs</td><td>Antivirus y datos sensibles de adjuntos nuevos.</td></tr><tr><td><code>maintenance</code></td><td>jobs</td><td>Tareas periódicas (tabla siguiente).</td></tr><tr><td><code>mail</code></td><td>worker</td><td>Invitaciones, restablecimiento de contraseña y notificaciones.</td></tr></tbody></table></div>
+<div class="tbl"><table><thead><tr><th>Tarea periódica</th><th>Frecuencia</th></tr></thead><tbody><tr><td>Correo entrante, SLA, pendientes, planificadores, privacidad, cierre de chats inactivos</td><td>cada minuto</td></tr><tr><td>Sincronización con Azure DevOps</td><td>cada 15 min</td></tr><tr><td>Limpieza (adjuntos sin usar, etc.)</td><td>cada hora</td></tr><tr><td>Retención de datos</td><td>cada 6 h</td></tr></tbody></table></div>
+<p>Los trabajos tienen 8 intentos con espera exponencial (desde 30 s); los completados se borran a las 24 h y los fallidos a los 7 días.</p></section><section class="chapter" id="datos"><h2><span class="num">06</span>Datos</h2><p class="lead">PostgreSQL es la fuente de verdad; Redis guarda estado efímero y colas.</p>
+<div class="tbl"><table><thead><tr><th>Dominio</th><th>Modelos principales</th></tr></thead><tbody><tr><td>Identidad y acceso</td><td>Organization, User, Invitation, CustomRole, UserIdentity (SSO), WebAuthnCredential, ApiToken, RecoveryCode</td></tr><tr><td>Soporte</td><td>Group, GroupAccess, TicketPriority, SupportPlan, Signature, BusinessCalendar, Sla, SlaTarget</td></tr><tr><td>Tickets</td><td>Ticket, Article, Attachment, TicketTag, TicketLink, TicketHistory, Mention, Subscription, SharedDraft, ChecklistItem, TimeEntry</td></tr><tr><td>Reglas y productividad</td><td>Trigger, Scheduler, Overview, CoreWorkflow, Macro, TextModule, TicketTemplate, ObjectAttribute</td></tr><tr><td>Canales</td><td>EmailChannel, PostmasterFilter, InboundMessage, CallLog, MessagingChannel, ChatSession</td></tr><tr><td>Privacidad y sistema</td><td>AuditLog, Notification, DataPrivacyTask, RetentionPolicy, AppSetting</td></tr><tr><td>Integraciones</td><td>Webhook, WebhookDelivery, DevOpsLink, TeamsChannel</td></tr><tr><td>Base de conocimiento</td><td>KbCategory, KbAnswer, KbTranslation, KbTranslationVersion</td></tr></tbody></table></div>
+<h3>Roles de base de datos</h3>
+<ul>
+<li><code>app_migrator</code>: dueño del esquema; solo lo usa el contenedor <code>migrator</code>.</li>
+<li><code>app_rw</code>: la aplicación; solo SELECT, INSERT, UPDATE y DELETE, máximo 40 conexiones.</li>
+<li>Conexiones solo por TLS (<code>hostssl</code>) con <code>scram-sha-256</code>.</li>
+</ul>
+<h3>Migraciones</h3>
+<p>Prisma Migrate, aplicadas por el desplegador antes de levantar la nueva versión. Política expand/contract: una reversión de imágenes no deshace el esquema, así que cada migración debe ser compatible con la versión anterior (ADR-0008).</p>
+<h3>Redis</h3>
+<p>Sesiones (solo hashes), límites de frecuencia, valores de un solo uso (TOTP, OIDC, WebAuthn, CTI), colas BullMQ, pub/sub de eventos y presencia. Persistencia AOF cada segundo.</p></section><section class="chapter" id="infraestructura"><h2><span class="num">07</span>Infraestructura en OCI</h2><p class="lead">Todo se crea con Terraform (<code>infra/terraform</code>, proveedor oracle/oci 9.x).</p>
+<div class="tbl"><table><thead><tr><th>Recurso</th><th>Configuración</th></tr></thead><tbody><tr><td>Región y compartimento</td><td><code>mx-queretaro-1</code> (la validación solo admite regiones de México); compartimento <code>mesa-soporte-prod</code>.</td></tr><tr><td>Instancia</td><td><code>mesa-prod-app</code>: VM.Standard.A1.Flex, 2 OCPU, 12 GB, Ubuntu 24.04 aarch64, solo IMDSv2, red paravirtualizada.</td></tr><tr><td>Discos</td><td>Arranque 50 GB; datos 100 GB en <code>/srv/mesa</code> (XFS, <code>prevent_destroy</code>), ambos cifrados con la llave maestra.</td></tr><tr><td>Vault</td><td><code>mesa-prod-vault</code> con llave <code>mesa-prod-master-key</code> (AES-256 en HSM). Terraform nunca crea valores de secretos.</td></tr><tr><td>IAM</td><td>Grupo dinámico <code>mesa-prod-vm</code> (instance principal) con permisos mínimos; usuario de servicio de pgBackRest solo para <code>respaldos-pitr</code>; grupos humanos de infraestructura y auditoría.</td></tr><tr><td>Seguridad</td><td>Cloud Guard, Security Zone (Maximum Security), escaneo semanal de vulnerabilidades del host.</td></tr><tr><td>Observabilidad</td><td>Topic <code>mesa-prod-alerts</code>; alarmas de CPU, memoria, disco, respaldo fallido, falta de latido y aplicación no sana; logs del host y de <code>/var/log/mesa</code> por 90 días.</td></tr><tr><td>Estado de Terraform</td><td>Backend OCI, bucket <code>mesa-terraform-state</code>, clave <code>mesa-soporte/prod.tfstate</code>.</td></tr></tbody></table></div>
+<h3>Buckets</h3>
+<div class="tbl"><table><thead><tr><th>Bucket</th><th>Uso</th><th>Retención</th></tr></thead><tbody><tr><td><code>adjuntos</code></td><td>Archivos de tickets</td><td>Versionado; versiones previas se borran a 14 días</td></tr><tr><td><code>respaldos-pitr</code></td><td>Repositorio de pgBackRest</td><td>Versionado; versiones previas se borran a 14 días</td></tr><tr><td><code>respaldos-inmutables</code></td><td>Volcados diarios cifrados</td><td>Regla WORM de 30 días (se bloquea a mano tras la primera prueba de restauración); borrado a 90 días</td></tr></tbody></table></div>
+<h3>Arranque de la VM (cloud-init)</h3>
+<p>Instala Docker y Compose, age, jq, auditd, actualizaciones automáticas, OCI CLI y cosign verificado; endurece sshd, sysctl y Docker; prepara el tmpfs de secretos y el volumen de datos; y deja en <code>/opt/mesa</code> el compose, los scripts y las unidades systemd. Los cambios de cloud-init requieren reemplazar la instancia (<code>terraform plan -replace=oci_core_instance.app</code>), porque <code>metadata</code> está en <code>ignore_changes</code>.</p>
+<div class="callout warn"><b class="t">Capacidad de A1</b><p>Si OCI responde «Out of host capacity» al crear la instancia, se reintenta el <code>apply</code> en un ciclo hasta que haya capacidad.</p></div></section><section class="chapter" id="despliegue"><h2><span class="num">08</span>Integración y despliegue</h2><p class="lead">Del pull request a producción sin que GitHub tenga acceso al servidor.</p>
+<figure><div class="dg-wrap"><svg class="dg" viewBox="0 0 1000 340" role="img" aria-label="El código pasa por CI y, al llegar a main, el release construye y firma las imágenes; tras la aprobación se publica el manifest. La VM consulta cada 10 minutos, verifica las firmas, respalda, migra, arranca y revierte si la API no queda sana."><defs><marker id="a-pipe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="soft" x="10" y="14" width="980" height="138" rx="10"/><text class="zl" x="24" y="34">GitHub</text><rect class="soft" x="10" y="190" width="980" height="138" rx="10"/><text class="zl" x="24" y="210">VM de producción</text><rect class="box" x="30" y="54" width="150" height="62" rx="7"/><text class="b" x="105.0" y="76" text-anchor="middle">PR + CI</text><text class="m" x="105.0" y="93" text-anchor="middle">pruebas · escaneos</text><rect class="box" x="210" y="54" width="150" height="62" rx="7"/><text class="b" x="285.0" y="89.5" text-anchor="middle">merge a main</text><rect class="box" x="390" y="46" width="190" height="78" rx="7"/><text class="b" x="485.0" y="68" text-anchor="middle">Release</text><text class="m" x="485.0" y="85" text-anchor="middle">imágenes amd64 + arm64</text><text class="m" x="485.0" y="100" text-anchor="middle">firma cosign · SBOM</text><rect class="key" x="610" y="54" width="160" height="62" rx="7"/><text class="b" x="690.0" y="76" text-anchor="middle">Aprobación</text><text class="m" x="690.0" y="93" text-anchor="middle">entorno production</text><rect class="box" x="800" y="54" width="170" height="62" rx="7"/><text class="b" x="885.0" y="76" text-anchor="middle">GitHub Release</text><text class="m" x="885.0" y="93" text-anchor="middle">manifest.json (digests)</text><polyline class="e" points="180,85 210,85" marker-end="url(#a-pipe)"/><polyline class="e" points="360,85 390,85" marker-end="url(#a-pipe)"/><polyline class="e" points="580,85 610,85" marker-end="url(#a-pipe)"/><polyline class="e" points="770,85 800,85" marker-end="url(#a-pipe)"/><rect class="box" x="30" y="230" width="150" height="62" rx="7"/><text class="b" x="105.0" y="252" text-anchor="middle">mesa-deployer</text><text class="m" x="105.0" y="269" text-anchor="middle">cada 10 min</text><rect class="box" x="210" y="230" width="150" height="62" rx="7"/><text class="b" x="285.0" y="252" text-anchor="middle">cosign verify</text><text class="m" x="285.0" y="269" text-anchor="middle">identidad del workflow</text><rect class="box" x="390" y="230" width="190" height="62" rx="7"/><text class="b" x="485.0" y="252" text-anchor="middle">pull + respaldo</text><text class="m" x="485.0" y="269" text-anchor="middle">backup.sh incr</text><rect class="box" x="610" y="230" width="160" height="62" rx="7"/><text class="b" x="690.0" y="265.5" text-anchor="middle">migrator + up -d</text><rect class="key" x="800" y="222" width="170" height="78" rx="7"/><text class="b" x="885.0" y="244" text-anchor="middle">API sana ≤ 180 s</text><text class="m" x="885.0" y="261" text-anchor="middle">sí: versión actual</text><text class="m" x="885.0" y="276" text-anchor="middle">no: images.env.previous</text><polyline class="e" points="180,261 210,261" marker-end="url(#a-pipe)"/><polyline class="e" points="360,261 390,261" marker-end="url(#a-pipe)"/><polyline class="e" points="580,261 610,261" marker-end="url(#a-pipe)"/><polyline class="e" points="770,261 800,261" marker-end="url(#a-pipe)"/><polyline class="e d" points="105,230 105,170 885,170 885,116" marker-end="url(#a-pipe)"/><text class="el" x="495" y="164" text-anchor="middle">lee el último release aprobado (API de GitHub, token de solo lectura)</text></svg></div><figcaption><b>De un PR a producción.</b> GitHub nunca entra al servidor: la VM <i>jala</i> el release aprobado y solo acepta imágenes firmadas por el workflow de release en <code>main</code>.</figcaption></figure>
+<h3>CI (en cada PR y en main)</h3>
+<div class="tbl"><table><thead><tr><th>Job</th><th>Qué valida</th></tr></thead><tbody><tr><td>Lint, types, unit tests, build</td><td>ESLint, Prettier, TypeScript, Vitest y build.</td></tr><tr><td>Integration and browser tests</td><td>PostgreSQL y Redis reales, almacenamiento S3 y correo de prueba; pruebas de integración y Playwright.</td></tr><tr><td>Backup/PITR, deployer, secrets…</td><td>shellcheck, pruebas del desplegador y de secretos, respaldo y PITR reales, smoke de la pila de producción con OWASP ZAP.</td></tr><tr><td>Secrets, SAST, dependencies, IaC…</td><td>gitleaks, Semgrep, <code>pnpm audit</code>, Trivy sobre IaC e imágenes.</td></tr><tr><td>Terraform</td><td><code>fmt</code>, <code>validate</code> y tflint.</td></tr><tr><td>linux/arm64 build and smoke test</td><td>Solo en main: build y smoke en arm64 con QEMU.</td></tr></tbody></table></div>
+<h3>Release</h3>
+<p>En cada push a main: reutiliza la CI, construye las cinco imágenes (api, migrator, worker, web, postgres) para amd64 y arm64 con SBOM y procedencia, las publica en GHCR y las firma con cosign keyless. Tras la aprobación del entorno <code>production</code> publica el release <code>mesa-vAAAA.MM.DD-N</code> con <code>manifest.json</code>.</p>
+<h3>Desplegador en la VM</h3>
+<p><code>mesa-deployer.timer</code> corre cada 10 minutos. Usa <code>github_read_token</code> (lectura del repositorio) y <code>ghcr_read_token</code> (<code>read:packages</code>). Solo acepta imágenes fijadas por digest y firmadas por el workflow de release en <code>main</code>. El estado queda en <code>/var/lib/mesa/deploy/</code> y el log en <code>/var/log/mesa/deployer.log</code>.</p>
+<h3>Unidades systemd</h3>
+<div class="tbl"><table><thead><tr><th>Unidad</th><th>Cuándo</th><th>Qué hace</th></tr></thead><tbody><tr><td><code>mesa-secrets-sync</code></td><td>al arrancar</td><td>Copia los secretos de Vault al tmpfs.</td></tr><tr><td><code>mesa-stack</code></td><td>al arrancar</td><td>Levanta la pila con <code>stack.env</code> e <code>images.env</code>.</td></tr><tr><td><code>mesa-deployer.timer</code></td><td>cada 10 min</td><td>Instala el último release aprobado.</td></tr><tr><td><code>mesa-backup-full.timer</code></td><td>domingo 02:00</td><td>Respaldo completo de pgBackRest.</td></tr><tr><td><code>mesa-backup-diff.timer</code></td><td>lun–sáb 02:00</td><td>Respaldo diferencial.</td></tr><tr><td><code>mesa-backup-check.timer</code></td><td>cada hora</td><td>Verifica el archivado de WAL.</td></tr><tr><td><code>mesa-dump.timer</code></td><td>diario 03:00</td><td>Volcado cifrado al bucket inmutable.</td></tr><tr><td><code>mesa-report.timer</code></td><td>cada 5 min</td><td>Métricas: latido, disco, salud de la aplicación.</td></tr><tr><td><code>mesa-alert@</code></td><td>al fallar otra unidad</td><td>Publica la alerta en el topic de OCI.</td></tr></tbody></table></div></section><section class="chapter" id="respaldos"><h2><span class="num">09</span>Respaldos y recuperación</h2><p class="lead">Objetivos: RPO ≤ 5 min (≤ 24 h con el volcado inmutable) y RTO ≤ 4 h.</p>
+<figure><div class="dg-wrap"><svg class="dg" viewBox="0 0 1000 300" role="img" aria-label="PostgreSQL envía WAL continuo y respaldos full y diferenciales a respaldos-pitr con pgBackRest; un volcado diario cifrado con age va al bucket inmutable; cada camino tiene su script de restauración."><defs><marker id="a-bak" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="key" x="24" y="112" width="170" height="70" rx="7"/><text class="b" x="109.0" y="134" text-anchor="middle">PostgreSQL 16</text><text class="m" x="109.0" y="151" text-anchor="middle">/srv/mesa/pgdata</text><rect class="box" x="260" y="30" width="210" height="72" rx="7"/><text class="b" x="365.0" y="52" text-anchor="middle">pgBackRest</text><text class="m" x="365.0" y="69" text-anchor="middle">WAL cada ≤ 60 s</text><text class="m" x="365.0" y="84" text-anchor="middle">full dom · diff lun–sáb 02:00</text><rect class="box" x="260" y="192" width="210" height="72" rx="7"/><text class="b" x="365.0" y="214" text-anchor="middle">pg_dump diario 03:00</text><text class="m" x="365.0" y="231" text-anchor="middle">cifrado con age</text><text class="m" x="365.0" y="246" text-anchor="middle">(solo llave pública)</text><rect class="box" x="536" y="30" width="220" height="72" rx="7"/><text class="b" x="646.0" y="52" text-anchor="middle">respaldos-pitr</text><text class="m" x="646.0" y="69" text-anchor="middle">AES-256 · 35 días</text><text class="m" x="646.0" y="84" text-anchor="middle">versionado</text><rect class="box" x="536" y="192" width="220" height="72" rx="7"/><text class="b" x="646.0" y="214" text-anchor="middle">respaldos-inmutables</text><text class="m" x="646.0" y="231" text-anchor="middle">WORM 30 días</text><text class="m" x="646.0" y="246" text-anchor="middle">borrado a 90 días</text><rect class="soft" x="820" y="30" width="160" height="72" rx="7"/><text class="b" x="900.0" y="52" text-anchor="middle">restore.sh</text><text class="m" x="900.0" y="69" text-anchor="middle">PITR · RPO ≤ 5 min</text><rect class="soft" x="820" y="192" width="160" height="72" rx="7"/><text class="b" x="900.0" y="214" text-anchor="middle">restore-dump.sh</text><text class="m" x="900.0" y="231" text-anchor="middle">base nueva · RPO ≤ 24 h</text><polyline class="e" points="194,135 260,72" marker-end="url(#a-bak)"/><polyline class="e" points="194,160 260,224" marker-end="url(#a-bak)"/><polyline class="e" points="470,66 536,66" marker-end="url(#a-bak)"/><text class="el" x="503" y="58" text-anchor="middle">S3 compatible</text><polyline class="e" points="470,228 536,228" marker-end="url(#a-bak)"/><text class="el" x="503" y="220" text-anchor="middle">--no-overwrite</text><polyline class="e d" points="756,66 820,66" marker-end="url(#a-bak)"/><text class="el" x="788" y="58" text-anchor="middle">restaurar</text><polyline class="e d" points="756,228 820,228" marker-end="url(#a-bak)"/><text class="el" x="788" y="220" text-anchor="middle">restaurar</text></svg></div><figcaption><b>Respaldos.</b> Dos caminos independientes: pgBackRest para recuperar a cualquier minuto (PITR) y un volcado diario cifrado con una llave cuya parte privada nunca está en el servidor.</figcaption></figure>
+<div class="tbl"><table><thead><tr><th>Escenario</th><th>Procedimiento</th></tr></thead><tbody><tr><td>A. Error humano</td><td>PITR con <code>restore.sh --time "&lt;fecha&gt;"</code>; los datos actuales se mueven a <code>/srv/mesa/pgdata.before-restore-&lt;fecha&gt;</code>, nunca se borran.</td></tr><tr><td>B. Pérdida del servidor</td><td><code>terraform apply</code>, secretos, desplegador y <code>restore.sh --latest --yes</code>.</td></tr><tr><td>C. Servidor comprometido</td><td>Restaurar el volcado inmutable desde un equipo limpio con <code>restore-dump.sh</code> a una base nueva.</td></tr><tr><td>D. Prueba trimestral</td><td>Obligatoria; también se prueba en CI en cada cambio.</td></tr></tbody></table></div>
+<div class="callout warn"><b class="t">Llave de age</b><p>El servidor solo tiene la llave <b>pública</b> (<code>/opt/mesa/backup-age-recipient.txt</code>). La privada vive en el gestor de contraseñas y en un sobre sellado; sin ella el volcado inmutable no se puede abrir.</p></div>
+<p>Detalle completo: <code>docs/runbooks/restauracion.md</code> y ADR-0009.</p></section><section class="chapter" id="seguridad"><h2><span class="num">10</span>Seguridad</h2><p class="lead">Controles transversales y decisiones de arquitectura.</p>
+<h3>Secretos</h3>
+<ol class="steps">
+<li><code>infra/scripts/bootstrap-secrets.sh</code> genera los valores aleatorios, pide los externos y los guarda en OCI Vault; produce <code>secrets.map</code> (nombres y OCID, sin valores).</li>
+<li><code>secrets.map</code> se instala en <code>/opt/mesa/secrets.map</code>.</li>
+<li><code>mesa-secrets-sync</code> lee Vault con el instance principal y escribe archivos 0400 en el tmpfs <code>/run/mesa/secrets</code>.</li>
+<li>Un secreto con valor <code>unused</code> deja su integración desactivada. Rotación: <code>docs/runbooks/rotacion-secretos.md</code>.</li>
+</ol>
+<h3>Cifrado</h3>
+<ul>
+<li><b>En reposo</b>: llave HSM para volúmenes y buckets; pgBackRest cifrado; age en volcados; AES-256-GCM por campo para semillas TOTP, URLs de Teams y similares (con rotación por id de llave).</li>
+<li><b>En tránsito</b>: Cloudflare y túnel; PostgreSQL con TLS dentro de Docker; SMTP con STARTTLS. El cifrado en tránsito del volumen no está disponible en A1.</li>
+</ul>
+<h3>Navegador</h3>
+<p>CSP estricta (<code>script-src 'self'</code>, sin estilos ni scripts en línea, <code>frame-ancestors 'none'</code>), HSTS de 2 años, <code>nosniff</code>, Permissions-Policy restrictiva, COOP y CORP <code>same-origin</code>.</p>
+<h3>Gobierno</h3>
+<ul>
+<li>Modelo de amenazas STRIDE con 55 amenazas, mitigación y prueba: <code>docs/seguridad/modelo-amenazas.md</code>.</li>
+<li>OWASP ASVS 4.0 nivel 2: <code>docs/seguridad/matriz-asvs.md</code>.</li>
+<li>Respuesta a incidentes (triage ≤ 1 h, LFPDPPP): <code>docs/seguridad/respuesta-incidentes.md</code>.</li>
+<li>Riesgos aceptados: un solo servidor sin alta disponibilidad, certificado autofirmado de PostgreSQL interno, llave de larga duración de pgBackRest, detectores por patrones (datos sensibles e IA), <code>img-src https:</code> en la CSP.</li>
+</ul>
+<h3>Decisiones de arquitectura (ADR)</h3>
+<div class="tbl"><table><thead><tr><th>ADR</th><th>Tema</th></tr></thead><tbody><tr><td>0001</td><td>Stack tecnológico</td></tr><tr><td>0002</td><td>Autorización «denegar por defecto»</td></tr><tr><td>0003</td><td>Sesiones en servidor, cookies por host y CSRF</td></tr><tr><td>0004</td><td>Almacenamiento de archivos</td></tr><tr><td>0005</td><td>Secretos como archivos desde OCI Vault</td></tr><tr><td>0006</td><td>Correo saliente por cola</td></tr><tr><td>0007</td><td>Infraestructura en OCI México</td></tr><tr><td>0008</td><td>Despliegue pull con firmas verificadas</td></tr><tr><td>0009</td><td>Respaldos y recuperación</td></tr><tr><td>0010</td><td>Bases efímeras para pruebas</td></tr><tr><td>0011</td><td>Reglas como datos</td></tr><tr><td>0012</td><td>Canal de correo</td></tr><tr><td>0013</td><td>Adjuntos, antivirus y datos sensibles</td></tr><tr><td>0014</td><td>Tiempo real, tokens de API y ver como cliente</td></tr><tr><td>0015</td><td>Base de conocimiento bilingüe</td></tr><tr><td>0016</td><td>Reportes y exportación</td></tr><tr><td>0017</td><td>Azure DevOps, Teams y webhooks</td></tr><tr><td>0018</td><td>SSO OIDC y WebAuthn</td></tr><tr><td>0019</td><td>API de Inncentives y widget</td></tr><tr><td>0020</td><td>Telefonía, WhatsApp y SMS</td></tr><tr><td>0021</td><td>Chat en vivo</td></tr><tr><td>0022</td><td>IA para agentes</td></tr></tbody></table></div></section><section class="chapter" id="operacion"><h2><span class="num">11</span>Operación</h2><p class="lead">Archivos, comandos y verificaciones del día a día en el servidor.</p>
+<h3>Archivos en la VM</h3>
+<div class="tbl"><table><thead><tr><th>Ruta</th><th>Contenido</th></tr></thead><tbody><tr><td><code>/opt/mesa/stack.env</code></td><td>Hosts, región y namespace de OCI, remitente de correo y opciones de Graph.</td></tr><tr><td><code>/opt/mesa/images.env</code></td><td>Imágenes por digest de la versión actual (y <code>.previous</code>).</td></tr><tr><td><code>/opt/mesa/deployer.env</code></td><td>Repositorio, rutas y topic de alertas del desplegador.</td></tr><tr><td><code>/opt/mesa/secrets.map</code></td><td>Nombres y OCID de los secretos.</td></tr><tr><td><code>/opt/mesa/scripts/</code></td><td>Desplegador, respaldos, restauración, secretos y métricas.</td></tr><tr><td><code>/run/mesa/secrets</code></td><td>Secretos en memoria (tmpfs).</td></tr><tr><td><code>/srv/mesa/</code></td><td>Volumen de datos: <code>pgdata</code>, <code>redis</code>, <code>clamav</code>.</td></tr><tr><td><code>/var/lib/mesa/deploy/</code></td><td>Versión actual e historial de despliegues.</td></tr><tr><td><code>/var/log/mesa/</code></td><td>Logs del desplegador, respaldos y secretos.</td></tr></tbody></table></div>
+<h3>Comandos frecuentes</h3>
+<div class="tbl"><table><thead><tr><th>Para</th><th>Comando</th></tr></thead><tbody><tr><td>Ver contenedores</td><td><code>sudo docker ps --format '{{{{.Names}}}}  {{{{.Status}}}}'</code></td></tr><tr><td>Logs de un servicio</td><td><code>cd /opt/mesa &amp;&amp; sudo docker compose -p mesa -f docker-compose.prod.yml --env-file stack.env --env-file images.env logs -f api</code></td></tr><tr><td>Reiniciar la pila</td><td><code>sudo systemctl restart mesa-stack</code></td></tr><tr><td>Desplegar ahora</td><td><code>sudo systemctl start mesa-deployer</code> (o <code>deployer.sh --force</code>)</td></tr><tr><td>Versión instalada</td><td><code>cat /var/lib/mesa/deploy/current-version</code></td></tr><tr><td>Respaldos</td><td><code>sudo /opt/mesa/scripts/backup.sh full|diff|incr|check|info</code></td></tr><tr><td>Temporizadores</td><td><code>systemctl list-timers 'mesa-*'</code> (deben aparecer 6)</td></tr><tr><td>Primer administrador</td><td><code>… run --rm api dist/scripts/bootstrap-admin.js &lt;correo&gt; "&lt;Nombre&gt;"</code></td></tr></tbody></table></div>
+<h3>Salud</h3>
+<p><code>GET /health</code> (proceso vivo) y <code>GET /ready</code> (base de datos y Redis), sin prefijo <code>/api/v1</code>. <code>mesa-report</code> publica <code>app_healthy</code> y el latido cada 5 minutos; las alarmas avisan al topic <code>mesa-prod-alerts</code>.</p>
+<h3>Runbooks</h3>
+<ul>
+<li><code>docs/despliegue.md</code>: aprovisionamiento completo.</li>
+<li><code>docs/runbooks/restauracion.md</code>: restauración de PostgreSQL.</li>
+<li><code>docs/runbooks/rotacion-secretos.md</code>: rotación (tokens de GitHub y llave de pgBackRest cada 90 días; SMTP 180; resto anual).</li>
+<li><code>docs/seguridad/respuesta-incidentes.md</code>.</li>
+</ul></section><section class="chapter" id="estado"><h2><span class="num">12</span>Estado de producción</h2><p class="lead">Lo que difiere de la guía de despliegue y lo que queda pendiente, al 20 de octubre de 2026.</p>
+<h3>Diferencias con la guía de despliegue</h3>
+<ul>
+<li>Hosts en <code>neitek.net</code> con DNS en DigitalOcean y Cloudflare for SaaS (dominio técnico <code>neiteksupport.com</code>), en lugar de una zona propia en Cloudflare.</li>
+<li>Acceso de operadores por port forwarding de Bastion con llaves en <code>admin_ssh_public_keys</code>; la security list lleva la salida TCP 22 hacia la subred.</li>
+<li>El aprovisionamiento se hizo desde Windows (OCI CLI en un venv, Git Bash para <code>bootstrap-secrets.sh</code>).</li>
+</ul>
+<h3>Pendientes</h3>
+<ul>
+<li>Actualizar <code>docs/despliegue.md</code> con las diferencias anteriores.</li>
+<li>Configurar el correo de Microsoft 365 (envío del sistema y buzones de entrada). Mientras tanto, las invitaciones se generan con un token manual desde el servidor.</li>
+<li>Completar en Cloudflare el WAF, el límite de autenticación y Cloudflare Access para el host de agentes.</li>
+<li>Configuración inicial de la aplicación (§9 bis de la guía).</li>
+<li>Bloquear la regla WORM de <code>respaldos-inmutables</code> después de la primera prueba de restauración.</li>
+</ul></section>
+      <footer class="end">Documento interno de Neitek. Fuente: el repositorio <code>mesa-soporte</code> (docs, ADRs, Terraform, compose y scripts) y el registro de la puesta en marcha. Si algo cambia, actualiza <code>docs/manuales/build_tecnico.py</code>.</footer>
+    </div>
+  </main>
+</div>
+</body>
+</html>

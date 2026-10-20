@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manual del cliente Inncentives</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the app's own shell — navy sidebar with the logo and the table of
+   contents, cream canvas, white cards, golden-yellow highlights. */
+:root {
+  --canvas: #fbfaf6; --surface: #ffffff; --line: #e7e4d8; --ink: #2a2a12; --muted: #6b6758;
+  --nav: #2d2e82; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold: #fbc52a; --gold-soft: #fffbeb; --gold-line: #fde68a; --gold-ink: #8a5d0a;
+  --orange: #ee7d11; --note: #fef3c7; --note-line: #f2d27a;
+  --ok-bg: #dcfce7; --ok-ink: #166534; --warn-bg: #fef3c7; --warn-ink: #78350f;
+  --new-bg: #e6e7f5; --new-ink: #25266d; --gray-bg: #e7e4d8; --gray-ink: #3d3a2c;
+  --red-bg: #fee2e2; --red-ink: #991b1b;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --canvas: #171610; --surface: #232118; --line: #3d3a2c; --ink: #f4f2ea; --muted: #a7a290;
+  --nav: #22236a; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold-soft: #2c2410; --gold-line: #5c3d06; --gold-ink: #fcd34d;
+  --note: #2f2712; --note-line: #5c3d06;
+  --ok-bg: #14321f; --ok-ink: #86efac; --warn-bg: #3a2a0c; --warn-ink: #fcd34d;
+  --new-bg: #25266d; --new-ink: #e6e7f5; --gray-bg: #3d3a2c; --gray-ink: #e7e4d8;
+  --red-bg: #3b1414; --red-ink: #fca5a5; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --canvas: #171610; --surface: #232118; --line: #3d3a2c; --ink: #f4f2ea; --muted: #a7a290;
+  --nav: #22236a; --nav-hover: #3a3c94; --nav-text: #bfc1de;
+  --gold-soft: #2c2410; --gold-line: #5c3d06; --gold-ink: #fcd34d;
+  --note: #2f2712; --note-line: #5c3d06;
+  --ok-bg: #14321f; --ok-ink: #86efac; --warn-bg: #3a2a0c; --warn-ink: #fcd34d;
+  --new-bg: #25266d; --new-ink: #e6e7f5; --gray-bg: #3d3a2c; --gray-ink: #e7e4d8;
+  --red-bg: #3b1414; --red-ink: #fca5a5; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font); font-size: 15.5px; line-height: 1.6; }
+.shell { display: grid; grid-template-columns: 288px minmax(0, 1fr); min-height: 100vh; }
+
+/* Sidebar */
+.side { background: var(--nav); color: var(--nav-text); position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 20px 14px 28px max(14px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 6px; }
+.logo { background: #fff; border-radius: 8px; padding: 12px 14px; display: block; }
+.logo img { display: block; width: 100%; height: auto; }
+.side .area { font-size: 12.5px; padding: 6px 10px 0; color: var(--nav-text); }
+.side .manual-name { color: #fff; font-weight: 600; font-size: 15px; padding: 0 10px 8px; }
+.side h2 { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--nav-text); margin: 14px 10px 4px; font-weight: 600; }
+.side nav a { display: flex; gap: 10px; align-items: baseline; color: var(--nav-text); text-decoration: none; font-size: 14px;
+  padding: 7px 10px; border-radius: 6px; }
+.side nav a:hover, .side nav a:focus-visible { background: var(--nav-hover); color: #fff; outline: none; }
+.side nav a .n { font-size: 11.5px; color: #8f92c4; min-width: 1.6em; font-variant-numeric: tabular-nums; }
+.side .others { margin-top: auto; border-top: 1px solid var(--nav-hover); padding-top: 12px; display: grid; gap: 2px; }
+.side .others a { color: var(--nav-text); font-size: 13.5px; padding: 6px 10px; border-radius: 6px; text-decoration: none; }
+.side .others a:hover { background: var(--nav-hover); color: #fff; }
+.side .others a[aria-current="page"] { background: var(--nav-hover); color: var(--gold); box-shadow: inset 3px 0 0 var(--gold); }
+
+/* Main column */
+main { overflow-wrap: anywhere; padding-block: 40px 64px; padding-left: max(16px, min(5vw, 56px)); padding-right: max(16px, env(safe-area-inset-right, 0px), min(5vw, 56px)); }
+.wrap { max-width: 860px; }
+.cover { border-top: 8px solid var(--gold); background: linear-gradient(180deg, var(--gold-soft), var(--surface)); border-radius: 10px;
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 32px 32px 28px; margin-bottom: 36px; }
+.cover .eyebrow { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-ink); font-weight: 600; }
+.cover h1 { font-size: clamp(30px, 4.4vw, 42px); line-height: 1.12; margin: 8px 0 12px; letter-spacing: -0.02em; text-wrap: balance; }
+.cover h1 em { font-style: normal; color: var(--gold-ink); }
+.cover p { margin: 0; max-width: 62ch; color: var(--muted); font-size: 16.5px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 18px; font-size: 13px; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 600; }
+
+section.chapter { padding-top: 12px; margin-bottom: 44px; }
+.chapter > h2 { font-size: 25px; letter-spacing: -0.01em; margin: 0 0 6px; display: flex; gap: 12px; align-items: baseline; text-wrap: balance; }
+.chapter > h2 .num { color: var(--gold-ink); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chapter > .lead { color: var(--muted); margin: 0 0 18px; max-width: 66ch; }
+h3 { font-size: 18px; margin: 28px 0 8px; }
+h4 { font-size: 15px; margin: 18px 0 6px; }
+p, li { max-width: 68ch; }
+a { color: var(--gold-ink); }
+ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 12px 0 18px; display: grid; gap: 10px; }
+ol.steps > li { counter-increment: step; position: relative; padding-left: 42px; }
+ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 1px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--gold); color: #2a2a12; font-weight: 700; font-size: 13.5px; display: grid; place-items: center; }
+ul { padding-left: 1.2em; }
+ul li { margin: 4px 0; }
+
+/* UI vocabulary */
+.ui { font-weight: 600; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; font-size: .94em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.btn { font-weight: 600; background: var(--gold); color: #2a2a12; border-radius: 5px; padding: 1px 8px; font-size: .92em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.path { font-weight: 600; }
+.path::before { content: "▸ "; color: var(--gold-ink); }
+kbd { font-family: var(--mono); font-size: .85em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+code { font-family: var(--mono); font-size: .86em; background: var(--gray-bg); color: var(--gray-ink); border-radius: 4px; padding: 1px 5px; }
+.chip { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+.chip.new { background: var(--new-bg); color: var(--new-ink); }
+.chip.open { background: var(--warn-bg); color: var(--warn-ink); }
+.chip.pend { background: var(--gray-bg); color: var(--gray-ink); }
+.chip.done { background: var(--ok-bg); color: var(--ok-ink); }
+.chip.merged { background: var(--gray-bg); color: var(--muted); }
+.chip.sla-warn { background: #f59e0b; color: #000; border-radius: 4px; font-weight: 600; }
+.chip.sla-bad { background: #b91c1c; color: #fff; border-radius: 4px; font-weight: 600; }
+.chip.internal { background: var(--note); color: var(--warn-ink); border-radius: 4px; }
+
+/* Callouts */
+.callout { border: 1px solid var(--line); border-left: 4px solid var(--gold); background: var(--surface); border-radius: 8px; padding: 12px 16px; margin: 16px 0; max-width: 72ch; }
+.callout b.t { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-ink); margin-bottom: 2px; }
+.callout.warn { border-left-color: var(--orange); background: var(--gold-soft); }
+.callout.warn b.t { color: var(--orange); }
+.callout p { margin: 4px 0; }
+
+/* Figures */
+figure { margin: 18px 0 24px; }
+figure .frame { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px; box-shadow: 0 1px 2px rgba(42,42,18,.06); }
+figure img { display: block; width: 100%; height: auto; border-radius: 6px; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+figcaption b { color: var(--ink); }
+
+/* Tables */
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); margin: 14px 0 22px; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th { text-align: left; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600;
+  padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--canvas); }
+td { padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.yes { color: var(--ok-ink); font-weight: 600; } .no { color: var(--muted); }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0 20px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.tile h4 { margin: 0 0 4px; font-size: 15px; }
+.tile p { margin: 0; font-size: 14px; color: var(--muted); }
+footer.end { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 16px; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side, main { min-width: 0; }
+  .side { position: static; height: auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+  .side nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .logo { max-width: 260px; }
+  .cover { padding: 24px 20px; }
+}
+@media print {
+  .side { display: none; } .shell { display: block; } main { padding: 0; }
+  .chapter { break-before: page; } figure, .callout, .tbl { break-inside: avoid; }
+  body { font-size: 11pt; }
+}
+</style>
+
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="logo" href="#inicio"><img src="img/logo.png" alt="Inncentives"></a>
+    <div class="area">Portal de clientes</div>
+    <div class="manual-name">Manual del cliente</div>
+    <h2>Contenido</h2>
+    <nav aria-label="Contenido"><a href="#acceso"><span class="n">01</span><span>Entrar al portal</span></a><a href="#portal"><span class="n">02</span><span>Conoce el portal</span></a><a href="#tickets"><span class="n">03</span><span>Consultar tus tickets</span></a><a href="#nuevo"><span class="n">04</span><span>Crear un ticket</span></a><a href="#seguimiento"><span class="n">05</span><span>Dar seguimiento y responder</span></a><a href="#chat"><span class="n">06</span><span>Chat en vivo</span></a><a href="#kb"><span class="n">07</span><span>Base de conocimiento</span></a><a href="#cuenta"><span class="n">08</span><span>Mi cuenta y seguridad</span></a><a href="#ayuda"><span class="n">09</span><span>Atajos y dudas frecuentes</span></a></nav>
+    <div class="others"><h2 style="margin-top:0">Manuales</h2><a href="manual-cliente.html" aria-current="page">Manual del cliente</a><a href="manual-agente.html">Manual del agente</a><a href="manual-administrador.html">Manual del administrador</a></div>
+  </aside>
+  <main id="inicio">
+    <div class="wrap">
+      <header class="cover">
+        <div class="eyebrow">Soporte Inncentives · Guía de uso</div>
+        <h1>Manual del <em>cliente</em></h1>
+        <p>Cómo pedir ayuda al equipo de Soporte Inncentives: crear tickets, dar seguimiento, usar el chat y la base de conocimiento, y cuidar tu cuenta.</p>
+        <div class="meta"><span><b>Para:</b> usuarios de las empresas cliente</span><span><b>Versión:</b> 1.0 · octubre 2026</span><span><b>Idioma de las pantallas:</b> español (México)</span></div>
+      </header>
+      <section class="chapter" id="acceso"><h2><span class="num">01</span>Entrar al portal</h2><p class="lead">Tu cuenta se crea con una invitación. Después entras con tu correo y contraseña.</p>
+<h3>Activar tu cuenta</h3>
+<ol class="steps">
+<li>Recibirás un correo de invitación de Soporte Inncentives. Abre el enlace; la página se titula <b>Activa tu cuenta</b> y muestra tu correo y tu organización.</li>
+<li>Revisa tu <span class="ui">Nombre</span>, elige una <span class="ui">Nueva contraseña</span> (mínimo 12 caracteres) y confírmala.</li>
+<li>Pulsa <span class="btn">Crear cuenta</span>. Verás «Tu cuenta está lista. Ya puedes iniciar sesión.»</li>
+</ol>
+<div class="callout warn"><b class="t">El enlace vence</b><p>Si aparece «El enlace no es válido o ya venció», pide al equipo de soporte que te envíe una nueva invitación.</p></div>
+<h3>Iniciar sesión</h3>
+<figure><div class="frame"><img src="img/portal-login.jpg" alt="Iniciar sesión. Arriba a la derecha puedes cambiar el idioma entre Español e English." loading="lazy"></div><figcaption><b>Iniciar sesión.</b> Arriba a la derecha puedes cambiar el idioma entre Español e English.</figcaption></figure>
+
+<ol class="steps">
+<li>Abre la dirección de tu mesa de soporte en el navegador.</li>
+<li>Escribe tu <span class="ui">Correo electrónico</span> y tu <span class="ui">Contraseña</span> y pulsa <span class="btn">Entrar</span>.</li>
+<li>Si tienes activada la verificación en dos pasos, escribe el <span class="ui">Código de 6 dígitos</span> que muestra tu app de autenticación y pulsa <span class="btn">Verificar</span>. También puedes usar tu llave o passkey, o un código de recuperación (<span class="ui">Usar un código de recuperación</span>).</li>
+</ol>
+<p>Tu organización puede pedir verificación en dos pasos. Si es así, después de entrar se te pedirá configurarla; sigue los pasos de la sección <a href="#cuenta">Mi cuenta</a>.</p>
+
+<h3>Si olvidaste tu contraseña</h3>
+<ol class="steps">
+<li>En la pantalla de inicio pulsa <span class="ui">¿Olvidaste tu contraseña?</span>.</li>
+<li>Escribe tu correo y pulsa <span class="btn">Enviar enlace</span>. Por seguridad siempre verás el mismo mensaje, exista o no la cuenta.</li>
+<li>Abre el enlace del correo, escribe tu <span class="ui">Nueva contraseña</span>, confírmala y pulsa <span class="btn">Cambiar contraseña</span>.</li>
+</ol></section><section class="chapter" id="portal"><h2><span class="num">02</span>Conoce el portal</h2><p class="lead">El menú azul de la izquierda te lleva a todo lo que necesitas.</p>
+<figure><div class="frame"><img src="img/portal-tickets.jpg" alt="Inicio del portal. Menú a la izquierda, buscador arriba y tus tickets agrupados por día." loading="lazy"></div><figcaption><b>Inicio del portal.</b> Menú a la izquierda, buscador arriba y tus tickets agrupados por día.</figcaption></figure>
+<div class="grid2">
+<div class="tile"><h4>Tickets</h4><p>Tus solicitudes de soporte: crear, consultar y responder.</p></div>
+<div class="tile"><h4>Chat</h4><p>Conversación en vivo con un agente cuando hay alguien disponible.</p></div>
+<div class="tile"><h4>Base de conocimiento</h4><p>Respuestas a las dudas más frecuentes, para resolver por tu cuenta.</p></div>
+<div class="tile"><h4>Mi cuenta</h4><p>Contraseña, sesiones y métodos de acceso.</p></div>
+</div>
+<p>Abajo del menú también están el selector de <b>idioma</b> y <span class="ui">Cerrar sesión</span>. En teléfonos, el menú se abre con el botón ☰ de la esquina superior.</p></section><section class="chapter" id="tickets"><h2><span class="num">03</span>Consultar tus tickets</h2><p class="lead">Cada solicitud es un ticket con un número, un estado y su conversación.</p>
+<h3>Vistas</h3>
+<p>Arriba de la lista hay pestañas con un contador. Normalmente verás:</p>
+<ul>
+<li><b>Mis tickets abiertos</b>: lo que está en curso.</li>
+<li><b>Mis tickets cerrados</b>: tu historial.</li>
+<li><b>Abiertos de mi organización</b>: los tickets de tus compañeros, solo si tu cuenta tiene ese permiso.</li>
+</ul>
+<p>La lista agrupa los tickets por el día de su última actualización (<b>Hoy</b>, <b>Ayer</b> o la fecha). Debajo de cada título verás el número (por ejemplo <code>#20261001</code>) y el grupo que lo atiende. Pulsa el título para abrirlo.</p>
+<h3>Buscar</h3>
+<p>Escribe en el buscador de arriba y pulsa <span class="ui">Buscar tickets</span>. Puedes buscar por texto o por número, por ejemplo <code>#20261001</code>. El resultado también muestra artículos de la base de conocimiento que coinciden.</p>
+<h3>Estados de un ticket</h3>
+
+<div class="tbl"><table>
+<thead><tr><th>Estado</th><th>Qué significa</th></tr></thead><tbody>
+<tr><td><span class="chip new">Nuevo</span></td><td>El ticket se acaba de crear y nadie lo ha trabajado todavía.</td></tr>
+<tr><td><span class="chip open">Abierto</span></td><td>El equipo de soporte está trabajando en él.</td></tr>
+<tr><td><span class="chip pend">Pendiente (recordatorio)</span></td><td>En espera de algo (por ejemplo, información del cliente) hasta una fecha; ese día vuelve a la bandeja del agente.</td></tr>
+<tr><td><span class="chip pend">Pendiente de cierre</span></td><td>Se cerrará solo en la fecha indicada si nadie responde.</td></tr>
+<tr><td><span class="chip done">Resuelto</span></td><td>Se dio una solución; si respondes, el ticket se reactiva.</td></tr>
+<tr><td><span class="chip done">Cerrado</span></td><td>El caso terminó.</td></tr>
+<tr><td><span class="chip merged">Fusionado</span></td><td>Se unió con otro ticket del mismo caso; la conversación sigue en el otro.</td></tr>
+</tbody></table></div></section><section class="chapter" id="nuevo"><h2><span class="num">04</span>Crear un ticket</h2><p class="lead">Describe tu caso con el mayor detalle posible: así el equipo lo resuelve más rápido.</p>
+<figure><div class="frame"><img src="img/portal-new.jpg" alt="Nuevo ticket. El aviso de privacidad aparece arriba; los campos con * son obligatorios." loading="lazy"></div><figcaption><b>Nuevo ticket.</b> El aviso de privacidad aparece arriba; los campos con * son obligatorios.</figcaption></figure>
+<ol class="steps">
+<li>Pulsa el botón amarillo <span class="btn">+</span> junto al buscador (o la tecla <kbd>n</kbd>).</li>
+<li>Escribe un <span class="ui">Título</span> breve. Al escribir aparecen sugerencias de la base de conocimiento bajo «Quizá esto te ayude:»; revísalas, tal vez ya esté la respuesta.</li>
+<li>En <span class="ui">Mensaje</span> explica qué pasó, qué esperabas y desde cuándo ocurre.</li>
+<li>Completa <b>Datos del caso</b> (por ejemplo, el <span class="ui">Módulo de Inncentives</span>). Los marcados con * son obligatorios.</li>
+<li>Si tienes capturas o archivos, agrégalos en <span class="ui">Adjuntar archivos</span>.</li>
+<li>Pulsa <span class="btn">Crear ticket</span>. Recibirás el número del ticket y la confirmación por correo.</li>
+</ol>
+<div class="callout warn"><b class="t">Protege los datos de tus empleados</b><p>No escribas RFC, CURP, NSS, CLABE ni sueldos. Si el sistema detecta datos de ese tipo, te mostrará «Tu mensaje parece contener datos de empleados… Por favor anonimízalos antes de enviarlo». Puedes corregir el texto o, si es indispensable, confirmar el envío.</p></div>
+<div class="callout "><b class="t">Adjuntos</b><p>Puedes adjuntar archivos de hasta <b>25 MB</b> cada uno. Todos pasan por un antivirus: mientras se analizan verás <span class="ui">Analizando…</span>, y solo se pueden descargar cuando están limpios. Un archivo con virus queda <span class="ui">En cuarentena</span>.</p></div>
+<h3>Reportar un problema desde Inncentives</h3>
+<p>Dentro de Inncentives puede haber un botón para reportar un problema. Abre la página <b>Reportar un problema</b> con los datos de la pantalla donde estabas (ambiente, módulo, versión, URL y hora), así no tienes que escribirlos.</p>
+<ol class="steps">
+<li>Escribe el <span class="ui">Título</span> y el <span class="ui">Mensaje</span>. Puedes pegar una captura con <kbd>Ctrl</kbd>+<kbd>V</kbd> dentro del mensaje.</li>
+<li>Adjunta archivos si hace falta y pulsa <span class="btn">Enviar reporte</span>.</li>
+</ol></section><section class="chapter" id="seguimiento"><h2><span class="num">05</span>Dar seguimiento y responder</h2><p class="lead">Toda la conversación del ticket queda en un solo lugar.</p>
+<figure><div class="frame"><img src="img/portal-zoom.jpg" alt="Detalle del ticket. Arriba el número, el estado y el botón para cerrarlo; abajo el cuadro para responder." loading="lazy"></div><figcaption><b>Detalle del ticket.</b> Arriba el número, el estado y el botón para cerrarlo; abajo el cuadro para responder.</figcaption></figure>
+<ol class="steps">
+<li>Abre el ticket desde la lista. Verás los mensajes en orden, con quién los escribió y cuándo.</li>
+<li>Para descargar un adjunto, pulsa <span class="ui">Descargar</span> junto al nombre del archivo.</li>
+<li>Para contestar, escribe en <span class="ui">Mensaje</span> (o usa la tecla <kbd>r</kbd>), agrega archivos si lo necesitas y pulsa <span class="btn">Enviar</span>.</li>
+</ol>
+<p>También puedes responder desde tu correo: contesta el correo de notificación y tu mensaje se agrega al mismo ticket.</p>
+<h3>Cerrar un ticket</h3>
+<p>Si tu caso ya quedó resuelto, pulsa <span class="ui">Cerrar ticket</span>. Este botón solo aparece si tu mesa de soporte lo permite.</p>
+<div class="callout "><b class="t">Si un ticket resuelto vuelve a fallar</b><p>Responde en el mismo ticket: se reactiva y el equipo lo verá de nuevo. Si el ticket ya estaba cerrado, según la configuración se reabre o se crea uno nuevo enlazado.</p></div></section><section class="chapter" id="chat"><h2><span class="num">06</span>Chat en vivo</h2><p class="lead">Para dudas rápidas, conversa en tiempo real con un agente.</p>
+<figure><div class="frame"><img src="img/portal-chat.jpg" alt="Chat en vivo. Si no hay agentes disponibles, el portal te ofrece crear un ticket." loading="lazy"></div><figcaption><b>Chat en vivo.</b> Si no hay agentes disponibles, el portal te ofrece crear un ticket.</figcaption></figure>
+<ol class="steps">
+<li>Abre <span class="path">Chat</span> en el menú.</li>
+<li>Escribe tu pregunta en <span class="ui">¿En qué te ayudamos?</span> y pulsa <span class="btn">Iniciar chat</span>.</li>
+<li>Verás «Esperando a que un agente se una…». Cuando el agente entre, escribe en <span class="ui">Mensaje</span> y pulsa <span class="btn">Enviar</span>.</li>
+<li>Al terminar, pulsa <span class="ui">Terminar chat</span>.</li>
+</ol>
+<p>Cada chat queda guardado como un ticket, así que puedes consultarlo después en tu lista.</p>
+<p>Si aparece «No hay agentes disponibles en este momento», usa el botón <span class="ui">Nuevo ticket</span> y te responderemos por esa vía.</p></section><section class="chapter" id="kb"><h2><span class="num">07</span>Base de conocimiento</h2><p class="lead">Respuestas listas a las preguntas más comunes sobre Inncentives.</p>
+<figure><div class="frame"><img src="img/portal-kb.jpg" alt="Base de conocimiento. Categorías a la izquierda y buscador arriba." loading="lazy"></div><figcaption><b>Base de conocimiento.</b> Categorías a la izquierda y buscador arriba.</figcaption></figure>
+<ul>
+<li>Elige una categoría a la izquierda o deja <b>Todas</b>.</li>
+<li>Escribe al menos 3 letras en <span class="ui">Buscar en la base de conocimiento</span>.</li>
+<li>Abre un artículo para leerlo. Si el artículo existe en inglés, puedes cambiar de idioma con las pestañas <b>Español</b> / <b>English</b>.</li>
+</ul></section><section class="chapter" id="cuenta"><h2><span class="num">08</span>Mi cuenta y seguridad</h2><p class="lead">Mantén tu acceso protegido.</p>
+<figure><div class="frame"><img src="img/portal-account.jpg" alt="Mi cuenta. Contraseña, sesiones y llaves de acceso." loading="lazy"></div><figcaption><b>Mi cuenta.</b> Contraseña, sesiones y llaves de acceso.</figcaption></figure>
+
+<h3>Configurar la verificación en dos pasos</h3>
+<ol class="steps">
+<li>Instala una app de autenticación en tu teléfono (Microsoft Authenticator, Google Authenticator, 1Password u otra).</li>
+<li>En la pantalla <b>Configura la verificación en dos pasos</b>, escanea el código QR con la app. Si no puedes escanearlo, captura la clave que aparece debajo.</li>
+<li>Escribe el código de 6 dígitos que muestra la app y pulsa <span class="btn">Activar</span>. Si prefieres, usa <span class="ui">Usar una llave de seguridad o passkey en su lugar</span>.</li>
+<li>Aparecerán tus <b>códigos de recuperación</b>. Guárdalos en un lugar seguro (por ejemplo, tu gestor de contraseñas): no se volverán a mostrar. Pulsa <span class="btn">Ya los guardé</span>.</li>
+</ol>
+
+<h3>Cambiar tu contraseña</h3>
+<ol class="steps">
+<li>Abre <span class="path">Mi cuenta</span> en la parte de abajo del menú.</li>
+<li>En <b>Cambiar contraseña</b> escribe tu <span class="ui">Contraseña actual</span> y la <span class="ui">Nueva contraseña</span> (mínimo 12 caracteres; una frase fácil de recordar funciona bien).</li>
+<li>Pulsa <span class="btn">Cambiar contraseña</span>. Por seguridad se cierran tus otras sesiones abiertas.</li>
+</ol>
+<h3>Sesiones activas</h3>
+<p>La tabla <b>Sesiones activas</b> muestra desde qué navegador e IP has entrado. La fila marcada <span class="ui">Esta sesión</span> es la actual. Si ves una sesión que no reconoces, pulsa <span class="ui">Cerrar</span> en esa fila o <span class="ui">Cerrar las demás sesiones</span> y cambia tu contraseña.</p>
+<h3>Llaves de seguridad y passkeys</h3>
+<p>Puedes entrar con la huella, el rostro o una llave física en lugar del código de 6 dígitos. Escribe un nombre (por ejemplo «Laptop») y pulsa <span class="ui">Agregar llave</span>; tu navegador te guiará. Para quitar una llave, pulsa <span class="ui">Cerrar</span> junto a ella.</p>
+<h3>Códigos de recuperación</h3>
+<p>Si perdiste los códigos que guardaste al activar la verificación en dos pasos, pulsa <span class="ui">Generar nuevos códigos de recuperación</span>. Los anteriores dejan de servir. Cada código funciona una sola vez.</p>
+<div class="callout "><b class="t">Confirmar tu contraseña</b><p>Algunas acciones sensibles muestran <b>«Confirma tu contraseña para continuar»</b>. Escríbela y pulsa <span class="ui">Confirmar</span>; es una protección por si alguien más usa tu computadora.</p></div>
+</section><section class="chapter" id="ayuda"><h2><span class="num">09</span>Atajos y dudas frecuentes</h2><p class="lead">Pequeños trucos para moverte más rápido.</p>
+<h3>Atajos de teclado</h3>
+
+<div class="tbl"><table><thead><tr><th>Tecla</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><kbd>/</kbd></td><td>Lleva el cursor al buscador de tickets.</td></tr>
+<tr><td><kbd>n</kbd></td><td>Abre un ticket nuevo.</td></tr>
+<tr><td><kbd>r</kbd></td><td>Lleva el cursor al cuadro <b>Mensaje</b> para responder el ticket abierto.</td></tr>
+</tbody></table></div>
+<p>Los atajos no funcionan mientras escribes en un campo ni si tienes presionada <kbd>Ctrl</kbd>, <kbd>Alt</kbd> o <kbd>Cmd</kbd>.</p>
+<h3>Dudas frecuentes</h3>
+<h4>No veo los tickets de mis compañeros</h4>
+<p>La vista <b>Abiertos de mi organización</b> solo aparece si tu cuenta tiene ese acceso. Pídelo al equipo de soporte.</p>
+<h4>No me llegan los correos</h4>
+<p>Revisa la carpeta de correo no deseado y agrega la dirección de soporte a tus contactos.</p>
+<h4>Perdí mi teléfono con la app de autenticación</h4>
+<p>Entra con uno de tus códigos de recuperación (<span class="ui">Usar un código de recuperación</span>) y después configura la app en el nuevo teléfono. Si tampoco tienes los códigos, contacta al equipo de soporte.</p></section>
+      <footer class="end">Soporte Inncentives · Neitek. Las pantallas de este manual usan datos de ejemplo; los nombres de vistas, grupos y campos pueden variar según la configuración de tu mesa de soporte.</footer>
+    </div>
+  </main>
+</div>
+</body>
+</html>
