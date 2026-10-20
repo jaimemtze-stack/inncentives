@@ -697,6 +697,9 @@ function PostmasterFilterForm({ value, onChange }: FormProps) {
   );
 }
 
+/** Write-only field: never returned by the API, sent only when typed. */
+const WEBHOOK_WRITE_ONLY = 'secret';
+
 function WebhookForm({ value, onChange, isNew }: FormProps) {
   const { t } = useTranslation();
   const b = binder(value, onChange);
@@ -710,7 +713,7 @@ function WebhookForm({ value, onChange, isNew }: FormProps) {
         label={t('cfg.f.secret')}
         type="password"
         hint={isNew ? undefined : t('cfg.keepSecret')}
-        {...b('secret', 'omit')}
+        {...b(WEBHOOK_WRITE_ONLY, 'omit')}
       />
       <Active value={value} onChange={onChange} />
     </>
