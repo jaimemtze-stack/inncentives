@@ -142,7 +142,7 @@ variable "public_hosts" {
 }
 
 variable "mail_from" {
-  description = "Sender of system e-mails, e.g. 'Soporte Inncentives <soporte@neitek.com>'."
+  description = "Sender of system e-mails, e.g. 'Soporte Inncentives <soporte@neitek.net>'."
   type        = string
 }
 

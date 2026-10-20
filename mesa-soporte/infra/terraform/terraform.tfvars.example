@@ -16,4 +16,4 @@ public_hosts = {
   portal = "supportinncentives.neitek.net"
   agent  = "agents-supportinncentives.neitek.net"
 }
-mail_from = "Soporte Inncentives <soporte@neitek.com>"
+mail_from = "Soporte Inncentives <soporte@neitek.net>"
