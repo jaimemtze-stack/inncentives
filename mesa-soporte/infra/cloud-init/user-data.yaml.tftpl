@@ -123,6 +123,7 @@ runcmd:
   - augenrules --load || true
   # Apply the SSH hardening only if sshd accepts it; never leave SSH broken.
   - |
+    install -d -m 0755 /run/sshd   # sshd -t needs it; socket activation creates it late
     if sshd -t; then
       systemctl daemon-reload
       systemctl is-enabled --quiet ssh.socket && systemctl restart ssh.socket
