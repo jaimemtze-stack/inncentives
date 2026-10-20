@@ -55,7 +55,7 @@ La llave privada **nunca** se copia al servidor ni a OCI. Sin ella, los volcados
    - `agentes.soporte.inncentives.com` → `http://web:8080`
    - `ssh-mesa.inncentives.com` → `ssh://localhost:22` (para el paso 9)
 3. **Correo:**
-   - Crea el buzón compartido `soporte@` en Microsoft 365.
+   - Buzón de envío y recepción: `soporte@neitek.com` (Microsoft 365). Debe coincidir en `MAIL_FROM`, `GRAPH_SENDER` y el canal de correo.
    - **Entrada (fase 1, Microsoft Graph):** registra una aplicación en Entra ID con el permiso de aplicación `Mail.ReadWrite` y `Mail.Send`, y **limítala al buzón** con *RBAC for Applications* de Exchange Online (`New-ManagementScope` + `New-ManagementRoleAssignment -App <id> -Role "Application Mail.ReadWrite" -CustomResourceScope`). Crea un secreto de cliente (máximo 12 meses) para `graph_client_secret`. En *Configuración → Canales de correo* registra `tenantId`, `clientId`, `mailbox` y `trustedAuthServ` (el servidor que escribe `Authentication-Results`, normalmente `mx.microsoft.com`; confírmalo en los encabezados de un correo recibido).
    - **Correo del sistema** (invitaciones, notificaciones; fase 2): **recomendado por Graph**. Agrega a la misma aplicación el rol `Application Mail.Send` con el mismo *management scope* del buzón y añade a `/opt/mesa/stack.env`:
 
@@ -63,7 +63,7 @@ La llave privada **nunca** se copia al servidor ni a OCI. Sin ella, los volcados
      MAIL_TRANSPORT=graph
      GRAPH_TENANT_ID=<id del tenant>
      GRAPH_CLIENT_ID=<id de la aplicación>
-     GRAPH_SENDER=soporte@inncentives.com
+     GRAPH_SENDER=soporte@neitek.com
      ```
 
      El worker usa `graph_client_secret`. Sin estas variables sigue saliendo por SMTP con STARTTLS (`smtp_username`/`smtp_password`), que Microsoft está retirando para Exchange Online.
