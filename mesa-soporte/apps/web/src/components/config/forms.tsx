@@ -301,7 +301,7 @@ function SlaForm({ value, onChange }: FormProps) {
               {minutes('update', target, set)}
               {minutes('solution', target, set)}
             </div>
-            <p className="text-xs text-plum-500">{t('cfg.minutesHint')}</p>
+            <p className="text-xs text-ink-500">{t('cfg.minutesHint')}</p>
           </div>
         )}
       />

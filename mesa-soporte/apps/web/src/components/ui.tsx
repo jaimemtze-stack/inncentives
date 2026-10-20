@@ -38,7 +38,7 @@ export function Field(props: {
         aria-describedby={props.hint ? `${id}-hint` : undefined}
       />
       {props.hint && (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-plum-500">
+        <p id={`${id}-hint`} className="mt-1 text-xs text-ink-500">
           {props.hint}
         </p>
       )}

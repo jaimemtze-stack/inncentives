@@ -286,7 +286,7 @@ export function TicketNewPage() {
             customer={!staff}
             onChange={setCustomFields}
           />
-          {required.length > 0 && <p className="text-xs text-plum-600">* {required.join(', ')}</p>}
+          {required.length > 0 && <p className="text-xs text-ink-600">* {required.join(', ')}</p>}
         </fieldset>
       )}
       <AttachmentPicker onChange={setAttachmentIds} />

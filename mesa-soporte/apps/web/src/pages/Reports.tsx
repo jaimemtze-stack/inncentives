@@ -29,11 +29,11 @@ const hours = (m: number | null) =>
 function Tile({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
     <div className="card p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-plum-500">{label}</p>
-      <p className="mt-2 text-3xl font-semibold tabular-nums text-plum-900 dark:text-white">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{label}</p>
+      <p className="mt-2 text-3xl font-semibold tabular-nums text-ink-900 dark:text-white">
         {value}
       </p>
-      {hint && <p className="mt-1 text-xs text-plum-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-ink-500">{hint}</p>}
     </div>
   );
 }
@@ -52,11 +52,11 @@ function DailyChart({ data }: { data: Summary['perDay'] }) {
   const path = (k: 'created' | 'closed') =>
     data.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(d[k]).toFixed(1)}`).join('');
   const ticks = [0, Math.ceil(max / 2), max];
-  if (!data.length) return <p className="text-sm text-plum-500">{t('reports.noData')}</p>;
+  if (!data.length) return <p className="text-sm text-ink-500">{t('reports.noData')}</p>;
   const last = data.length - 1;
   return (
     <div className="viz-root">
-      <div className="mb-2 flex gap-4 text-xs text-plum-700 dark:text-plum-300" aria-hidden="true">
+      <div className="mb-2 flex gap-4 text-xs text-ink-700 dark:text-ink-300" aria-hidden="true">
         <span className="flex items-center gap-1">
           <span className="inline-block h-0.5 w-4" style={{ background: 'var(--viz-series-1)' }} />
           {t('reports.created')}
@@ -150,7 +150,7 @@ function DailyChart({ data }: { data: Summary['perDay'] }) {
           </g>
         )}
       </svg>
-      <p className="h-5 text-xs text-plum-700 dark:text-plum-300" aria-live="polite">
+      <p className="h-5 text-xs text-ink-700 dark:text-ink-300" aria-live="polite">
         {hover !== null &&
           `${data[hover]!.date} · ${t('reports.created')}: ${data[hover]!.created} · ${t('reports.closed')}: ${data[hover]!.closed}`}
       </p>

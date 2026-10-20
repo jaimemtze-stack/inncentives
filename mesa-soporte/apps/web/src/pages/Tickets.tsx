@@ -18,11 +18,11 @@ export function StateBadge({ state }: { state: string }) {
   const { t } = useTranslation();
   const color =
     state === 'new'
-      ? 'bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-100'
+      ? 'bg-navy-100 text-navy-800 dark:bg-navy-800 dark:text-navy-100'
       : state === 'open'
         ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200'
         : state.startsWith('pending')
-          ? 'bg-plum-200 text-plum-800 dark:bg-plum-800 dark:text-plum-200'
+          ? 'bg-ink-200 text-ink-800 dark:bg-ink-800 dark:text-ink-200'
           : 'bg-green-100 text-green-900 dark:bg-green-950 dark:text-green-200';
   return (
     <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}>
@@ -87,7 +87,7 @@ function TicketTable({
 }) {
   const { t, i18n } = useTranslation();
   if (!items.length)
-    return <p className="px-6 py-10 text-center text-sm text-plum-500">{t('tickets.empty')}</p>;
+    return <p className="px-6 py-10 text-center text-sm text-ink-500">{t('tickets.empty')}</p>;
   const days: Array<[string, TicketRow[]]> = [];
   for (const tk of items) {
     const key = DAY_KEY.format(new Date(tk.updatedAt));
@@ -124,16 +124,16 @@ function TicketTable({
         </thead>
         {days.map(([key, rows]) => (
           <tbody key={key}>
-            <tr className="bg-plum-50 dark:bg-plum-900/60">
+            <tr className="bg-ink-50 dark:bg-ink-900/60">
               <th
                 colSpan={cols}
                 scope="colgroup"
-                className="py-2 pl-4 !text-sm !normal-case !tracking-normal text-plum-700 dark:text-plum-200"
+                className="py-2 pl-4 !text-sm !normal-case !tracking-normal text-ink-700 dark:text-ink-200"
               >
                 <span className="inline-block first-letter:uppercase">
                   {dayLabel(key, i18n.language, t)}
                 </span>
-                <span className="float-right pr-4 text-xs font-medium text-plum-500">
+                <span className="float-right pr-4 text-xs font-medium text-ink-500">
                   {t('tickets.ticketCount', { count: rows.length })}
                 </span>
               </th>
@@ -160,7 +160,7 @@ function TicketTable({
                     <Link
                       to="/tickets/$id"
                       params={{ id: tk.id }}
-                      className="font-medium text-plum-900 hover:text-brand-700 hover:underline dark:text-slate-100 dark:hover:text-brand-300"
+                      className="font-medium text-ink-900 hover:text-brand-800 hover:underline dark:text-slate-100 dark:hover:text-brand-300"
                     >
                       {tk.title}
                     </Link>
@@ -171,7 +171,7 @@ function TicketTable({
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-plum-500">
+                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-500">
                     <span className="font-mono">#{tk.number}</span>
                     {tk.group && (
                       <>
@@ -190,13 +190,13 @@ function TicketTable({
                 </td>
                 {staff && <td>{tk.customer?.name ?? tk.unverifiedFrom ?? '—'}</td>}
                 {staff && (
-                  <td className={tk.owner ? '' : 'text-plum-500'}>
+                  <td className={tk.owner ? '' : 'text-ink-500'}>
                     {tk.owner?.name ?? t('tickets.unassigned')}
                   </td>
                 )}
                 <td>{tk.priority.name}</td>
                 <td
-                  className="whitespace-nowrap text-right tabular-nums text-plum-600 dark:text-plum-300"
+                  className="whitespace-nowrap text-right tabular-nums text-ink-600 dark:text-ink-300"
                   title={formatDate(tk.updatedAt, i18n.language)}
                 >
                   {time.format(new Date(tk.updatedAt))}
@@ -211,7 +211,7 @@ function TicketTable({
 }
 
 /** Stable colour per group (the coloured project dot of a time-entry list). */
-const GROUP_COLORS = ['#7e3fbf', '#d6409f', '#2a78d6', '#1f9d74', '#d97706', '#0e7490', '#b4495b'];
+const GROUP_COLORS = ['#2d2e82', '#f49a18', '#2a78d6', '#1f9d74', '#c2410c', '#0e7490', '#7c3aed'];
 function groupColor(name: string): string {
   let h = 0;
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
@@ -398,10 +398,10 @@ export function TicketsPage() {
           <label htmlFor="q" className="sr-only">
             {t('tickets.search')}
           </label>
-          <Icon name="search" className="h-5 w-5 shrink-0 text-plum-500" />
+          <Icon name="search" className="h-5 w-5 shrink-0 text-ink-500" />
           <input
             id="q"
-            className="min-w-0 flex-1 border-0 bg-transparent py-2 text-base placeholder:text-plum-500 focus:outline-none focus:ring-0"
+            className="min-w-0 flex-1 border-0 bg-transparent py-2 text-base placeholder:text-ink-500 focus:outline-none focus:ring-0"
             placeholder={t('tickets.searchHint')}
             value={q}
             onChange={(e) => setQ(e.target.value)}

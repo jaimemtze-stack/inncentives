@@ -39,14 +39,14 @@ export function NotificationBell({ variant }: { variant?: 'sidebar' }) {
         <Icon name="bell" />
         {variant === 'sidebar' && <span aria-hidden="true">{t('nav.notifications')}</span>}
         {list.data?.unread ? (
-          <span className="ml-auto rounded-full bg-accent-400 px-1.5 text-xs font-semibold text-plum-900">
+          <span className="ml-auto rounded-full bg-brand-400 px-1.5 text-xs font-semibold text-ink-900">
             {list.data.unread}
           </span>
         ) : null}
       </button>
       {open && (
         <div
-          className={`z-50 w-80 rounded-lg border border-plum-200 bg-white p-3 text-plum-900 shadow-lg dark:border-plum-700 dark:bg-plum-850 dark:text-slate-100 ${
+          className={`z-50 w-80 rounded-lg border border-ink-200 bg-white p-3 text-ink-900 shadow-lg dark:border-ink-700 dark:bg-ink-850 dark:text-slate-100 ${
             variant === 'sidebar' ? 'fixed bottom-24 left-4 md:left-64' : 'absolute right-0 mt-2'
           }`}
         >

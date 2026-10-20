@@ -3,64 +3,64 @@
 @tailwind utilities;
 
 /*
- * Visual language inspired by Toggl Track: deep plum sidebar, light plum-tinted
- * canvas, white cards with hairline borders, purple actions, a pink accent for
- * the main call to action and small uppercase table headers.
+ * Layout inspired by Toggl Track (dark sidebar, light canvas, white cards with
+ * hairline borders, small uppercase table headers) in the Inncentives colours:
+ * golden yellow for actions, warm neutrals, the logo navy for the sidebar.
  */
 @layer base {
   :root {
-    --plum-muted: 125 100 137; /* #7d6489 */
+    --ink-muted: 107 103 88; /* #6b6758 */
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --plum-muted: 165 139 176; /* #a58bb0 */
+      --ink-muted: 167 162 144; /* #a7a290 */
     }
   }
   body {
-    @apply bg-plum-50 text-plum-900 antialiased dark:bg-plum-950 dark:text-slate-100;
+    @apply bg-ink-50 text-ink-900 antialiased dark:bg-ink-950 dark:text-slate-100;
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-lg border border-plum-200 bg-white p-6 shadow-[0_1px_2px_rgba(44,19,56,0.06)] dark:border-plum-700 dark:bg-plum-850;
+    @apply rounded-lg border border-ink-200 bg-white p-6 shadow-[0_1px_2px_rgba(42,42,18,0.06)] dark:border-ink-700 dark:bg-ink-850;
   }
   .input {
-    @apply mt-1 block w-full rounded-md border border-plum-200 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-plum-500 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/25 dark:border-plum-700 dark:bg-plum-950;
+    @apply mt-1 block w-full rounded-md border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-ink-500 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/25 dark:border-ink-700 dark:bg-ink-950;
   }
   .label {
-    @apply block text-sm font-medium text-plum-700 dark:text-plum-300;
+    @apply block text-sm font-medium text-ink-700 dark:text-ink-300;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700 focus-visible:ring-brand-600;
+    @apply btn bg-brand-400 text-ink-900 hover:bg-brand-500 focus-visible:ring-brand-600;
   }
   .btn-secondary {
-    @apply btn border border-plum-200 bg-white text-plum-900 hover:bg-plum-100 dark:border-plum-700 dark:bg-plum-850 dark:text-slate-100 dark:hover:bg-plum-800;
+    @apply btn border border-ink-200 bg-white text-ink-900 hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-850 dark:text-slate-100 dark:hover:bg-ink-800;
   }
   .btn-danger {
     @apply btn bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-600;
   }
   /* The pink round button of the timer bar ("start"): the page's main action. */
   .btn-accent {
-    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-400 text-plum-900 shadow-sm transition-colors hover:bg-accent-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2;
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-400 text-ink-900 shadow-sm transition-colors hover:bg-brand-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2;
   }
   .link {
-    @apply font-medium text-brand-700 underline-offset-2 hover:underline dark:text-brand-300;
+    @apply font-medium text-brand-800 underline-offset-2 hover:underline dark:text-brand-300;
   }
   .table {
     @apply w-full text-left text-sm;
   }
   .table th {
-    @apply border-b border-plum-200 py-2 pr-4 text-xs font-semibold uppercase tracking-wide text-plum-500 dark:border-plum-700;
+    @apply border-b border-ink-200 py-2 pr-4 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:border-ink-700;
   }
   .table td {
-    @apply border-b border-plum-100 py-2.5 pr-4 align-top dark:border-plum-800;
+    @apply border-b border-ink-100 py-2.5 pr-4 align-top dark:border-ink-800;
   }
   .table tbody tr:hover td {
-    @apply bg-plum-50 dark:bg-plum-800/60;
+    @apply bg-ink-50 dark:bg-ink-800/60;
   }
 
   /* Page header: title on the left, actions on the right (Toggl's top bar). */
@@ -73,44 +73,44 @@
 
   /* Segmented control (Toggl's List / Calendar / Timesheet switcher). */
   .segmented {
-    @apply inline-flex flex-wrap rounded-md border border-plum-200 bg-white p-0.5 text-sm dark:border-plum-700 dark:bg-plum-850;
+    @apply inline-flex flex-wrap rounded-md border border-ink-200 bg-white p-0.5 text-sm dark:border-ink-700 dark:bg-ink-850;
   }
   .segment {
-    @apply flex items-center gap-2 rounded px-3 py-1.5 font-medium text-plum-600 hover:bg-plum-100 dark:text-plum-300 dark:hover:bg-plum-800;
+    @apply flex items-center gap-2 rounded px-3 py-1.5 font-medium text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800;
   }
   .segment-active {
     @apply bg-brand-100 text-brand-800 hover:bg-brand-100 dark:bg-brand-900 dark:text-brand-100 dark:hover:bg-brand-900;
   }
   .count {
-    @apply rounded-full bg-plum-100 px-2 text-xs tabular-nums text-plum-600 dark:bg-plum-700 dark:text-plum-200;
+    @apply rounded-full bg-ink-100 px-2 text-xs tabular-nums text-ink-600 dark:bg-ink-700 dark:text-ink-200;
   }
 
   /* Sidebar navigation. */
   .nav-section {
-    @apply px-3 pb-1 pt-5 text-[0.7rem] font-semibold uppercase tracking-wider text-plum-400;
+    @apply px-3 pb-1 pt-5 text-[0.7rem] font-semibold uppercase tracking-wider text-navy-300;
   }
   .nav-item {
-    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-plum-300 transition-colors hover:bg-plum-700 hover:text-white;
+    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-navy-300 transition-colors hover:bg-navy-700 hover:text-white;
   }
   .nav-item-active {
-    @apply bg-plum-700 text-white shadow-[inset_3px_0_0_theme(colors.accent.400)];
+    @apply bg-navy-700 text-brand-300 shadow-[inset_3px_0_0_theme(colors.brand.400)];
   }
 }
 
 /* Chart tokens (validated two-series palette; dark steps chosen for the dark surface). */
 .viz-root {
   --viz-surface: #ffffff;
-  --viz-grid: #ece6ef;
-  --viz-axis: #5a3d66;
-  --viz-series-1: #7e3fbf;
-  --viz-series-2: #d6409f;
+  --viz-grid: #e7e4d8;
+  --viz-axis: #55513f;
+  --viz-series-1: #4f52b8;
+  --viz-series-2: #d47c00;
 }
 @media (prefers-color-scheme: dark) {
   .viz-root {
-    --viz-surface: #2f1b38;
-    --viz-grid: #412a4c;
-    --viz-axis: #c9b5d1;
-    --viz-series-1: #a46ee6;
-    --viz-series-2: #d9508f;
+    --viz-surface: #232118;
+    --viz-grid: #3d3a2c;
+    --viz-axis: #cfcbbb;
+    --viz-series-1: #7d81e0;
+    --viz-series-2: #c27c18;
   }
 }

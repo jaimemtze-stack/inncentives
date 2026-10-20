@@ -100,7 +100,7 @@ export function KbPage() {
               className={`flex w-full justify-between rounded px-3 py-1.5 text-left ${c.parentId ? 'pl-6' : ''} ${category === c.id ? 'bg-brand-50 font-semibold dark:bg-brand-950' : ''}`}
             >
               <span>{name(c)}</span>
-              <span className="text-xs text-plum-500">{c.answers}</span>
+              <span className="text-xs text-ink-500">{c.answers}</span>
             </button>
           ))}
       </aside>
@@ -124,7 +124,7 @@ export function KbPage() {
                 <Link to="/kb/$id" params={{ id: r.id }} className="link font-medium">
                   {r.title}
                 </Link>
-                <p className="text-sm text-plum-600 dark:text-plum-400">{r.snippet}…</p>
+                <p className="text-sm text-ink-600 dark:text-ink-400">{r.snippet}…</p>
               </li>
             ))}
             {found.data?.length === 0 && <p className="text-sm">{t('kb.noResults')}</p>}
@@ -137,7 +137,7 @@ export function KbPage() {
                   {pick(a.translations, locale)?.title}
                 </Link>
                 {a.state && a.state !== 'published' && (
-                  <span className="rounded bg-plum-200 px-1 text-xs dark:bg-plum-700">
+                  <span className="rounded bg-ink-200 px-1 text-xs dark:bg-ink-700">
                     {t(`kb.states.${a.state}`)}
                   </span>
                 )}
@@ -257,7 +257,7 @@ export function KbAnswerPage() {
               className="prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: shown.bodyHtml }}
             />
-            {!tr && <p className="text-xs text-plum-500">{t('kb.notTranslated')}</p>}
+            {!tr && <p className="text-xs text-ink-500">{t('kb.notTranslated')}</p>}
           </>
         ) : null}
         {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}

@@ -67,7 +67,7 @@ export function AttachmentPicker({ onChange }: { onChange: (ids: string[]) => vo
         className="text-sm"
       />
       {files.length > 0 && (
-        <p className="text-xs text-plum-600">{files.map((f) => f.filename).join(', ')}</p>
+        <p className="text-xs text-ink-600">{files.map((f) => f.filename).join(', ')}</p>
       )}
       {error && <Alert>{error}</Alert>}
     </div>
@@ -191,7 +191,7 @@ function KbInsert({ onInsert }: { onInsert: (text: string) => void }) {
   const found = useKbSearch(q, 5);
   return (
     <details className="text-sm">
-      <summary className="cursor-pointer text-brand-700 dark:text-brand-400">
+      <summary className="cursor-pointer text-brand-800 dark:text-brand-300">
         {t('kb.insert')}
       </summary>
       <input
@@ -522,7 +522,7 @@ export function Composer(props: {
             props.onTyping?.(e.target.value.length > 0);
           }}
         />
-        {props.staff && <p className="mt-1 text-xs text-plum-500">{t('article.textModuleHint')}</p>}
+        {props.staff && <p className="mt-1 text-xs text-ink-500">{t('article.textModuleHint')}</p>}
         {props.staff && (
           <KbInsert onInsert={(text) => setBody((b) => (b ? `${b}\n\n${text}` : text))} />
         )}
@@ -551,7 +551,7 @@ export function Composer(props: {
         <AiCompose ticketId={props.ticketId} draft={body} onResult={setBody} />
       )}
       {messagingReply ? (
-        <p className="text-xs text-plum-600 dark:text-plum-300">
+        <p className="text-xs text-ink-600 dark:text-ink-300">
           {t(type === 'whatsapp' ? 'article.whatsappHint' : 'article.smsHint')}
         </p>
       ) : (

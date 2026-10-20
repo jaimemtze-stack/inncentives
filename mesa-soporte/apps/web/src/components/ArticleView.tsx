@@ -45,13 +45,13 @@ export function ArticleView(props: {
   const tone = a.internal
     ? 'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950'
     : a.sender === 'customer'
-      ? 'border-plum-200 bg-white dark:border-plum-800 dark:bg-plum-850'
+      ? 'border-ink-200 bg-white dark:border-ink-800 dark:bg-ink-850'
       : 'border-brand-200 bg-brand-50 dark:border-brand-900 dark:bg-brand-950';
 
   return (
     <article className={`rounded-lg border p-4 ${tone}`} data-testid="article">
-      <header className="mb-2 flex flex-wrap items-center gap-2 text-xs text-plum-600 dark:text-plum-400">
-        <strong className="text-sm text-plum-900 dark:text-slate-100">
+      <header className="mb-2 flex flex-wrap items-center gap-2 text-xs text-ink-600 dark:text-ink-400">
+        <strong className="text-sm text-ink-900 dark:text-slate-100">
           {a.authorName ?? a.from ?? t('article.types.system')}
         </strong>
         <span>{t(`article.types.${a.type}`)}</span>
@@ -141,7 +141,7 @@ export function ArticleView(props: {
           {a.attachments.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center gap-2">
               <span>📎 {f.filename}</span>
-              <span className="text-xs text-plum-500">{Math.ceil(f.size / 1024)} KB</span>
+              <span className="text-xs text-ink-500">{Math.ceil(f.size / 1024)} KB</span>
               {f.scanStatus === 'clean' || f.scanStatus === 'skipped' ? (
                 <button
                   type="button"

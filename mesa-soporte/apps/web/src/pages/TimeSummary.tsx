@@ -16,7 +16,7 @@ const duration = (m: number) => `${Math.floor(m / 60)}:${String(m % 60).padStart
 function Total({ label, minutes }: { label: string; minutes: number }) {
   return (
     <div className="card p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-plum-500">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{label}</p>
       <p className="mt-2 text-3xl font-semibold tabular-nums">{duration(minutes)}</p>
     </div>
   );
@@ -78,11 +78,11 @@ export function TimeSummaryPage() {
                   <td className="text-right tabular-nums">{duration(r.billableMinutes)}</td>
                   <td>
                     {r.includedMinutes === null ? (
-                      <span className="text-plum-500">—</span>
+                      <span className="text-ink-500">—</span>
                     ) : (
                       <div className="flex items-center gap-3">
                         <div
-                          className="h-2 flex-1 overflow-hidden rounded-full bg-plum-100 dark:bg-plum-700"
+                          className="h-2 flex-1 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-700"
                           role="progressbar"
                           aria-valuemin={0}
                           aria-valuemax={100}
@@ -95,7 +95,7 @@ export function TimeSummaryPage() {
                           />
                         </div>
                         <span
-                          className={`whitespace-nowrap text-xs tabular-nums ${over ? 'font-semibold text-red-700 dark:text-red-400' : 'text-plum-500'}`}
+                          className={`whitespace-nowrap text-xs tabular-nums ${over ? 'font-semibold text-red-700 dark:text-red-400' : 'text-ink-500'}`}
                         >
                           {over && '⚠ '}
                           {duration(r.includedMinutes)}

@@ -70,7 +70,7 @@ export function PhonePage() {
             )}
             {!lookup.data.customers.length && <p>{t('phone.noMatch')}</p>}
             {lookup.data.customers.map((c) => (
-              <div key={c.id} className="rounded border border-plum-200 p-3 dark:border-plum-700">
+              <div key={c.id} className="rounded border border-ink-200 p-3 dark:border-ink-700">
                 <p className="font-semibold">{c.name}</p>
                 <p>
                   {c.email} · {c.organization.name}

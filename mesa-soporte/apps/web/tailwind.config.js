@@ -4,38 +4,46 @@ export default {
   darkMode: 'media',
   theme: {
     extend: {
-      // Visual language inspired by Toggl Track: deep plum navigation, purple
-      // actions and a pink accent for the main call to action.
+      // Inncentives colours (inncentives.neitek.com): golden yellow for actions,
+      // warm neutrals and cream surfaces, the logo navy for the sidebar and
+      // orange as the second chart series.
       colors: {
         brand: {
-          50: '#f6f0fd',
-          100: '#ecdffb',
-          200: '#d9bff6',
-          300: '#c09bef',
-          400: '#a46ee6',
-          500: '#9050da',
-          600: '#7e3fbf',
-          700: '#6a32a3',
-          800: '#562a83',
-          900: '#43226a',
-          950: '#2c1338',
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbc52a',
+          500: '#f2b20c',
+          600: '#d99a06',
+          700: '#b37905',
+          800: '#8a5d0a',
+          900: '#5c3d06',
+          950: '#3d2805',
         },
-        plum: {
-          50: '#fbf9fc',
-          100: '#f3eef5',
-          200: '#e6dcea',
-          300: '#c9b5d1',
-          400: '#a58bb0',
+        ink: {
+          50: '#fbfaf6',
+          100: '#f4f2ea',
+          200: '#e7e4d8',
+          300: '#cfcbbb',
+          400: '#a7a290',
           // Muted text: darker on light surfaces, lighter on dark ones (index.css).
-          500: 'rgb(var(--plum-muted) / <alpha-value>)',
-          600: '#5a3d66',
-          700: '#412a4c',
-          800: '#35203f',
-          850: '#2f1b38',
-          900: '#2c1338',
-          950: '#1e1424',
+          500: 'rgb(var(--ink-muted) / <alpha-value>)',
+          600: '#55513f',
+          700: '#3d3a2c',
+          800: '#2c2a1f',
+          850: '#232118',
+          900: '#2a2a12',
+          950: '#171610',
         },
-        accent: { 300: '#f2a9e9', 400: '#e57cd8', 500: '#d6409f' },
+        navy: {
+          100: '#e6e7f5',
+          300: '#bfc1de',
+          700: '#3a3c94',
+          800: '#25266d',
+          900: '#2d2e82',
+        },
+        accent: { 400: '#ee7d11' },
       },
       fontFamily: {
         sans: [

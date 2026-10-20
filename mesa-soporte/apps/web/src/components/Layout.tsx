@@ -96,15 +96,19 @@ export function Layout() {
     await navigate({ to: '/entrar' });
   }
 
-  const language = (
-    <div className="flex items-center gap-2 px-3 text-plum-300">
+  const language = (onSidebar: boolean) => (
+    <div className={`flex items-center gap-2 px-3 ${onSidebar ? 'text-navy-300' : 'text-ink-500'}`}>
       <Icon name="globe" className="h-4 w-4" />
       <label className="sr-only" htmlFor="lang">
         {t('common.language')}
       </label>
       <select
         id="lang"
-        className="w-full rounded border border-plum-700 bg-plum-900 px-2 py-1 text-sm text-plum-100"
+        className={`w-full rounded border px-2 py-1 text-sm ${
+          onSidebar
+            ? 'border-navy-700 bg-navy-900 text-navy-100'
+            : 'border-ink-200 bg-white text-ink-900 dark:border-ink-700 dark:bg-ink-850 dark:text-slate-100'
+        }`}
         value={i18n.language.startsWith('en') ? 'en' : 'es'}
         onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
       >
@@ -114,18 +118,20 @@ export function Layout() {
     </div>
   );
 
-  // Signed out (login, MFA, invitation…): centred page on the plum backdrop.
+  // Signed out (login, MFA, invitation…): centred page on the cream backdrop of the website.
   if (!authed) {
     return (
-      <div className="flex min-h-screen flex-col bg-plum-900 px-4 py-8">
-        <div className="mx-auto mb-8 flex w-full max-w-md items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-white">
-            <img src="/favicon.svg" alt="" className="h-8 w-8" />
-            <span>{appName}</span>
+      <div className="flex min-h-screen flex-col border-t-8 border-brand-400 bg-gradient-to-b from-brand-50 to-ink-50 px-4 py-8 dark:from-ink-950 dark:to-ink-950">
+        <div className="mx-auto mb-8 flex w-full max-w-md items-center justify-between gap-4">
+          <Link to="/" className="flex flex-col gap-2 font-semibold">
+            <span className="rounded-md dark:bg-white dark:px-3 dark:py-2">
+              <img src="/inncentives-logo.png" alt="Inncentives" className="h-6 w-auto" />
+            </span>
+            <span className="text-sm">{appName}</span>
           </Link>
-          <div className="w-36">{language}</div>
+          <div className="w-36">{language(false)}</div>
         </div>
-        <main className="mx-auto w-full max-w-md text-plum-900 dark:text-slate-100">
+        <main className="mx-auto w-full max-w-md text-ink-900 dark:text-slate-100">
           <Outlet />
         </main>
       </div>
@@ -136,11 +142,13 @@ export function Layout() {
     <nav className="flex h-full flex-col overflow-y-auto px-3 py-4" aria-label={t('nav.main')}>
       <Link
         to="/"
-        className="mb-2 flex items-center gap-2 px-3 font-semibold text-white"
+        className="mb-2 flex flex-col gap-2 px-1 font-semibold text-white"
         onClick={close}
       >
-        <img src="/favicon.svg" alt="" className="h-8 w-8" />
-        <span className="text-sm leading-tight">{appName}</span>
+        <span className="rounded-md bg-white px-3 py-2.5">
+          <img src="/inncentives-logo.png" alt="Inncentives" className="h-auto w-full" />
+        </span>
+        <span className="px-2 text-xs font-medium leading-tight text-navy-300">{appName}</span>
       </Link>
       <NavSection title={t('nav.sectionWork')}>
         <NavLink to="/" icon="tickets" label={t('nav.tickets')} exact onNavigate={close} />
@@ -180,15 +188,15 @@ export function Layout() {
           )}
         </NavSection>
       )}
-      <div className="mt-auto space-y-2 border-t border-plum-700 pt-4">
+      <div className="mt-auto space-y-2 border-t border-navy-700 pt-4">
         {agent && <NotificationBell variant="sidebar" />}
         <NavLink to="/cuenta" icon="user" label={t('common.account')} onNavigate={close} />
-        {language}
+        {language(true)}
         <button type="button" className="nav-item w-full" onClick={() => void logout()}>
           <Icon name="logout" />
           <span>{t('common.logout')}</span>
         </button>
-        <p className="truncate px-3 text-xs text-plum-400">{me.data?.user.name}</p>
+        <p className="truncate px-3 text-xs text-navy-300">{me.data?.user.name}</p>
       </div>
     </nav>
   );
@@ -196,14 +204,14 @@ export function Layout() {
   return (
     <div className="min-h-screen md:pl-60">
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between bg-plum-900 px-4 py-2 md:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between bg-navy-900 px-4 py-2 md:hidden">
         <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-white">
           <img src="/favicon.svg" alt="" className="h-7 w-7" />
           <span>{appName}</span>
         </Link>
         <button
           type="button"
-          className="rounded p-2 text-plum-100 hover:bg-plum-700"
+          className="rounded p-2 text-navy-100 hover:bg-navy-700"
           aria-expanded={menuOpen}
           aria-controls="sidebar"
           aria-label={t('nav.menu')}
@@ -214,20 +222,20 @@ export function Layout() {
       </header>
       <aside
         id="sidebar"
-        className={`fixed inset-y-0 left-0 z-40 w-60 bg-plum-900 md:block ${menuOpen ? 'block' : 'hidden'}`}
+        className={`fixed inset-y-0 left-0 z-40 w-60 bg-navy-900 md:block ${menuOpen ? 'block' : 'hidden'}`}
       >
         {sidebar}
       </aside>
       {menuOpen && (
         <div
-          className="fixed inset-0 z-30 bg-plum-950/50 md:hidden"
+          className="fixed inset-0 z-30 bg-ink-950/50 md:hidden"
           aria-hidden="true"
           onClick={close}
         />
       )}
       <main className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">
         <Outlet />
-        <p className="mt-8 text-center text-xs text-plum-500">{t('tickets.shortcuts')}</p>
+        <p className="mt-8 text-center text-xs text-ink-500">{t('tickets.shortcuts')}</p>
       </main>
       {agent && <CallToast />}
     </div>

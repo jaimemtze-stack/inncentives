@@ -90,7 +90,7 @@ export function ReportPage() {
       <h1 className="text-xl font-semibold">{t('widget.title')}</h1>
       {ctx.isError && <Alert>{errorText(ctx.error)}</Alert>}
       {ctx.data && (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded border border-plum-200 p-3 text-sm dark:border-plum-700">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded border border-ink-200 p-3 text-sm dark:border-ink-700">
           <dt className="font-medium">{t('widget.environment')}</dt>
           <dd>{ctx.data.environment.name}</dd>
           <dt className="font-medium">{t('widget.module')}</dt>
@@ -128,7 +128,7 @@ export function ReportPage() {
           onChange={(e) => setBody(e.target.value)}
           onPaste={(e) => void paste(e)}
         />
-        <p className="mt-1 text-xs text-plum-600 dark:text-plum-300">{t('widget.pasteHint')}</p>
+        <p className="mt-1 text-xs text-ink-600 dark:text-ink-300">{t('widget.pasteHint')}</p>
         {shots.length > 0 && <p className="text-xs">{shots.map((s) => s.filename).join(', ')}</p>}
       </div>
       <AttachmentPicker onChange={setPicked} />
@@ -167,7 +167,7 @@ export function InncentivesPanel({ ticketId }: { ticketId: string }) {
     <div>
       <h3 className="font-semibold">Inncentives</h3>
       {!q.data.available ? (
-        <p className="text-xs text-plum-600 dark:text-plum-300">
+        <p className="text-xs text-ink-600 dark:text-ink-300">
           {t(`inncentives.${q.data.reason ?? 'unavailable'}`)}
         </p>
       ) : (

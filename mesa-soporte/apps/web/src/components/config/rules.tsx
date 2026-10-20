@@ -136,7 +136,7 @@ function GroupEditor(props: {
   const set = (conditions: Rec[]) => props.onChange({ ...props.node, conditions });
   return (
     <div
-      className={`space-y-2 ${props.depth ? 'rounded border border-dashed border-plum-300 p-2 dark:border-plum-600' : ''}`}
+      className={`space-y-2 ${props.depth ? 'rounded border border-dashed border-ink-300 p-2 dark:border-ink-600' : ''}`}
     >
       <div className="flex items-center gap-2">
         <select
@@ -155,7 +155,7 @@ function GroupEditor(props: {
         )}
       </div>
       {children.length === 0 && props.depth === 0 && (
-        <p className="text-xs text-plum-500">{t('cfg.cond.empty')}</p>
+        <p className="text-xs text-ink-500">{t('cfg.cond.empty')}</p>
       )}
       {children.map((c, i) => {
         const update = (v: Rec) => set(children.map((x, j) => (j === i ? v : x)));
@@ -241,7 +241,7 @@ function LeafEditor(props: {
   }
 
   return (
-    <div className="grid items-end gap-2 rounded border border-plum-200 p-2 sm:grid-cols-[1fr_1fr_1.5fr_auto] dark:border-plum-700">
+    <div className="grid items-end gap-2 rounded border border-ink-200 p-2 sm:grid-cols-[1fr_1fr_1.5fr_auto] dark:border-ink-700">
       <SelectIn label={t('cfg.f.field')} value={field} onChange={setField} options={fieldOptions} />
       <SelectIn
         label={t('cfg.f.operator')}

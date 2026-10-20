@@ -150,7 +150,7 @@ function ResourceEditor({ resource }: { resource: string }) {
           {rows.data?.map((r) => (
             <tr key={String(r.id)}>
               <td>{String(r.name ?? r.keyword ?? r.target ?? r.id)}</td>
-              <td className="text-xs text-plum-500">{r.active === false ? '✕' : ''}</td>
+              <td className="text-xs text-ink-500">{r.active === false ? '✕' : ''}</td>
               <td className="whitespace-nowrap text-right">
                 {(resource === 'webhooks' || resource === 'teams-channels') && (
                   <button
@@ -471,7 +471,7 @@ function ViewAsPanel() {
   }
   return (
     <div className="space-y-3">
-      <div role="status" className="rounded bg-purple-800 px-3 py-2 text-sm text-white">
+      <div role="status" className="rounded bg-navy-900 px-3 py-2 text-sm text-white">
         {t('config.viewAsBanner', {
           name: session.customer.name,
           until: formatDate(session.expiresAt, i18n.language),
