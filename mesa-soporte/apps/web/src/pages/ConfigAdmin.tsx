@@ -113,7 +113,7 @@ function ResourceEditor({ resource }: { resource: string }) {
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
       {editing && (
         <form
-          className="space-y-3 rounded border border-blue-200 p-4 dark:border-blue-900"
+          className="space-y-3 rounded border border-brand-200 p-4 dark:border-brand-900"
           onSubmit={(e) => {
             e.preventDefault();
             void save();
@@ -150,7 +150,7 @@ function ResourceEditor({ resource }: { resource: string }) {
           {rows.data?.map((r) => (
             <tr key={String(r.id)}>
               <td>{String(r.name ?? r.keyword ?? r.target ?? r.id)}</td>
-              <td className="text-xs text-slate-500">{r.active === false ? '✕' : ''}</td>
+              <td className="text-xs text-ink-500">{r.active === false ? '✕' : ''}</td>
               <td className="whitespace-nowrap text-right">
                 {(resource === 'webhooks' || resource === 'teams-channels') && (
                   <button
@@ -471,7 +471,7 @@ function ViewAsPanel() {
   }
   return (
     <div className="space-y-3">
-      <div role="status" className="rounded bg-purple-800 px-3 py-2 text-sm text-white">
+      <div role="status" className="rounded bg-navy-900 px-3 py-2 text-sm text-white">
         {t('config.viewAsBanner', {
           name: session.customer.name,
           until: formatDate(session.expiresAt, i18n.language),
@@ -614,51 +614,56 @@ export function ConfigAdminPage() {
     ['tokens', t('config.tokens')],
   ];
   return (
-    <div className="grid gap-6 md:grid-cols-[14rem_1fr]">
-      <nav className="space-y-1 text-sm" aria-label={t('config.title')}>
-        {can('admin.config') &&
-          RESOURCE_KEYS.map((r) => (
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">{t('config.title')}</h1>
+      </div>
+      <div className="grid gap-6 md:grid-cols-[14rem_1fr]">
+        <nav className="space-y-1 text-sm" aria-label={t('config.title')}>
+          {can('admin.config') &&
+            RESOURCE_KEYS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setTab(r)}
+                className={`block w-full rounded px-3 py-1.5 text-left ${tab === r ? 'bg-brand-50 font-semibold dark:bg-brand-950' : ''}`}
+              >
+                {t(`config.resources.${r}`)}
+              </button>
+            ))}
+          <hr className="my-2" />
+          {special.map(([k, label]) => (
             <button
-              key={r}
+              key={k}
               type="button"
-              onClick={() => setTab(r)}
-              className={`block w-full rounded px-3 py-1.5 text-left ${tab === r ? 'bg-blue-50 font-semibold dark:bg-blue-950' : ''}`}
+              onClick={() => setTab(k!)}
+              className={`block w-full rounded px-3 py-1.5 text-left ${tab === k ? 'bg-brand-50 font-semibold dark:bg-brand-950' : ''}`}
             >
-              {t(`config.resources.${r}`)}
+              {label}
             </button>
           ))}
-        <hr className="my-2" />
-        {special.map(([k, label]) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setTab(k!)}
-            className={`block w-full rounded px-3 py-1.5 text-left ${tab === k ? 'bg-blue-50 font-semibold dark:bg-blue-950' : ''}`}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-      <section className="card">
-        <h1 className="mb-4 text-xl font-semibold">
-          {RESOURCE_KEYS.includes(tab)
-            ? t(`config.resources.${tab}`)
-            : special.find(([k]) => k === tab)?.[1]}
-        </h1>
-        {RESOURCE_KEYS.includes(tab) && <ResourceEditor key={tab} resource={tab} />}
-        {tab === 'settings' && (
-          <FormPanel<Rec>
-            queryKey={['settings']}
-            load={() => api<Rec>('GET', '/admin/settings')}
-            save={(b) => api('PUT', '/admin/settings', b)}
-            render={(value, onChange) => <SettingsForm value={value} onChange={onChange} />}
-          />
-        )}
-        {tab === 'users' && <UsersPanel />}
-        {tab === 'privacy' && <PrivacyPanel />}
-        {tab === 'view-as' && <ViewAsPanel />}
-        {tab === 'tokens' && <TokensPanel />}
-      </section>
+        </nav>
+        <section className="card">
+          <h2 className="mb-4 text-xl font-semibold">
+            {RESOURCE_KEYS.includes(tab)
+              ? t(`config.resources.${tab}`)
+              : special.find(([k]) => k === tab)?.[1]}
+          </h2>
+          {RESOURCE_KEYS.includes(tab) && <ResourceEditor key={tab} resource={tab} />}
+          {tab === 'settings' && (
+            <FormPanel<Rec>
+              queryKey={['settings']}
+              load={() => api<Rec>('GET', '/admin/settings')}
+              save={(b) => api('PUT', '/admin/settings', b)}
+              render={(value, onChange) => <SettingsForm value={value} onChange={onChange} />}
+            />
+          )}
+          {tab === 'users' && <UsersPanel />}
+          {tab === 'privacy' && <PrivacyPanel />}
+          {tab === 'view-as' && <ViewAsPanel />}
+          {tab === 'tokens' && <TokensPanel />}
+        </section>
+      </div>
     </div>
   );
 }

@@ -28,10 +28,12 @@ const hours = (m: number | null) =>
 
 function Tile({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-      <p className="text-sm text-slate-600 dark:text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
-      {hint && <p className="text-xs text-slate-500">{hint}</p>}
+    <div className="card p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{label}</p>
+      <p className="mt-2 text-3xl font-semibold tabular-nums text-ink-900 dark:text-white">
+        {value}
+      </p>
+      {hint && <p className="mt-1 text-xs text-ink-500">{hint}</p>}
     </div>
   );
 }
@@ -50,14 +52,11 @@ function DailyChart({ data }: { data: Summary['perDay'] }) {
   const path = (k: 'created' | 'closed') =>
     data.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(d[k]).toFixed(1)}`).join('');
   const ticks = [0, Math.ceil(max / 2), max];
-  if (!data.length) return <p className="text-sm text-slate-500">{t('reports.noData')}</p>;
+  if (!data.length) return <p className="text-sm text-ink-500">{t('reports.noData')}</p>;
   const last = data.length - 1;
   return (
     <div className="viz-root">
-      <div
-        className="mb-2 flex gap-4 text-xs text-slate-700 dark:text-slate-300"
-        aria-hidden="true"
-      >
+      <div className="mb-2 flex gap-4 text-xs text-ink-700 dark:text-ink-300" aria-hidden="true">
         <span className="flex items-center gap-1">
           <span className="inline-block h-0.5 w-4" style={{ background: 'var(--viz-series-1)' }} />
           {t('reports.created')}
@@ -151,7 +150,7 @@ function DailyChart({ data }: { data: Summary['perDay'] }) {
           </g>
         )}
       </svg>
-      <p className="h-5 text-xs text-slate-700 dark:text-slate-300" aria-live="polite">
+      <p className="h-5 text-xs text-ink-700 dark:text-ink-300" aria-live="polite">
         {hover !== null &&
           `${data[hover]!.date} · ${t('reports.created')}: ${data[hover]!.created} · ${t('reports.closed')}: ${data[hover]!.closed}`}
       </p>
@@ -182,8 +181,8 @@ function DailyChart({ data }: { data: Summary['perDay'] }) {
 
 function SimpleTable({ title, rows }: { title: string; rows: Array<[string, string | number]> }) {
   return (
-    <div>
-      <h3 className="mb-1 font-semibold">{title}</h3>
+    <div className="card">
+      <h3 className="mb-2 font-semibold">{title}</h3>
       <table className="table">
         <tbody>
           {rows.map(([k, v]) => (
@@ -227,9 +226,19 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{t('nav.reports')}</h1>
+      <div className="page-header mb-0">
+        <h1 className="page-title">{t('nav.reports')}</h1>
+        <div className="flex gap-2">
+          <a className="btn-secondary" href={`/api/v1/reports/export?${qs}&format=csv`}>
+            CSV
+          </a>
+          <a className="btn-secondary" href={`/api/v1/reports/export?${qs}&format=xlsx`}>
+            XLSX
+          </a>
+        </div>
+      </div>
       <div
-        className="card flex flex-wrap items-end gap-3"
+        className="card flex flex-wrap items-end gap-3 py-4"
         role="group"
         aria-label={t('reports.filters')}
       >
@@ -293,12 +302,6 @@ export function ReportsPage() {
             ))}
           </select>
         </div>
-        <a className="btn-secondary" href={`/api/v1/reports/export?${qs}&format=csv`}>
-          CSV
-        </a>
-        <a className="btn-secondary" href={`/api/v1/reports/export?${qs}&format=xlsx`}>
-          XLSX
-        </a>
       </div>
       {s && (
         <>
@@ -324,7 +327,7 @@ export function ReportsPage() {
             <h2 className="mb-2 font-semibold">{t('reports.daily')}</h2>
             <DailyChart data={s.perDay} />
           </section>
-          <section className="card grid gap-6 md:grid-cols-2">
+          <section className="grid gap-4 md:grid-cols-2">
             <SimpleTable
               title={t('reports.loadAgent')}
               rows={s.loadByAgent.map((r) => [r.name, r.open])}

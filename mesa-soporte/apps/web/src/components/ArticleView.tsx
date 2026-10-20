@@ -45,13 +45,13 @@ export function ArticleView(props: {
   const tone = a.internal
     ? 'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950'
     : a.sender === 'customer'
-      ? 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
-      : 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950';
+      ? 'border-ink-200 bg-white dark:border-ink-800 dark:bg-ink-850'
+      : 'border-brand-200 bg-brand-50 dark:border-brand-900 dark:bg-brand-950';
 
   return (
     <article className={`rounded-lg border p-4 ${tone}`} data-testid="article">
-      <header className="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-        <strong className="text-sm text-slate-900 dark:text-slate-100">
+      <header className="mb-2 flex flex-wrap items-center gap-2 text-xs text-ink-600 dark:text-ink-400">
+        <strong className="text-sm text-ink-900 dark:text-slate-100">
           {a.authorName ?? a.from ?? t('article.types.system')}
         </strong>
         <span>{t(`article.types.${a.type}`)}</span>
@@ -141,7 +141,7 @@ export function ArticleView(props: {
           {a.attachments.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center gap-2">
               <span>📎 {f.filename}</span>
-              <span className="text-xs text-slate-500">{Math.ceil(f.size / 1024)} KB</span>
+              <span className="text-xs text-ink-500">{Math.ceil(f.size / 1024)} KB</span>
               {f.scanStatus === 'clean' || f.scanStatus === 'skipped' ? (
                 <button
                   type="button"

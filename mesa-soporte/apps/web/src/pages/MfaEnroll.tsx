@@ -74,7 +74,7 @@ export function MfaEnrollPage() {
   return (
     <CenteredCard title={t('enroll.title')}>
       <form className="space-y-4" onSubmit={submit}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">{t('enroll.intro')}</p>
+        <p className="text-sm text-ink-600 dark:text-ink-400">{t('enroll.intro')}</p>
         {error && <Alert>{error}</Alert>}
         {setup && (
           <>
@@ -85,9 +85,9 @@ export function MfaEnrollPage() {
               width={220}
               height={220}
             />
-            <p className="text-xs text-slate-500">{t('enroll.manual')}</p>
+            <p className="text-xs text-ink-500">{t('enroll.manual')}</p>
             <code
-              className="block break-all rounded bg-slate-100 p-2 text-center text-sm dark:bg-slate-800"
+              className="block break-all rounded bg-ink-100 p-2 text-center text-sm dark:bg-ink-800"
               data-testid="totp-secret"
             >
               {setup.secret}

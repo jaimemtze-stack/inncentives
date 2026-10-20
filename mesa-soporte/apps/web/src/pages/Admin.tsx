@@ -101,7 +101,7 @@ function CsvImport({ canOrgs }: { canOrgs: boolean }) {
   return (
     <section className="card space-y-3">
       <h2 className="text-lg font-semibold">{t('csvImport.title')}</h2>
-      <p className="text-sm text-slate-600 dark:text-slate-300">{t('csvImport.help')}</p>
+      <p className="text-sm text-ink-600 dark:text-ink-300">{t('csvImport.help')}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className="label" htmlFor="imp-kind">

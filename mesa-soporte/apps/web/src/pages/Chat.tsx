@@ -102,7 +102,7 @@ function Conversation({ session, onEnded }: { session: Session; onEnded?: () => 
   return (
     <div className="space-y-3">
       <ol
-        className="max-h-[60vh] space-y-2 overflow-y-auto rounded border border-slate-200 p-3 dark:border-slate-700"
+        className="max-h-[60vh] space-y-2 overflow-y-auto rounded border border-ink-200 p-3 dark:border-ink-700"
         aria-live="polite"
         aria-label={t('chat.messages')}
       >
@@ -111,8 +111,8 @@ function Conversation({ session, onEnded }: { session: Session; onEnded?: () => 
             <div
               className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
                 mine(a)
-                  ? 'bg-blue-700 text-white'
-                  : 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+                  ? 'bg-brand-400 text-ink-900'
+                  : 'bg-ink-100 text-ink-900 dark:bg-ink-800 dark:text-slate-100'
               }`}
             >
               <p className="whitespace-pre-wrap">{htmlText(a.bodyHtml)}</p>
@@ -291,7 +291,7 @@ function AgentChat() {
           {items.map((i) => (
             <li
               key={i.id}
-              className="rounded border border-slate-200 p-2 text-sm dark:border-slate-700"
+              className="rounded border border-ink-200 p-2 text-sm dark:border-ink-700"
             >
               <p className="font-medium">{i.customer ?? '—'}</p>
               <p className="truncate">{i.title}</p>
