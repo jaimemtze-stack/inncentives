@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # PostgreSQL 16 + pgBackRest + age on Ubuntu 24.04 (multi-arch). pgBackRest
 # must live next to PostgreSQL because archive_command runs inside it.
-FROM ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac
+FROM ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944
 ARG DEBIAN_FRONTEND=noninteractive
 # The optional "ca" secret is only used when building behind a TLS-inspecting proxy.
 # Fixed uid/gid 5432 so host directories and secret files can be owned by it.
